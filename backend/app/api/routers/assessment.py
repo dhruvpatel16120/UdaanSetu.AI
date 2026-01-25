@@ -72,3 +72,14 @@ def get_assessment_report(user_id: str):
     except Exception as e:
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@router.get("/result/{user_id}")
+def get_assessment_result_endpoint(user_id: str):
+    """
+    Retrieve the bio-data profile for a specific user.
+    """
+    from app.services.db_firebase import get_assessment_result
+    result = get_assessment_result(user_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Assessment result not found")
+    return result
