@@ -82,62 +82,65 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {/* Show public links only when NOT authenticated */}
-            {status !== "authenticated" && navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
-                  pathname === item.href
-                    ? theme === "light"
-                      ? "text-black bg-black/10 backdrop-blur-sm"
-                      : "text-white bg-white/20 backdrop-blur-sm"
-                    : theme === "light"
-                      ? "text-black/90 hover:text-black hover:bg-black/5"
-                      : "text-white/90 hover:text-white hover:bg-white/10"
-                )}
-              >
-                {item.name}
-              </Link>
-            ))}
-
-            {/* Always show Assessment link */}
-            <Link
-              href={ROUTES.assessment}
-              className={cn(
-                "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
-                pathname === ROUTES.assessment
-                  ? theme === "light"
-                    ? "text-black bg-black/10 backdrop-blur-sm"
-                    : "text-white bg-white/20 backdrop-blur-sm"
-                  : theme === "light"
-                    ? "text-black/90 hover:text-black hover:bg-black/5"
-                    : "text-white/90 hover:text-white hover:bg-white/10"
-              )}
-            >
-              {t("nav.assessment")}
-            </Link>
-
-            {/* Show authenticated-only links when authenticated */}
-            {status === "authenticated" && authNavigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
-                  pathname === item.href
-                    ? theme === "light"
-                      ? "text-black bg-black/10 backdrop-blur-sm"
-                      : "text-white bg-white/20 backdrop-blur-sm"
-                    : theme === "light"
-                      ? "text-black/90 hover:text-black hover:bg-black/5"
-                      : "text-white/90 hover:text-white hover:bg-white/10"
-                )}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {/* Show appropriate links based on authentication status */}
+            {status !== "authenticated" ? (
+              // Unauthenticated users see: Home, About, Assessment, Resources
+              navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
+                    pathname === item.href
+                      ? theme === "light"
+                        ? "text-black bg-black/10 backdrop-blur-sm"
+                        : "text-white bg-white/20 backdrop-blur-sm"
+                      : theme === "light"
+                        ? "text-black/90 hover:text-black hover:bg-black/5"
+                        : "text-white/90 hover:text-white hover:bg-white/10"
+                  )}
+                >
+                  {item.name}
+                </Link>
+              ))
+            ) : (
+              // Authenticated users see: Assessment, Dashboard, Assessment Results, Mentor, Career Report
+              <>
+                <Link
+                  href={ROUTES.assessment}
+                  className={cn(
+                    "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
+                    pathname === ROUTES.assessment
+                      ? theme === "light"
+                        ? "text-black bg-black/10 backdrop-blur-sm"
+                        : "text-white bg-white/20 backdrop-blur-sm"
+                      : theme === "light"
+                        ? "text-black/90 hover:text-black hover:bg-black/5"
+                        : "text-white/90 hover:text-white hover:bg-white/10"
+                  )}
+                >
+                  {t("nav.assessment")}
+                </Link>
+                {authNavigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
+                      pathname === item.href
+                        ? theme === "light"
+                          ? "text-black bg-black/10 backdrop-blur-sm"
+                          : "text-white bg-white/20 backdrop-blur-sm"
+                        : theme === "light"
+                          ? "text-black/90 hover:text-black hover:bg-black/5"
+                          : "text-white/90 hover:text-white hover:bg-white/10"
+                    )}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </>
+            )}
           </div>
 
           {/* Right side actions */}
