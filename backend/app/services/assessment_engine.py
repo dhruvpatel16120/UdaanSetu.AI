@@ -37,36 +37,57 @@ def get_next_question_id(question_id: str, selected_option_id: str = None) -> st
 
 def generate_user_bio_profile(profile_data: dict) -> str:
     """
-    Generate a descriptive text bio of the user based on assessment data.
-    This string will be used as the 'Persona' context for the RAG chatbot.
+    Generate a comprehensive, narrative-style bio of the user based on assessment data.
+    This serves as the 'User Context' for the LLM to generate personalized advice.
     """
+    # 1. Basic Demographics & Education
     name = profile_data.get("name", "The student")
-    edu = profile_data.get("education", "educational background")
+    edu = profile_data.get("education", "unknown education level")
     loc = profile_data.get("location", "Gujarat")
+    gender = profile_data.get("gender", "unknown gender")
+    
+    # 2. Traits & Background
     traits = profile_data.get("traits", {})
+    family_bg = traits.get("family_background", "unknown")
+    fin_status = traits.get("financial_status", "unknown")
+    academic = traits.get("academic_performance", "average")
+    
+    # 3. Interests & Goals
     text_res = profile_data.get("text_responses", {})
+    hobbies = text_res.get("q6_hobbies", "Not specified")
+    vision = text_res.get("q9_vision", "Not specified")
+    strengths = text_res.get("q11_positive", "Not specified")
+    weaknesses = text_res.get("q12_negative", "Not specified")
     
-    # Construct descriptive sentences
-    bio_parts = [
-        f"{name} is a student from {loc} currently at the {edu} level.",
-        f"They have shown a primary interest in {traits.get('interest_domain', 'general fields')}."
-    ]
+    # Construct Narrative
+    bio_sections = []
     
-    if traits.get("tech_mindset") == "creator":
-        bio_parts.append("They possess a creator mindset, showing curiosity about how technology and applications are built.")
+    # Section A: Identity
+    bio_sections.append(f"Student Profile: {name}, a {gender} from {loc}.")
+    bio_sections.append(f"Current Status: Studying at {edu} level with {academic} academic performance.")
     
-    if text_res.get("q11_positive"):
-        bio_parts.append(f"Their key strengths include: {text_res.get('q11_positive')}.")
-        
-    if text_res.get("q12_negative"):
-        bio_parts.append(f"They acknowledge areas for improvement such as: {text_res.get('q12_negative')}.")
-        
-    if profile_data.get("mobility") == "yes":
-        bio_parts.append("They are highly mobile and willing to relocate anywhere for their career.")
-    elif profile_data.get("mobility") == "partial":
-        bio_parts.append("They prefer to stay within Gujarat for career opportunities.")
+    # Section B: Socio-Economic Context
+    family_desc = f"comes from a {family_bg}-oriented family" if family_bg != 'unknown' else "has an undisclosed family background"
+    fin_desc = f"with {fin_status} financial resources" if fin_status != 'unknown' else ""
+    bio_sections.append(f"Background: {name} {family_desc} {fin_desc}.")
     
-    return " ".join(bio_parts)
+    # Section C: Psychographics & Interests
+    interest = traits.get("interest_domain", "general fields")
+    mindset = traits.get("tech_mindset", "general")
+    bio_sections.append(f"Interests: Primary interest lies in {interest}. Tech Mindset: {mindset}.")
+    bio_sections.append(f"Hobbies & Activities: {hobbies}.")
+    
+    # Section D: Aspirations & Self-Reflection
+    bio_sections.append(f"Career Vision: \"{vision}\"")
+    bio_sections.append(f"Self-Perceived Strengths: {strengths}")
+    bio_sections.append(f"Self-Perceived Areas for Improvement: {weaknesses}")
+    
+    # Section E: Constraints
+    mobility = profile_data.get("mobility", "maybe")
+    mobility_desc = "willing to relocate anywhere" if mobility == "yes" else ("prefers within Gujarat" if mobility == "partial" else "restricted to current location")
+    bio_sections.append(f"Logistics: Income Assumption: {traits.get('income_expectation', 'market standard')}. Mobility: {mobility_desc}.")
+
+    return "\n".join(bio_sections)
 
 async def process_assessment_submission(answers: List[Answer], user_id: str = "demo_user_123"):
     """

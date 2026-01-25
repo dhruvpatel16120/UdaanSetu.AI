@@ -44,15 +44,13 @@ async def generate_career_report(student_profile: dict) -> dict:
     Act as an expert Career Counselor for rural Indian youth (UdaanSetu.AI).
     Analyze this student profile and suggest the BEST career path.
     
-    Student Profile:
-    - Name: {name}
-    - Gender: {gender}
-    - Location: {location}
-    - Current Education: {education}
-    - Category Scores (Calculated): {json.dumps(bio.get("scores", {}))}
-    - Psychological Traits/Scoring: {json.dumps(traits)}
-    - Open-ended Responses: {json.dumps(text_responses)}
-    - Full Bio Summary: {bio.get("full_user_bio_profile", "N/A")}
+    Student Persona & Bio-Data:
+    {bio.get("full_user_bio_profile", "N/A")}
+    
+    Additional Data Points:
+    - Calculated Category Scores: {json.dumps(bio.get("scores", {}))}
+    - Raw Psychological Traits: {json.dumps(traits)}
+    - Direct Open-ended Responses: {json.dumps(text_responses)}
     
     Task:
     Provide a detailed career guidance report in valid JSON format ONLY. 
