@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict
-from app.services.gemini_service import chat_with_mentor
+from app.services.chat_mentor import mentor_service
 from app.services.db_firebase import init_firebase
 from firebase_admin import firestore
 import firebase_admin
@@ -11,6 +11,7 @@ router = APIRouter()
 class ChatRequest(BaseModel):
     user_id: str
     message: str
+    language: str = "en" # "en" or "gu"
     history: List[Dict[str, str]] = [] # [{"role": "user", "content": "..."}, ...]
 
 class ChatResponse(BaseModel):
@@ -42,10 +43,11 @@ async def chat_endpoint(request: ChatRequest):
         student_data = {}
 
     # 2. Call AI
-    ai_response = await chat_with_mentor(
+    ai_response = await mentor_service.chat_with_mentor(
         history=request.history,
         student_profile=student_data,
-        query=request.message
+        query=request.message,
+        language=request.language
     )
     
     return {"response": ai_response}

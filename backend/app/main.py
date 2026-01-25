@@ -10,6 +10,7 @@ from app.api.routers import assessment
 
 app = FastAPI(title="UdaanSetu Assessment Engine")
 
+
 # CORS config to allow frontend communication
 app.add_middleware(
     CORSMiddleware,
@@ -18,6 +19,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 
 @app.get("/")
 def read_root():

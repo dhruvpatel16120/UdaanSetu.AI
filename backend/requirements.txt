@@ -11,3 +11,7 @@ pgvector
 asyncpg
 requests
 prisma
+pandas
+duckduckgo-search
+beautifulsoup4
+langchain-postgres

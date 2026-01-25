@@ -8,4 +8,8 @@ load_dotenv(override=True)
 from app.main import app
 
 if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    host = "0.0.0.0"
+    port = 8000
+    print(f"Starting UdaanSetu Backend on {host}:{port}...")
+    print("If you encounter 'getaddrinfo failed', check your usage of --host arguments.")
+    uvicorn.run("app.main:app", host=host, port=port, reload=True)
