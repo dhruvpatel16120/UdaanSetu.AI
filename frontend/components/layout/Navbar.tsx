@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,6 +19,11 @@ export function Navbar() {
   const { t } = useI18n();
   const { theme } = useTheme();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Hide navbar on auth-related pages
   const isAuthPage = pathname?.startsWith('/auth');
@@ -104,13 +109,14 @@ export function Navbar() {
                 </Link>
               ))
             ) : (
-              // Authenticated users see: Assessment, Dashboard, Assessment Results, Mentor, Career Report
+              // Authenticated users see: Dashboard, Career Report, Mentor, Assessment (or Results)
               <>
+                {/* 1. Dashboard */}
                 <Link
-                  href={ROUTES.assessment}
+                  href={ROUTES.dashboard}
                   className={cn(
                     "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
-                    pathname === ROUTES.assessment
+                    pathname === ROUTES.dashboard
                       ? theme === "light"
                         ? "text-black bg-black/10 backdrop-blur-sm"
                         : "text-white bg-white/20 backdrop-blur-sm"
@@ -119,15 +125,52 @@ export function Navbar() {
                         : "text-white/90 hover:text-white hover:bg-white/10"
                   )}
                 >
-                  {t("nav.assessment")}
+                  {t("nav.dashboard")}
                 </Link>
-                {authNavigation.map((item) => (
+
+                {/* 2. Career Report */}
+                <Link
+                  href={ROUTES.careerReport}
+                  className={cn(
+                    "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
+                    pathname === ROUTES.careerReport
+                      ? theme === "light"
+                        ? "text-black bg-black/10 backdrop-blur-sm"
+                        : "text-white bg-white/20 backdrop-blur-sm"
+                      : theme === "light"
+                        ? "text-black/90 hover:text-black hover:bg-black/5"
+                        : "text-white/90 hover:text-white hover:bg-white/10"
+                  )}
+                >
+                  {t("nav.careerReport")}
+                </Link>
+
+                {/* 3. Mentor */}
+                <Link
+                  href={ROUTES.mentor}
+                  className={cn(
+                    "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
+                    pathname === ROUTES.mentor
+                      ? theme === "light"
+                        ? "text-black bg-black/10 backdrop-blur-sm"
+                        : "text-white bg-white/20 backdrop-blur-sm"
+                      : theme === "light"
+                        ? "text-black/90 hover:text-black hover:bg-black/5"
+                        : "text-white/90 hover:text-white hover:bg-white/10"
+                  )}
+                >
+                  {t("nav.mentor")}
+                </Link>
+
+                {/* 4. Assessment (Conditional) */}
+                {/* Check if assessment result exists in localStorage */}
+                {/* Using mounted check to prevent hydration mismatch */}
+                {mounted && typeof window !== 'undefined' && localStorage.getItem('assessment_completed') ? (
                   <Link
-                    key={item.name}
-                    href={item.href}
+                    href={ROUTES.assessmentResult}
                     className={cn(
                       "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
-                      pathname === item.href
+                      pathname === ROUTES.assessmentResult
                         ? theme === "light"
                           ? "text-black bg-black/10 backdrop-blur-sm"
                           : "text-white bg-white/20 backdrop-blur-sm"
@@ -136,9 +179,25 @@ export function Navbar() {
                           : "text-white/90 hover:text-white hover:bg-white/10"
                     )}
                   >
-                    {item.name}
+                    {t("nav.assessmentResults")}
                   </Link>
-                ))}
+                ) : (
+                  <Link
+                    href={ROUTES.assessment}
+                    className={cn(
+                      "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
+                      pathname === ROUTES.assessment
+                        ? theme === "light"
+                          ? "text-black bg-black/10 backdrop-blur-sm"
+                          : "text-white bg-white/20 backdrop-blur-sm"
+                        : theme === "light"
+                          ? "text-black/90 hover:text-black hover:bg-black/5"
+                          : "text-white/90 hover:text-white hover:bg-white/10"
+                    )}
+                  >
+                    {t("nav.assessment")}
+                  </Link>
+                )}
               </>
             )}
           </div>

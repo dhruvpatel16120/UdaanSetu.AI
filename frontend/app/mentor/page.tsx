@@ -24,6 +24,13 @@ export default function MentorPage() {
     const { user } = useAuth();
     const { t } = useI18n();
     const { theme } = useTheme();
+    const { setLanguage } = useI18n();
+    const [showLanguagePopup, setShowLanguagePopup] = useState(true);
+
+    const handleLanguageSelect = (lang: "en" | "gu") => {
+        setLanguage(lang);
+        setShowLanguagePopup(false);
+    };
 
     // Initialize welcome message on client side only to avoid hydration mismatch
     useEffect(() => {
@@ -82,39 +89,36 @@ export default function MentorPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary-indigo/5">
-            {/* Header */}
-            <div className="sticky top-0 z-10 backdrop-blur-md bg-gradient-to-r from-primary-indigo/95 via-primary-navy/95 to-accent-teal/95 border-b border-foreground/10 shadow-lg">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                        <div className="relative w-10 h-10 flex-shrink-0">
-                            <Image
-                                src="/logo.png"
-                                alt="UdaanSetu AI Mentor"
-                                width={40}
-                                height={40}
-                                className="object-contain"
-                                priority
-                            />
-                            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-accent to-teal opacity-20 blur-xl animate-pulse"></div>
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary-indigo/5 relative">
+            {/* Language Preference Popup */}
+            {mounted && showLanguagePopup && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in-fade">
+                    <div className="bg-background border border-foreground/10 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4 glass-card animate-in-scale">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-gradient-to-br from-accent to-teal rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                <span className="text-2xl">🌐</span>
+                            </div>
+                            <h2 className="text-xl font-bold mb-2">Select Language</h2>
+                            <p className="text-foreground/70 text-sm">Please choose your preferred language to continue</p>
+                            <p className="text-foreground/70 text-sm mt-1">આગળ વધવા માટે કૃપા કરીને તમારી પસંદગીની ભાષા પસંદ કરો</p>
                         </div>
-                        <div>
-                            <h1 className={cn(
-                                "text-xl font-bold",
-                                theme === "light" ? "text-white" : "text-white"
-                            )}>
-                                AI Career Mentor
-                            </h1>
-                            <p className={cn(
-                                "text-sm",
-                                theme === "light" ? "text-white/80" : "text-white/70"
-                            )}>
-                                Your personal guide to career success
-                            </p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Button
+                                onClick={() => handleLanguageSelect("en")}
+                                className="bg-gradient-to-r from-primary-indigo to-primary-navy hover:scale-105 transition-transform"
+                            >
+                                English
+                            </Button>
+                            <Button
+                                onClick={() => handleLanguageSelect("gu")}
+                                className="bg-gradient-to-r from-accent to-orange-600 hover:scale-105 transition-transform"
+                            >
+                                ગુજરાતી
+                            </Button>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Messages Container */}
             <div className="flex-1 overflow-y-auto px-4 py-6">
@@ -244,7 +248,7 @@ export default function MentorPage() {
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             ) : (
                                 <svg
-                                    className="w-5 h-5"
+                                    className="w-5 h-5 rotate-90"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
