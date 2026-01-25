@@ -267,6 +267,7 @@ export type TranslationKey =
   | "assessment.errorGender"
   | "assessment.errorDob"
   | "assessment.errorAge"
-  | "assessment.errorLocation";
+  | "assessment.errorLocation"
+  | "assessment.analyzing";
 
 export type Translations = Record<TranslationKey, string>;

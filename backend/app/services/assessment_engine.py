@@ -66,7 +66,17 @@ async def process_assessment_submission(answers: List[Answer], user_id: str = "d
     }
     # --- AI INTEGRATION END ---
     
-    # Save to "Database"
+    # Save to "Database" (Original Firebase logic)
     save_assessment_result(user_id, student_profile)
+    
+    # Save to PostgreSQL via Prisma if user is authenticated
+    if user_id and user_id != "demo_user_123":
+        try:
+            from app.services.user_service import get_user_by_firebase_id, save_assessment_to_profile
+            user = await get_user_by_firebase_id(user_id)
+            if user:
+                await save_assessment_to_profile(user.id, student_profile)
+        except Exception as e:
+            print(f"Error saving to Prisma: {e}")
     
     return student_profile

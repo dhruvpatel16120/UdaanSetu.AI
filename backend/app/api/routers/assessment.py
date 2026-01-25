@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException
-from typing import List
+from fastapi import APIRouter, HTTPException, Header
+from typing import List, Optional
 import random
 from app.models.schemas import Question, Answer
 from app.data.question_bank import get_questions
@@ -39,13 +39,15 @@ def get_question(question_id: str):
             return q
     raise HTTPException(status_code=404, detail="Question not found")
 
+
 @router.post("/submit")
-async def submit_assessment(answers: List[Answer]):
+async def submit_assessment(answers: List[Answer], x_firebase_id: Optional[str] = Header(None)):
     """
     Receive answers and generate a bio-data profile.
     This is where the 'Logic' happens.
     """
-    return await process_assessment_submission(answers)
+    # Use x_firebase_id as user_id if present
+    return await process_assessment_submission(answers, user_id=x_firebase_id or "demo_user_123")
 
 @router.get("/report/{user_id}")
 def get_assessment_report(user_id: str):

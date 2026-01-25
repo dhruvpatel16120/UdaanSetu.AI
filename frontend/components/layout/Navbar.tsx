@@ -47,7 +47,12 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-md bg-gradient-to-r from-primary-indigo/95 via-primary-navy/95 to-accent-teal/95 dark:from-primary-indigo/95 dark:via-primary-navy/95 dark:to-accent-teal/95 border-b border-foreground/10 shadow-lg relative">
+    <nav className={cn(
+      "sticky top-0 z-50 backdrop-blur-md transition-all duration-300 border-b relative",
+      theme === "light"
+        ? "bg-background/80 border-border/40 shadow-sm"
+        : "bg-gradient-to-r from-primary-indigo/90 via-primary-navy/90 to-primary-indigo/90 border-white/10 shadow-2xl"
+    )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}

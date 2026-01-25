@@ -6,6 +6,8 @@ import { BasicInfoForm } from "@/components/assessment/BasicInfoForm";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/utils/cn";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { ENV } from "@/constants/env";
 
 // Types matching the Backend Response
 interface BackendOption {
@@ -46,6 +48,7 @@ export function BackendQASection() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const { language, t } = useI18n();
+  const { user } = useAuth();
   const router = useRouter();
 
   // Fetch Questions from Backend
@@ -53,7 +56,7 @@ export function BackendQASection() {
     async function fetchQuestions() {
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:8000/api/assessment/questions');
+        const res = await fetch(`${ENV.apiUrl}/api/assessment/questions`);
         if (!res.ok) throw new Error('Failed to fetch questions');
         const data: BackendQuestion[] = await res.json();
 
@@ -120,10 +123,11 @@ export function BackendQASection() {
       // or backend should have asked for it. 
       // Current backend endpoint /submit just takes answers list.
 
-      const res = await fetch('http://localhost:8000/api/assessment/submit', {
+      const res = await fetch(`${ENV.apiUrl}/api/assessment/submit`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Firebase-Id': user?.uid || ''
         },
         body: JSON.stringify(payload)
       });
