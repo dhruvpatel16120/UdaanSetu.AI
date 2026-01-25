@@ -19,8 +19,6 @@ class MarketIntelligenceService:
             temperature=0.3
         )
         self.search = DuckDuckGoSearchRun()
-        
-        # CSV Data Path
         self.csv_path = os.path.join(os.path.dirname(__file__), "../data/gujarat_job_market.csv")
 
     def get_csv_context(self, sector_filter: str = None) -> str:
@@ -29,70 +27,99 @@ class MarketIntelligenceService:
         """
         try:
             df = pd.read_csv(self.csv_path)
-            
             if sector_filter:
-                # Fuzzy filter or exact
                 df = df[df['Sector'].str.contains(sector_filter, case=False, na=False)]
-            
-            if df.empty:
-                return "No specific local data found in CSV records."
-                
-            return df.to_string(index=False)
+            return df.to_string(index=False) if not df.empty else "No specific local data found in CSV records."
         except Exception as e:
             return f"Error reading local data: {str(e)}"
 
-    def perform_web_research(self, query: str) -> str:
+    async def perform_web_research(self, query: str) -> dict:
         """
-        Uses LangChain Search Tool to find real-time data from Web, LinkedIn, etc.
+        Optimized parallel search for strictly separated contexts.
         """
+        # Search 1: Hard Numbers (Salaries, Demand) - Indeed, Naukri, Glassdoor
+        stats_query = f"{query} Gujarat India salary data demand trends 2024 2025 site:indeed.in OR site:naukri.com OR site:glassdoor.co.in"
+        
+        # Search 2: Content & Roadmap (Skills, Future, Learning) - YouTube, Medium, LinkedIn Articles
+        learning_query = f"{query} career roadmap skills path 2025 tutorial site:youtube.com OR site:linkedin.com/pulse OR site:medium.com"
+        
+        # In a real async environment, these would run in parallel.
+        # For simplicity here, we run sequential but separate.
         try:
-            # We append specific site queries to simulate "LinkedIn/YouTube" search
-            # independent of actual API access constraints
-            search_query = f"{query} Gujarat India job market trends salaries 2024 2025 site:linkedin.com OR site:naukri.com OR site:indeed.in"
-            web_results = self.search.run(search_query)
-            return web_results
+            stats_results = self.search.run(stats_query)
+            learning_results = self.search.run(learning_query)
+            
+            return {
+                "stats_context": stats_results,
+                "learning_context": learning_results
+            }
         except Exception as e:
-            return f"Web search failed: {str(e)}"
+            return {"error": str(e)}
 
     async def generate_market_analysis(self, user_query: str, user_bio: str) -> dict:
         """
-        Synthesizes a Market Intelligence Report using RAG (CSV + Web).
+        Synthesizes a Comprehensive Market Intelligence Report (7-Part Strategy).
         """
         # 1. Gather Context
-        csv_data = self.get_csv_context() # Load all or filter if we could extract sector from query
-        web_data = self.perform_web_research(user_query)
+        csv_data = self.get_csv_context()
+        web_search_results = await self.perform_web_research(user_query)
         
         # 2. Construct Prompt
         template = """
-        You are an Expert Job Market Analyst for Gujarat, India.
+        You are an Expert Career Strategist & Market Analyst for Gujarat, India.
         
-        Using the following combined context, answer the user's career query.
+        Analyze the following multi-source data to answer the User's Query.
         
-        1. HISTORICAL BASELINE DATA (Kaggle/Offline Records):
+        --- SOURCE 1: HISTORICAL BASELINE (Local CSV) ---
         {csv_context}
-        *Note: This data may be dated. Use it for general categorization and historical baselines.*
         
-        2. REAL-TIME MARKET VERIFICATION (Live Web Search - Naukri/LinkedIn):
-        {web_context}
-        *Note: Prioritize this for current demand, active salary trends, and immediate openings.*
+        --- SOURCE 2: LIVE MARKET STATS (Indeed, Naukri, Glassdoor) ---
+        {web_stats}
         
-        USER PROFILE:
-        {user_bio}
+        --- SOURCE 3: LEARNING & TRENDS (YouTube, Blogs, LinkedIn) ---
+        {web_learning}
         
-        USER QUERY: {query}
+        --- USER CONTEXT ---
+        User Bio: {user_bio}
+        User Query: {query}
         
-        TASK:
-        Provide a strategic market analysis.
-        1. Compare the historical baseline with current web trends (e.g., "Salaries have risen by 20% compared to historical data").
-        2. Highlight any discrepancies between the offline records and current market reality.
-        3. Provide specific, actionable advice for the Gujarat region.
+        --- THE TASK ---
+        Generate a highly detailed strategic report in JSON format.
+        You MUST synthesize data from all sources. If YouTube/Learning context suggests a specific tool or roadmap, include it.
         
-        Output format: JSON with keys 'demand_analysis', 'salary_insight', 'skills_gap', 'verdict'.
-        Do not use markdown backticks.
+        REQUIRED JSON STRUCTURE:
+        {{
+            "market_snapshot": {{
+                "demand_level": "High/Medium/Low",
+                "salary_range": "e.g. 25k - 50k INR",
+                "trend_direction": "Rising/Stable/Declining",
+                "key_insight": "One sentence summary of the market reality vs history."
+            }},
+            "skills_matrix": {{
+                "must_have": ["Skill 1", "Skill 2"],
+                "good_to_have": ["Skill 3", "Skill 4"],
+                "emerging_tech": ["New Tool mentioned in 2025 trends"]
+            }},
+            "learning_roadmap": [
+                {{ "step": "Phase 1: Foundations", "action": "What to learn first", "duration": "e.g. 1 month" }},
+                {{ "step": "Phase 2: Advanced", "action": "Next steps", "duration": "e.g. 2 months" }}
+            ],
+            "career_path": {{
+                "entry_role": "Junior Title",
+                "progression": "Senior Title -> Lead Title",
+                "future_outlook": "Where this industry is heading in 5 years"
+            }},
+            "resources": [
+                {{ "name": "Recommended YouTube Topic/Channel", "type": "Video" }},
+                {{ "name": "Recommended Certification/Course", "type": "Course" }}
+            ]
+        }}
+        
+        Return ONLY valid JSON.
         """
         
         prompt = PromptTemplate(
-            input_variables=["csv_context", "web_context", "user_bio", "query"],
+            input_variables=["csv_context", "web_stats", "web_learning", "user_bio", "query"],
             template=template
         )
         
@@ -101,7 +128,8 @@ class MarketIntelligenceService:
         try:
             response = await chain.ainvoke({
                 "csv_context": csv_data,
-                "web_context": web_data,
+                "web_stats": web_search_results.get("stats_context", ""),
+                "web_learning": web_search_results.get("learning_context", ""),
                 "user_bio": user_bio,
                 "query": user_query
             })
