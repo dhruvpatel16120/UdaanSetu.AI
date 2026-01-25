@@ -99,23 +99,14 @@ export default function CareerReportPage() {
 
                 const transformedData: ReportData = {
                     generatedAt: new Date(data.last_updated?.seconds * 1000 || Date.now()),
-                    careerReadiness: Math.min(readiness, 98),
-                    topStrengths: mappedStrengths,
-                    personalityTraits: [
+                    careerReadiness: aiReport.careerReadiness || Math.min(readiness, 98),
+                    topStrengths: aiReport.topStrengths || mappedStrengths,
+                    personalityTraits: aiReport.personalityTraits || [
                         traits.mindset === "growth" ? "Growth Mindset" : (traits.mindset === "billionaire" ? "Ambitious" : "Stable & Reliable"),
                         traits.social === "high" ? "Extroverted" : (traits.leadership === "independent" ? "Independent" : "Team Player"),
                         traits.risk_appetite === "high" ? "Risk Taker" : "Cautious"
                     ],
-                    // Hybrid Recommendation: Use AI Report if meaningful, else Fallback Heuristic
-                    recommendations: aiReport.primary_career ? 
-                        [
-                            {
-                                title: aiReport.primary_career,
-                                match: parseInt(aiReport.match_percentage || "90"),
-                                description: aiReport.reasoning || "Best fit based on analysis",
-                                requirements: aiReport.required_skills || []
-                            }
-                        ] : (
+                    recommendations: aiReport.recommendations || (
                         bio.suggested_paths?.length > 1 && bio.suggested_paths[0] !== "Pending Analysis..."
                         ? bio.suggested_paths.map((p: string) => ({ title: p, match: 85, description: "Recommended based on your profile", requirements: ["Dedication"] }))
                         : [
@@ -124,28 +115,19 @@ export default function CareerReportPage() {
                                 match: 92,
                                 description: traits.domain === "tech" ? "Build software and apps" : "Manage finances and business",
                                 requirements: traits.domain === "tech" ? ["Logic", "Coding"] : ["Math", "Management"]
-                            },
-                            {
-                                title: traits.domain === "tech" ? "IT Support Specialist" : (traits.domain === "medical" ? "Healthcare Assistant" : "Digital Marketer"),
-                                match: 85,
-                                description: "Support technical infrastructure or operations",
-                                requirements: ["Problem Solving", "Communication"]
                             }
                         ]
                     ),
-                    currentSkills: [
+                    currentSkills: aiReport.currentSkills || [
                         { name: "Communication", level: traits.strength === "communication" ? 90 : 70 },
                         { name: "Problem Solving", level: traits.problem_solving === "research_oriented" ? 85 : 65 },
                         { name: "Digital Literacy", level: traits.digital_literacy === "high" ? 90 : (traits.digital_literacy === "basic" ? 60 : 30) },
                     ],
-                    recommendedSkills: [
-                         ...(aiReport.required_skills ? aiReport.required_skills.map((s: string) => ({ name: s, priority: "high" })) : 
-                        [
-                            { name: "Time Management", priority: "medium" },
-                            { name: traits.domain === "tech" ? "Python Basics" : "Financial Literacy", priority: "high" }
-                        ])
+                    recommendedSkills: aiReport.recommendedSkills || [
+                        { name: "Time Management", priority: "medium" },
+                        { name: traits.domain === "tech" ? "Python Basics" : "Financial Literacy", priority: "high" }
                     ],
-                    learningPaths: [
+                    learningPaths: aiReport.learningPaths || [
                         {
                             title: traits.domain === "tech" ? "Web Development Bootstart" : "Business Fundamentals",
                             duration: "3 months",
@@ -155,8 +137,8 @@ export default function CareerReportPage() {
                             ]
                         }
                     ],
-                    actionPlan: {
-                        shortTerm: aiReport.roadmap_steps ? aiReport.roadmap_steps.map((s: any) => s.step) : ["Complete your profile", "Watch 2 introductory videos"],
+                    actionPlan: aiReport.actionPlan || {
+                        shortTerm: ["Complete your profile", "Watch 2 introductory videos"],
                         longTerm: ["Build a small project", "Apply for an internship"]
                     }
                 };

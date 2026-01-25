@@ -1,19 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv(override=True)
+
 from app.api.routers import assessment
-from app.db import get_db, db_manager
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Connect on startup
-    await get_db()
-    yield
-    # Disconnect on shutdown
-    if db_manager.client.is_connected():
-        await db_manager.client.disconnect()
-
-app = FastAPI(title="UdaanSetu Assessment Engine", lifespan=lifespan)
+app = FastAPI(title="UdaanSetu Assessment Engine")
 
 # CORS config to allow frontend communication
 app.add_middleware(

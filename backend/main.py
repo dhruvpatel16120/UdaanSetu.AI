@@ -1,4 +1,10 @@
 import uvicorn
+from dotenv import load_dotenv
+import os
+
+# Load .env file
+load_dotenv(override=True)
+
 from app.main import app
 
 if __name__ == "__main__":

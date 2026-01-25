@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from typing import List, Optional
 import random
+import os
 from app.models.schemas import Question, Answer
 from app.data.question_bank import get_questions
 from app.services.assessment_engine import process_assessment_submission
@@ -21,9 +22,14 @@ def get_all_questions():
     static_qs = [q for q in all_questions if q["section"] == "Static Layer"]
     dynamic_qs = [q for q in all_questions if q["section"] != "Static Layer"]
     
-    # Randomly select up to 15 dynamic questions
-    # ensure we don't crash if we have fewer than 15
-    count = min(len(dynamic_qs), 15)
+    # Randomly select dynamic questions based on env variable
+    env_count = os.getenv("ASSESSMENT_QUESTION_COUNT")
+    try:
+        max_dynamic = int(env_count) if env_count else 15
+    except ValueError:
+        max_dynamic = 15
+        
+    count = min(len(dynamic_qs), max_dynamic)
     selected_dynamic = random.sample(dynamic_qs, count)
     
     # Return combined list (Static + 15 Random Dynamic)
@@ -38,6 +44,24 @@ def get_question(question_id: str):
         if q["id"] == question_id:
             return q
     raise HTTPException(status_code=404, detail="Question not found")
+
+@router.post("/next-question", response_model=Optional[Question])
+def get_next_question(answer: Answer):
+    """
+    Get the next question based on the current answer.
+    """
+    from app.services.assessment_engine import get_next_question_id
+    next_id = get_next_question_id(answer.question_id, answer.selected_option_id)
+    
+    if not next_id:
+        return None
+        
+    questions = get_questions()
+    for q in questions:
+        if q["id"] == next_id:
+            return q
+            
+    return None
 
 
 @router.post("/submit")

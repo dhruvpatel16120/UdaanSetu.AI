@@ -5,6 +5,7 @@ class QuestionOption(BaseModel):
     id: str
     text: Dict[str, str] # {"en": "...", "gu": "..."}
     traits: Optional[Dict[str, str]] = None
+    next_question_id: Optional[str] = None
 
 class Question(BaseModel):
     id: str

@@ -33,16 +33,26 @@ async def generate_career_report(student_profile: dict) -> dict:
 
     # Construct the prompt
     bio = student_profile.get("generated_bio", {})
+    name = bio.get("name", "Student")
+    gender = bio.get("gender", "Unknown")
+    location = bio.get("location", "Gujarat")
     education = bio.get("education", "Unknown")
     traits = bio.get("traits", {})
+    text_responses = bio.get("text_responses", {})
     
     prompt = f"""
     Act as an expert Career Counselor for rural Indian youth (UdaanSetu.AI).
     Analyze this student profile and suggest the BEST career path.
     
     Student Profile:
+    - Name: {name}
+    - Gender: {gender}
+    - Location: {location}
     - Current Education: {education}
-    - Traits/Strengths: {json.dumps(traits)}
+    - Category Scores (Calculated): {json.dumps(bio.get("scores", {}))}
+    - Psychological Traits/Scoring: {json.dumps(traits)}
+    - Open-ended Responses: {json.dumps(text_responses)}
+    - Full Bio Summary: {bio.get("full_user_bio_profile", "N/A")}
     
     Task:
     Provide a detailed career guidance report in valid JSON format ONLY. 
@@ -117,10 +127,10 @@ async def chat_with_mentor(history: list, student_profile: dict, query: str) -> 
     context_str = f"""
     You are an AI Mentor for a student.
     Student Context:
+    - Profile Summary: {bio.get('full_user_bio_profile', 'N/A')}
     - Education: {bio.get('education', 'Unknown')}
-    - Traits: {json.dumps(bio.get('traits', {}))}
-    - Recommended Career: {report.get('primary_career', 'Unknown')}
-    - Roadmap: {json.dumps(report.get('roadmap_steps', []))}
+    - Category Scores: {json.dumps(bio.get('scores', {}))}
+    - Recommended Career: {report.get('recommendations', [{}])[0].get('title', 'Unknown')}
     
     The student is asking a follow-up question. Answer directly, be encouraging, and use simple language.
     """

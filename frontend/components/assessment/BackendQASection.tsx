@@ -51,21 +51,16 @@ export function BackendQASection() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // Fetch Questions from Backend
+  // Fetch First Question from Backend
   useEffect(() => {
-    async function fetchQuestions() {
+    async function fetchFirstQuestion() {
       setLoading(true);
       try {
-        const res = await fetch(`${ENV.apiUrl}/api/assessment/questions`);
-        if (!res.ok) throw new Error('Failed to fetch questions');
-        const data: BackendQuestion[] = await res.json();
-
-        // Filter out Static Layer if we are using BasicInfoForm
-        // Adjust this logic if you want the backend to drive everything.
-        // For now, removing questions that appear to be static to avoid duplication.
-        const dynamicQuestions = data.filter(q => q.section !== 'Static Layer');
-
-        setQuestions(dynamicQuestions);
+        // Start with the first dynamic question
+        const res = await fetch(`${ENV.apiUrl}/api/assessment/question/q1_edu_level`);
+        if (!res.ok) throw new Error('Failed to fetch question');
+        const firstQ: BackendQuestion = await res.json();
+        setQuestions([firstQ]);
       } catch (err) {
         setError('Could not load assessment questions. Make sure the backend is running on port 8000.');
         console.error(err);
@@ -74,15 +69,15 @@ export function BackendQASection() {
       }
     }
 
-    if (!showBasicInfoForm) {
-      fetchQuestions();
+    if (!showBasicInfoForm && questions.length === 0) {
+      fetchFirstQuestion();
     }
-  }, [showBasicInfoForm]);
+  }, [showBasicInfoForm, questions.length]);
 
-  // If questions define a "next_question_id", we could use that for navigation.
-  // For this list-based implementation, we just use index.
   const currentQuestion = questions[currentQuestionIndex];
-  const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
+  // Calculate progress based on a rough estimate or fixed goal (e.g., 15 questions)
+  const totalExpectedQuestions = 15;
+  const progress = Math.min(((currentQuestionIndex + 1) / totalExpectedQuestions) * 100, 100);
 
   const getText = (textObj: { en: string; gu: string } | undefined) => {
     if (!textObj) return "";
@@ -109,19 +104,27 @@ export function BackendQASection() {
     }));
   };
 
-  const submitAssessment = async () => {
+  const submitAssessment = async (finalAnswers: Record<string, string>) => {
     setLoading(true);
     try {
-      // Format answers for backend
-      // Backend expects: List[Answer] where Answer = { question_id, selected_option_id, text_answer }
-      const payload = Object.entries(answers).map(([qId, optId]) => ({
-        question_id: qId,
-        selected_option_id: optId
-      }));
-
-      // In a real app, send background info too if needed by backend, 
-      // or backend should have asked for it. 
-      // Current backend endpoint /submit just takes answers list.
+      // Map basic info to question IDs as per question_bank.py
+      const payload = [
+        ...Object.entries(finalAnswers).map(([qId, val]) => {
+          // Heuristic: If it's a dynamic question (starts with q) and we have it in questions, check type
+          const q = questions.find(question => question.id === qId);
+          const isText = q?.type === "text" || qId === "q6_hobbies" || qId === "q9_vision" || qId.includes("positive") || qId.includes("negative");
+          
+          return {
+            question_id: qId,
+            selected_option_id: isText ? undefined : val,
+            text_answer: isText ? val : undefined
+          };
+        }),
+        { question_id: 'static_name', text_answer: String(assessmentData.background.name || "") },
+        { question_id: 'static_gender', selected_option_id: String(assessmentData.background.gender || "").toLowerCase() },
+        { question_id: 'static_dob', text_answer: String(assessmentData.background.dateOfBirth || "") },
+        { question_id: 'static_district', selected_option_id: String(assessmentData.background.location || "").toLowerCase() }
+      ];
 
       const res = await fetch(`${ENV.apiUrl}/api/assessment/submit`, {
         method: 'POST',
@@ -133,9 +136,6 @@ export function BackendQASection() {
       });
 
       if (!res.ok) throw new Error('Submission failed');
-      const result = await res.json();
-      console.log('Assessment Result:', result);
-
       setIsCompleted(true);
     } catch (err) {
       console.error(err);
@@ -145,16 +145,52 @@ export function BackendQASection() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    const currentAnswer = answers[currentQuestion.id];
+    if (!currentAnswer) return;
+
+    // Check if we already have the next question in our local 'questions' array (from history)
     if (currentQuestionIndex < questions.length - 1) {
       setIsTransitioning(true);
       setTimeout(() => {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
         setIsTransitioning(false);
       }, 300);
-    } else {
-      // Last question - Submit
-      submitAssessment();
+      return;
+    }
+
+    // Otherwise, fetch next from backend
+    setLoading(true);
+    try {
+      const res = await fetch(`${ENV.apiUrl}/api/assessment/next-question`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question_id: currentQuestion.id,
+          selected_option_id: currentAnswer
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch next question');
+      
+      const nextQ = await res.json();
+
+      if (nextQ) {
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setQuestions(prev => [...prev, nextQ]);
+          setCurrentQuestionIndex(currentQuestionIndex + 1);
+          setIsTransitioning(false);
+          setLoading(false);
+        }, 300);
+      } else {
+        // No next question - Submit
+        await submitAssessment(answers);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Connection error while fetching next question.');
+      setLoading(false);
     }
   };
 
