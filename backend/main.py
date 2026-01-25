@@ -61,7 +61,7 @@ def get_all_questions():
     
     # Randomly select up to 15 dynamic questions
     # ensure we don't crash if we have fewer than 15
-    count = min(len(dynamic_qs), 1)
+    count = min(len(dynamic_qs), 15)
     selected_dynamic = random.sample(dynamic_qs, count)
     
     # Return combined list (Static + 15 Random Dynamic)
