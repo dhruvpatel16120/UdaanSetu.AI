@@ -7,6 +7,10 @@ import { useI18n } from "@/hooks/useI18n";
 import { useTheme } from "@/store/theme/ThemeProvider";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/utils/cn";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Send, Lightbulb, TrendingUp, Users, Globe } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
     id: string;
@@ -15,6 +19,13 @@ interface Message {
     timestamp: Date;
 }
 
+const quickActions = [
+    { icon: Lightbulb, text: "What skills should I learn?", gu: "મારે કઈ કુશળતા શીખવી જોઈએ?" },
+    { icon: TrendingUp, text: "Best career for me?", gu: "મારા માટે શ્રેષ્ઠ કારકિર્દી?" },
+    { icon: Users, text: "How to start?", gu: "હું કેવી રીતે શરૂ કરું?" },
+    { icon: Globe, text: "What is UdaanSetu.AI?", gu: "ઉડાનસેતુ.AI શું છે?" },
+];
+
 export default function MentorPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
@@ -22,14 +33,37 @@ export default function MentorPage() {
     const [mounted, setMounted] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { user } = useAuth();
-    const { t } = useI18n();
+    const { t, language } = useI18n();
     const { theme } = useTheme();
-    const { setLanguage } = useI18n();
-    const [showLanguagePopup, setShowLanguagePopup] = useState(true);
+    const [showLanguagePopup, setShowLanguagePopup] = useState(false);
+    const [hasShownInitialPopup, setHasShownInitialPopup] = useState(false);
+    const prevLanguageRef = useRef<"en" | "gu">(language);
 
-    const handleLanguageSelect = (lang: "en" | "gu") => {
-        setLanguage(lang);
+    // Show popup on initial mount and when language changes from navbar
+    useEffect(() => {
+        if (!mounted) return;
+        
+        // Show popup on first visit
+        if (!hasShownInitialPopup && typeof window !== 'undefined') {
+            const hasSeenPopup = localStorage.getItem('mentor_language_popup_seen');
+            if (!hasSeenPopup) {
+                setShowLanguagePopup(true);
+            }
+            setHasShownInitialPopup(true);
+        }
+        
+        // Show popup when language changes from navbar
+        if (prevLanguageRef.current !== language) {
+            setShowLanguagePopup(true);
+            prevLanguageRef.current = language;
+        }
+    }, [language, mounted, hasShownInitialPopup]);
+
+    const handleLanguageConfirm = () => {
         setShowLanguagePopup(false);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('mentor_language_popup_seen', 'true');
+        }
     };
 
     // Initialize welcome message on client side only to avoid hydration mismatch
@@ -39,11 +73,13 @@ export default function MentorPage() {
             {
                 id: "welcome",
                 role: "assistant",
-                content: "Hello! 👋 I'm your AI career mentor from UdaanSetu. I'm here to help you discover your skills, build your future, and guide you from rural dreams to digital careers. How can I assist you today?",
+                content: language === "en" 
+                    ? "Hello! 👋 I'm your AI career mentor from UdaanSetu.AI. I'm here to help you discover your skills, build your future, and guide you from rural dreams to digital careers. You can ask me about career guidance, educational paths, or learn more about how UdaanSetu.AI helps rural students like you. How can I assist you today?"
+                    : "નમસ્તે! 👋 હું ઉડાનસેતુ.AI તરફથી તમારો AI કારકિર્દી માર્ગદર્શક છું. તમારી કુશળતા શોધવા, તમારું ભવિષ્ય બનાવવા અને ગ્રામીણ સપનાઓથી ડિજિટલ કારકિર્દી તરફ માર્ગદર્શન આપવા હું અહીં છું. તમે કારકિર્દી માર્ગદર્શન, શૈક્ષણિક માર્ગો વિશે અથવા ઉડાનસેતુ.AI તમારા જેવા ગ્રામીણ વિદ્યાર્થીઓને કેવી રીતે મદદ કરે છે તે વિશે પૂછી શકો છો. હું તમને કેવી રીતે મદદ કરી શકું?",
                 timestamp: new Date(),
             },
         ]);
-    }, []);
+    }, [language]);
 
     // Auto-scroll to bottom when new messages arrive
     const scrollToBottom = () => {
@@ -54,13 +90,14 @@ export default function MentorPage() {
         scrollToBottom();
     }, [messages]);
 
-    const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+    const handleSend = async (messageText?: string) => {
+        const textToSend = messageText || input.trim();
+        if (!textToSend || isLoading) return;
 
         const userMessage: Message = {
             id: Date.now().toString(),
             role: "user",
-            content: input.trim(),
+            content: textToSend,
             timestamp: new Date(),
         };
 
@@ -68,7 +105,7 @@ export default function MentorPage() {
         setInput("");
         setIsLoading(true);
 
-        // Real API Call
+        // Real API Call with language parameter
         try {
             const userId = "demo_user_123";
             const history = messages.map(m => ({ role: m.role, content: m.content }));
@@ -79,7 +116,8 @@ export default function MentorPage() {
                 body: JSON.stringify({
                     user_id: userId,
                     message: userMessage.content,
-                    history: history
+                    history: history,
+                    language: language
                 })
             });
 
@@ -101,7 +139,9 @@ export default function MentorPage() {
              const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: "Sorry, I'm having trouble connecting to the server. Please try again later.",
+                content: language === "en"
+                    ? "Sorry, I'm having trouble connecting to the server. Please try again later."
+                    : "માફ કરશો, મને સર્વર સાથે કનેક્ટ કરવામાં મુશ્કેલી આવી રહી છે. કૃપા કરીને પછીથી ફરી પ્રયત્ન કરો.",
                 timestamp: new Date(),
             };
             setMessages((prev) => [...prev, errorMessage]);
@@ -117,121 +157,239 @@ export default function MentorPage() {
         }
     };
 
+    const handleQuickAction = (text: string) => {
+        handleSend(text);
+    };
+
     return (
-        <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary-indigo/5 relative">
-            {/* Language Preference Popup */}
-            {mounted && showLanguagePopup && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in-fade">
-                    <div className="bg-background border border-foreground/10 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4 glass-card animate-in-scale">
-                        <div className="text-center mb-6">
-                            <div className="w-16 h-16 bg-gradient-to-br from-accent to-teal rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                                <span className="text-2xl">🌐</span>
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary-indigo/5 relative overflow-hidden">
+            {/* Animated Background Elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-20 -left-20 w-72 h-72 bg-accent/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-20 -right-20 w-96 h-96 bg-teal/10 rounded-full blur-3xl animate-pulse animation-delay-1000"></div>
+                <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-primary-indigo/10 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
+            </div>
+
+            {/* Enhanced Language Preference Popup */}
+            <AnimatePresence>
+                {mounted && showLanguagePopup && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className="relative bg-background/95 backdrop-blur-xl border border-foreground/10 rounded-3xl p-8 shadow-2xl max-w-md w-full mx-4 glass-card"
+                        >
+                            {/* Decorative Glow */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-transparent to-teal/20 rounded-3xl blur-xl -z-10"></div>
+                            
+                            <div className="text-center mb-8">
+                                <motion.div 
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: 0.2, type: "spring" }}
+                                    className="w-20 h-20 bg-gradient-to-br from-accent to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl"
+                                >
+                                    <Globe className="w-10 h-10 text-white" />
+                                </motion.div>
+                                <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-accent to-orange-600 bg-clip-text text-transparent">
+                                    Select Language
+                                </h2>
+                                <p className="text-foreground/70 text-sm">
+                                    Please choose your preferred language to continue
+                                </p>
+                                <p className="text-foreground/70 text-sm mt-1">
+                                    આગળ વધવા માટે કૃપા કરીને તમારી પસંદગીની ભાષા પસંદ કરો
+                                </p>
                             </div>
-                            <h2 className="text-xl font-bold mb-2">Select Language</h2>
-                            <p className="text-foreground/70 text-sm">Please choose your preferred language to continue</p>
-                            <p className="text-foreground/70 text-sm mt-1">આગળ વધવા માટે કૃપા કરીને તમારી પસંદગીની ભાષા પસંદ કરો</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <Button
-                                onClick={() => handleLanguageSelect("en")}
-                                className="bg-gradient-to-r from-primary-indigo to-primary-navy hover:scale-105 transition-transform"
-                            >
-                                English
-                            </Button>
-                            <Button
-                                onClick={() => handleLanguageSelect("gu")}
-                                className="bg-gradient-to-r from-accent to-orange-600 hover:scale-105 transition-transform"
-                            >
-                                ગુજરાતી
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                            <div className="text-center">
+                                <p className="text-foreground/80 mb-4">
+                                    {language === "en" 
+                                        ? "Language changed successfully! Your chat mentor will now respond in " 
+                                        : "ભાષા સફળતાપૂર્વક બદલાઈ ગઈ! તમારો ચેટ માર્ગદર્શક હવે "}
+                                    <span className="font-bold text-accent">
+                                        {language === "en" ? "English" : "ગુજરાતી"}
+                                    </span>
+                                </p>
+                                <Button
+                                    onClick={handleLanguageConfirm}
+                                    className="w-full bg-gradient-to-r from-accent to-orange-600 hover:scale-105 transition-all duration-300 py-3"
+                                >
+                                    {language === "en" ? "Got it! ✓" : "સમજાયું! ✓"}
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+
 
             {/* Messages Container */}
-            <div className="flex-1 overflow-y-auto px-4 py-6">
+            <div className="flex-1 overflow-y-auto px-4 py-6 relative z-10">
                 <div className="max-w-4xl mx-auto space-y-6">
-                    {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={cn(
-                                "flex gap-3 animate-in-scale",
-                                message.role === "user" ? "flex-row-reverse" : "flex-row"
-                            )}
-                        >
-                            {/* Avatar */}
-                            <div className="flex-shrink-0">
-                                {message.role === "assistant" ? (
-                                    <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-accent to-teal p-1 shadow-lg">
-                                        <div className="w-full h-full bg-background rounded-full flex items-center justify-center">
-                                            <Image
-                                                src="/logo.png"
-                                                alt="Mentor"
-                                                width={32}
-                                                height={32}
-                                                className="object-contain"
-                                            />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-indigo to-primary-navy flex items-center justify-center text-white font-bold shadow-lg">
-                                        {user?.displayName?.[0] || user?.email?.[0] || "U"}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Message Bubble */}
-                            <div
+                    <AnimatePresence mode="popLayout">
+                        {messages.map((message, index) => (
+                            <motion.div
+                                key={message.id}
+                                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.3, delay: index * 0.05 }}
                                 className={cn(
-                                    "flex-1 max-w-[75%] sm:max-w-[65%] group",
-                                    message.role === "user" ? "flex flex-col items-end" : ""
+                                    "flex gap-3",
+                                    message.role === "user" ? "flex-row-reverse" : "flex-row"
                                 )}
                             >
+                                {/* Avatar */}
+                                <div className="flex-shrink-0">
+                                    {message.role === "assistant" ? (
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-accent to-teal rounded-full blur-sm animate-pulse"></div>
+                                            <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-accent to-teal p-1 shadow-lg">
+                                                <div className="w-full h-full bg-background rounded-full flex items-center justify-center">
+                                                    <Sparkles className="w-5 h-5 text-accent" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-primary-indigo via-purple to-accent rounded-full blur-md opacity-60 animate-pulse"></div>
+                                            <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-primary-indigo via-purple to-accent p-0.5 shadow-xl">
+                                                <div className="w-full h-full bg-gradient-to-br from-primary-indigo to-primary-navy rounded-full flex items-center justify-center text-white font-bold text-sm uppercase tracking-wide shadow-inner">
+                                                    {user?.displayName?.[0] || user?.email?.[0] || "U"}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Message Bubble */}
                                 <div
                                     className={cn(
-                                        "px-4 py-3 rounded-2xl shadow-md transition-all duration-200",
-                                        message.role === "assistant"
-                                            ? "glass-card bg-background/80 dark:bg-foreground/5 text-foreground border border-foreground/10"
-                                            : "bg-gradient-to-r from-primary-indigo to-primary-navy text-white"
+                                        "flex-1 max-w-[75%] sm:max-w-[65%] group",
+                                        message.role === "user" ? "flex flex-col items-end" : ""
                                     )}
                                 >
-                                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
-                                        {message.content}
-                                    </p>
+                                    <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        className={cn(
+                                            "px-4 py-3 rounded-2xl shadow-lg transition-all duration-200",
+                                            message.role === "assistant"
+                                                ? "glass-card bg-white/80 dark:bg-foreground/10 text-foreground border border-foreground/20 dark:border-foreground/10 backdrop-blur-xl"
+                                                : "bg-gradient-to-r from-primary-indigo to-primary-navy text-white shadow-xl shadow-primary-indigo/30"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "text-[15px] leading-relaxed prose prose-sm max-w-none",
+                                            message.role === "assistant" ? "text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-strong:font-bold prose-li:text-foreground" : "text-white prose-headings:text-white prose-strong:text-white prose-strong:font-bold prose-li:text-white"
+                                        )}>
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                                components={{
+                                                    // Custom styling for markdown elements
+                                                    p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                                                    strong: ({node, ...props}) => <strong className="font-bold text-accent" {...props} />,
+                                                    ul: ({node, ...props}) => <ul className="list-disc list-inside my-2 space-y-1" {...props} />,
+                                                    ol: ({node, ...props}) => <ol className="list-decimal list-inside my-2 space-y-1" {...props} />,
+                                                    li: ({node, ...props}) => <li className="ml-2" {...props} />,
+                                                    h1: ({node, ...props}) => <h1 className="text-xl font-bold mb-2 mt-3 first:mt-0" {...props} />,
+                                                    h2: ({node, ...props}) => <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0" {...props} />,
+                                                    h3: ({node, ...props}) => <h3 className="text-base font-bold mb-1 mt-2 first:mt-0" {...props} />,
+                                                    code: ({node, ...props}: any) => 
+                                                        (props as any).inline ? 
+                                                            <code className="bg-foreground/10 px-1 py-0.5 rounded text-sm" {...props} /> : 
+                                                            <code className="block bg-foreground/10 p-2 rounded my-2" {...props} />,
+                                                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-accent pl-3 italic my-2" {...props} />,
+                                                }}
+                                            >
+                                                {message.content}
+                                            </ReactMarkdown>
+                                        </div>
+                                    </motion.div>
+                                    <span className="text-xs text-foreground/60 dark:text-foreground/50 mt-1 px-2" suppressHydrationWarning>
+                                        {message.timestamp.toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                    </span>
                                 </div>
-                                <span className="text-xs text-foreground/50 mt-1 px-2" suppressHydrationWarning>
-                                    {message.timestamp.toLocaleTimeString([], {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                    })}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+
+                    {/* Quick Actions - Show when messages are few */}
+                    {messages.length <= 1 && !isLoading && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex flex-wrap gap-3 justify-center mt-8"
+                        >
+                            {quickActions.map((action, i) => {
+                                const Icon = action.icon;
+                                return (
+                                    <motion.button
+                                        key={i}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.1 }}
+                                        whileHover={{ scale: 1.05, y: -2 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handleQuickAction(language === "en" ? action.text : action.gu)}
+                                        className="group glass-card bg-white/70 dark:bg-background/60 backdrop-blur-xl border border-foreground/20 dark:border-foreground/10 hover:border-accent/50 px-4 py-3 rounded-xl shadow-lg hover:shadow-accent/20 transition-all duration-300"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Icon className="w-4 h-4 text-accent group-hover:rotate-12 transition-transform" />
+                                            <span className="text-sm font-medium text-foreground dark:text-foreground">
+                                                {language === "en" ? action.text : action.gu}
+                                            </span>
+                                        </div>
+                                    </motion.button>
+                                );
+                            })}
+                        </motion.div>
+                    )}
 
                     {/* Loading Indicator */}
                     {isLoading && (
-                        <div className="flex gap-3 animate-in-scale">
-                            <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-accent to-teal p-1 shadow-lg">
-                                <div className="w-full h-full bg-background rounded-full flex items-center justify-center">
-                                    <Image
-                                        src="/logo.png"
-                                        alt="Mentor"
-                                        width={32}
-                                        height={32}
-                                        className="object-contain"
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex gap-3"
+                        >
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-gradient-to-br from-accent to-teal rounded-full blur-sm animate-pulse"></div>
+                                <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-accent to-teal p-1 shadow-lg">
+                                    <div className="w-full h-full bg-background rounded-full flex items-center justify-center">
+                                        <Sparkles className="w-5 h-5 text-accent" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="glass-card bg-white/80 dark:bg-background/90 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-lg border border-foreground/20 dark:border-foreground/10">
+                                <div className="flex space-x-2">
+                                    <motion.div 
+                                        animate={{ y: [0, -5, 0] }}
+                                        transition={{ duration: 0.6, repeat: Infinity }}
+                                        className="w-2 h-2 bg-accent rounded-full"
+                                    />
+                                    <motion.div 
+                                        animate={{ y: [0, -5, 0] }}
+                                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                                        className="w-2 h-2 bg-accent rounded-full"
+                                    />
+                                    <motion.div 
+                                        animate={{ y: [0, -5, 0] }}
+                                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                                        className="w-2 h-2 bg-accent rounded-full"
                                     />
                                 </div>
                             </div>
-                            <div className="glass-card bg-background/80 dark:bg-foreground/5 px-4 py-3 rounded-2xl shadow-md">
-                                <div className="flex space-x-2">
-                                    <div className="w-2 h-2 bg-accent rounded-full animate-bounce"></div>
-                                    <div className="w-2 h-2 bg-accent rounded-full animate-bounce animation-delay-200"></div>
-                                    <div className="w-2 h-2 bg-accent rounded-full animate-bounce animation-delay-400"></div>
-                                </div>
-                            </div>
-                        </div>
+                        </motion.div>
                     )}
 
                     <div ref={messagesEndRef} />
@@ -239,7 +397,7 @@ export default function MentorPage() {
             </div>
 
             {/* Input Area */}
-            <div className="sticky bottom-0 border-t border-foreground/10 bg-background/95 backdrop-blur-md shadow-2xl">
+            <div className="sticky bottom-0 z-40 border-t border-foreground/10 bg-background/95 backdrop-blur-xl shadow-2xl">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex gap-3 items-end">
                         <div className="flex-1 relative">
@@ -247,11 +405,11 @@ export default function MentorPage() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyPress={handleKeyPress}
-                                placeholder={t("chatbot.placeholder") || "Type your message..."}
+                                placeholder={language === "en" ? "Type your message..." : "તમારો સંદેશ ટાઇપ કરો..."}
                                 rows={1}
                                 className={cn(
-                                    "w-full px-4 py-3 pr-12 rounded-2xl border-2 resize-none transition-all duration-200 outline-none",
-                                    "focus:border-accent focus:shadow-[0_0_20px_rgba(251,146,60,0.15)]",
+                                    "w-full px-4 py-3 pr-12 rounded-2xl border-2 resize-none transition-all duration-200 outline-none shadow-lg",
+                                    "focus:border-accent focus:shadow-[0_0_30px_rgba(251,146,60,0.2)]",
                                     theme === "light"
                                         ? "bg-white border-foreground/20 text-foreground"
                                         : "bg-foreground/5 border-foreground/20 text-foreground"
@@ -264,36 +422,30 @@ export default function MentorPage() {
                             />
                         </div>
                         <Button
-                            onClick={handleSend}
+                            onClick={() => handleSend()}
                             disabled={!input.trim() || isLoading}
                             className={cn(
-                                "h-12 px-6 rounded-2xl font-semibold shadow-lg transition-all duration-300",
+                                "h-12 w-12 rounded-2xl font-semibold shadow-xl transition-all duration-300 flex items-center justify-center",
                                 !input.trim() || isLoading
                                     ? "opacity-50 cursor-not-allowed bg-muted"
-                                    : "bg-gradient-to-r from-accent to-orange-600 hover:shadow-orange-500/30 hover:scale-105"
+                                    : "bg-gradient-to-r from-accent to-orange-600 hover:shadow-orange-500/40 hover:scale-110 active:scale-95"
                             )}
                         >
                             {isLoading ? (
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <motion.div 
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                                />
                             ) : (
-                                <svg
-                                    className="w-5 h-5 rotate-90"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                                    />
-                                </svg>
+                                <Send className="w-5 h-5" />
                             )}
                         </Button>
                     </div>
                     <p className="text-xs text-foreground/50 mt-2 text-center">
-                        Press Enter to send • Shift + Enter for new line
+                        {language === "en" 
+                            ? "Press Enter to send • Shift + Enter for new line"
+                            : "મોકલવા માટે Enter દબાવો • નવી લાઇન માટે Shift + Enter"}
                     </p>
                 </div>
             </div>
