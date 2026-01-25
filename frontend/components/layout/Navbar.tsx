@@ -36,6 +36,9 @@ export function Navbar() {
 
   const authNavigation = [
     { name: t("nav.dashboard"), href: ROUTES.dashboard },
+    { name: t("nav.assessmentResults"), href: ROUTES.assessmentResult },
+    { name: t("nav.mentor"), href: ROUTES.mentor },
+    { name: t("nav.careerReport"), href: ROUTES.careerReport },
   ];
 
   return (
@@ -59,7 +62,7 @@ export function Navbar() {
             <span className="text-2xl font-bold brand-name cursor-pointer">
               <span className={cn(
                 "bg-gradient-to-r bg-clip-text text-transparent transition-all duration-300",
-                theme === "light" 
+                theme === "light"
                   ? "from-yellow-600 via-yellow-500 to-amber-500 group-hover:from-yellow-500 group-hover:to-amber-400"
                   : "from-yellow-400 via-yellow-300 to-amber-300 group-hover:from-yellow-300 group-hover:to-amber-200"
               )}>
@@ -73,20 +76,21 @@ export function Navbar() {
               )}>
                 setu.ai
               </span>
-              
+
             </span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {navigation.map((item) => (
+            {/* Show public links only when NOT authenticated */}
+            {status !== "authenticated" && navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
                   "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
                   pathname === item.href
-                    ? theme === "light" 
+                    ? theme === "light"
                       ? "text-black bg-black/10 backdrop-blur-sm"
                       : "text-white bg-white/20 backdrop-blur-sm"
                     : theme === "light"
@@ -97,6 +101,25 @@ export function Navbar() {
                 {item.name}
               </Link>
             ))}
+
+            {/* Always show Assessment link */}
+            <Link
+              href={ROUTES.assessment}
+              className={cn(
+                "px-4 py-2 text-base font-medium rounded-lg transition-all duration-200",
+                pathname === ROUTES.assessment
+                  ? theme === "light"
+                    ? "text-black bg-black/10 backdrop-blur-sm"
+                    : "text-white bg-white/20 backdrop-blur-sm"
+                  : theme === "light"
+                    ? "text-black/90 hover:text-black hover:bg-black/5"
+                    : "text-white/90 hover:text-white hover:bg-white/10"
+              )}
+            >
+              {t("nav.assessment")}
+            </Link>
+
+            {/* Show authenticated-only links when authenticated */}
             {status === "authenticated" && authNavigation.map((item) => (
               <Link
                 key={item.name}
@@ -121,7 +144,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
             <LanguageToggle />
-            
+
             {status === "authenticated" && user ? (
               <div className="flex items-center space-x-4">
                 <span className={cn(
@@ -130,11 +153,11 @@ export function Navbar() {
                 )}>
                   {user.displayName || user.email}
                 </span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={signOut} 
-                  className={theme === "light" 
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={signOut}
+                  className={theme === "light"
                     ? "border-black/30 text-black hover:bg-black/10"
                     : "border-white/30 text-white hover:bg-white/10"
                   }
@@ -145,10 +168,10 @@ export function Navbar() {
             ) : (
               <div className="flex items-center space-x-2">
                 <Link href="/auth?mode=sign-in">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className={theme === "light" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={theme === "light"
                       ? "text-black hover:bg-black/10"
                       : "text-white hover:bg-white/10"
                     }
@@ -238,7 +261,7 @@ export function Navbar() {
                 {item.name}
               </Link>
             ))}
-            
+
             <div className={cn(
               "pt-4 border-t",
               theme === "light" ? "border-black/10" : "border-white/10"

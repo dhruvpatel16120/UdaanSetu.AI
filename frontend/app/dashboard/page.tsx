@@ -1,295 +1,287 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
+import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/hooks/useI18n";
+import { useTheme } from "@/store/theme/ThemeProvider";
+import { Button } from "@/components/ui/Button";
 import { ROUTES } from "@/constants/routes";
-
-interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'bot';
-  timestamp: Date;
-}
-
-interface QuickAction {
-  id: string;
-  text: string;
-  response: string;
-}
+import { cn } from "@/utils/cn";
 
 export default function DashboardPage() {
-  const { user, status, signOut } = useAuth();
+  const { user, status } = useAuth();
   const { t } = useI18n();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const quickActions: QuickAction[] = [
-    {
-      id: '1',
-      text: t("chatbot.careerAssessment") || "Start Career Assessment",
-      response: t("chatbot.assessmentResponse") || "I'd be happy to help you with a career assessment! Let me ask you some questions about your interests, skills, and goals. What subjects do you enjoy most?"
-    },
-    {
-      id: '2', 
-      text: t("chatbot.skillDevelopment") || "Skill Development",
-      response: t("chatbot.skillResponse") || "Great choice! Based on your profile, I recommend focusing on digital skills that are in high demand. Would you like to learn about programming, digital marketing, or data analysis?"
-    },
-    {
-      id: '3',
-      text: t("chatbot.jobOpportunities") || "Job Opportunities",
-      response: t("chatbot.jobResponse") || "There are many exciting opportunities in the tech sector! Let me help you explore different career paths. What type of work interests you - working with people, data, or creative projects?"
-    },
-    {
-      id: '4',
-      text: t("chatbot.learningResources") || "Learning Resources",
-      response: t("chatbot.learningResponse") || "I have access to many free and paid learning resources! Are you looking for online courses, workshops, or self-study materials? Also, do you prefer learning in English or Gujarati?"
-    }
-  ];
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Welcome message
-    const welcomeMessage: Message = {
-      id: '1',
-      text: t("chatbot.welcome") || `Hello ${user?.displayName || user?.email?.split('@')[0] || 'there'}! 👋 I'm your AI career mentor. I'm here to help you discover your skills, build your future, and guide you from rural dreams to digital careers. How can I assist you today?`,
-      sender: 'bot',
-      timestamp: new Date()
-    };
-    setMessages([welcomeMessage]);
-  }, [user, t]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
-
-    const userMessage: Message = {
-      // eslint-disable-next-line
-      id: Date.now().toString(),
-      text: inputValue,
-      sender: 'user',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
-    setIsTyping(true);
-
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse = generateBotResponse(inputValue);
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: botResponse,
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 1500);
-  };
-
-  const generateBotResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase();
-    
-    if (input.includes('career') || input.includes('કારકિર્દી')) {
-      return t("chatbot.careerAdvice") || "Career planning is exciting! Let me help you explore different options. What are your favorite subjects in school? Are you more interested in technology, business, or creative fields?";
-    }
-    
-    if (input.includes('skill') || input.includes('કૌશલ્ય')) {
-      return t("chatbot.skillAdvice") || "Developing skills is crucial for career success! I recommend starting with digital literacy, then moving to specific technical skills. What's your current skill level?";
-    }
-    
-    if (input.includes('job') || input.includes('નોકરી')) {
-      return t("chatbot.jobAdvice") || "The job market is evolving rapidly! Remote work and digital skills are in high demand. What type of work environment interests you?";
-    }
-    
-    if (input.includes('learn') || input.includes('શીખવવું')) {
-      return t("chatbot.learningAdvice") || "Learning is a lifelong journey! I can suggest both free and paid resources. What's your preferred learning style - videos, reading, or hands-on practice?";
-    }
-    
-    return t("chatbot.defaultResponse") || "That's interesting! I'm here to help with career guidance, skill development, and finding opportunities. Could you tell me more about what you'd like to achieve?";
-  };
-
-  const handleQuickAction = (action: QuickAction) => {
-    const userMessage: Message = {
-      // eslint-disable-next-line
-      id: Date.now().toString(),
-      text: action.text,
-      sender: 'user',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: action.response,
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 1000);
-  };
+    setMounted(true);
+  }, []);
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-accent"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary-indigo/5">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+          <div className="absolute inset-0 w-20 h-20 border-4 border-primary-indigo/20 border-t-transparent rounded-full animate-spin animation-delay-200"></div>
+        </div>
       </div>
     );
   }
 
   if (status !== "authenticated" || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary-indigo/5">
+        <div className="glass-card p-12 text-center max-w-md mx-4 animate-in-scale">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-foreground/70 mb-6">Please sign in to access your AI career mentor.</p>
-          <Link href={ROUTES.auth.signIn}>
-            <Button>Sign In</Button>
+          <p className="text-foreground/70 mb-6">Please sign in to access your dashboard.</p>
+          <Link href="/auth?mode=sign-in">
+            <Button className="bg-gradient-to-r from-accent to-orange-600">Sign In</Button>
           </Link>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="glass-card border-b border-border/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href={ROUTES.home} className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-accent to-teal rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                    />
-                  </svg>
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  udaansetu.ai
-                </span>
-              </Link>
-              <h1 className="text-xl font-semibold text-foreground">
-                {t("nav.dashboard") || "AI Career Mentor"}
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-foreground/70">
-                {user.displayName || user.email}
-              </span>
-              <Button variant="outline" size="sm" onClick={signOut}>
-                {t("nav.signOut")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+  const userName = user.displayName || user.email?.split('@')[0] || 'User';
+  const userInitial = userName[0].toUpperCase();
 
-      {/* Chat Container */}
-      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-3 rounded-2xl ${
-                  message.sender === 'user'
-                    ? 'bg-accent text-white'
-                    : 'glass-card text-foreground'
-                }`}
-              >
-                <p className="text-sm leading-relaxed">{message.text}</p>
-                <p className={`text-xs mt-1 ${message.sender === 'user' ? 'text-white/70' : 'text-foreground/50'}`}>
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+  // Mock data - Replace with actual API calls
+  const stats = {
+    assessmentsCompleted: 1,
+    profileCompletion: 75,
+    skillsIdentified: 8,
+    hoursLearned: 12
+  };
+
+  const quickActions = [
+    {
+      title: "Take Assessment",
+      description: "Discover your career path",
+      icon: "📋",
+      href: ROUTES.assessment,
+      gradient: "from-blue-500 to-indigo-600"
+    },
+    {
+      title: "Assessment Results",
+      description: "View your profile & results",
+      icon: "📊",
+      href: ROUTES.assessmentResult,
+      gradient: "from-purple-500 to-pink-600"
+    },
+    {
+      title: "AI Mentor",
+      description: "Chat with career mentor",
+      icon: "🤖",
+      href: ROUTES.mentor,
+      gradient: "from-teal-500 to-cyan-600"
+    },
+    {
+      title: "Career Report",
+      description: "Detailed career insights",
+      icon: "📈",
+      href: ROUTES.careerReport,
+      gradient: "from-orange-500 to-red-600"
+    }
+  ];
+
+  const careerInsights = {
+    topSkills: ["Communication", "Problem Solving", "Digital Literacy"],
+    suggestedPaths: ["Software Development", "Digital Marketing", "Data Analysis"],
+    nextSteps: ["Complete skill assessment", "Explore learning resources", "Connect with mentors"]
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary-indigo/5 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Welcome Section */}
+        <div className="glass-card p-8 mb-8 animate-in-scale">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                {userInitial}
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold mb-1">
+                  Welcome back, {userName}!
+                </h1>
+                <p className="text-foreground/60" suppressHydrationWarning>
+                  {mounted && new Date().toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
               </div>
             </div>
-          ))}
-          
-          {isTyping && (
-            <div className="flex justify-start">
-              <div className="glass-card px-4 py-3 rounded-2xl">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-accent rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-accent rounded-full animate-bounce delay-100"></div>
-                  <div className="w-2 h-2 bg-accent rounded-full animate-bounce delay-200"></div>
-                </div>
-              </div>
+            <div className="flex gap-3">
+              <Link href="/dashboard/profile">
+                <Button variant="outline" size="sm">View Profile</Button>
+              </Link>
             </div>
-          )}
-          
-          <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="glass-card p-6 animate-in-scale animation-delay-100">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-foreground/60">Assessments</h3>
+              <span className="text-2xl">📝</span>
+            </div>
+            <p className="text-3xl font-bold text-foreground">{stats.assessmentsCompleted}</p>
+            <p className="text-xs text-foreground/50 mt-1">Completed</p>
+          </div>
+
+          <div className="glass-card p-6 animate-in-scale animation-delay-200">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-foreground/60">Profile</h3>
+              <span className="text-2xl">✅</span>
+            </div>
+            <p className="text-3xl font-bold text-foreground">{stats.profileCompletion}%</p>
+            <div className="w-full bg-foreground/10 rounded-full h-2 mt-2">
+              <div
+                className="bg-gradient-to-r from-accent to-orange-600 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${stats.profileCompletion}%` }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="glass-card p-6 animate-in-scale animation-delay-300">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-foreground/60">Skills</h3>
+              <span className="text-2xl">🎯</span>
+            </div>
+            <p className="text-3xl font-bold text-foreground">{stats.skillsIdentified}</p>
+            <p className="text-xs text-foreground/50 mt-1">Identified</p>
+          </div>
+
+          <div className="glass-card p-6 animate-in-scale animation-delay-400">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-foreground/60">Learning</h3>
+              <span className="text-2xl">📚</span>
+            </div>
+            <p className="text-3xl font-bold text-foreground">{stats.hoursLearned}h</p>
+            <p className="text-xs text-foreground/50 mt-1">This month</p>
+          </div>
         </div>
 
         {/* Quick Actions */}
-        {messages.length === 1 && (
-          <div className="px-4 pb-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {quickActions.map((action) => (
-                <Button
-                  key={action.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuickAction(action)}
-                  className="text-xs h-auto py-2 px-3"
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {quickActions.map((action, index) => (
+              <Link key={action.title} href={action.href}>
+                <div
+                  className={cn(
+                    "glass-card p-6 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group animate-in-scale border border-foreground/10",
+                    `animation-delay-${(index + 1) * 100}`
+                  )}
                 >
-                  {action.text}
-                </Button>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-4xl group-hover:scale-110 transition-transform duration-300">{action.icon}</span>
+                    <div className={cn(
+                      "w-10 h-10 rounded-full bg-gradient-to-br opacity-20 group-hover:opacity-30 transition-opacity",
+                      action.gradient
+                    )}></div>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">{action.title}</h3>
+                  <p className="text-sm text-foreground/60">{action.description}</p>
+                  <div className="mt-4 flex items-center text-accent text-sm font-medium group-hover:translate-x-1 transition-transform">
+                    Get Started
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Career Insights */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Top Skills */}
+          <div className="glass-card p-6 animate-in-scale">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">💡</span>
+              <h3 className="text-lg font-semibold">Top Skills</h3>
+            </div>
+            <div className="space-y-2">
+              {careerInsights.topSkills.map((skill, index) => (
+                <div
+                  key={skill}
+                  className="px-3 py-2 bg-gradient-to-r from-accent/10 to-orange-600/10 rounded-lg border border-accent/20 text-sm animate-in-scale"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {skill}
+                </div>
               ))}
             </div>
           </div>
-        )}
 
-        {/* Input Area */}
-        <div className="border-t border-border/20 p-4">
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder={t("chatbot.inputPlaceholder") || "Ask me about careers, skills, or opportunities..."}
-              className="flex-1 px-4 py-3 glass-card border-0 focus:outline-none focus:ring-2 focus:ring-accent/50 rounded-full"
-              disabled={isTyping}
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isTyping}
-              size="sm"
-              className="px-6"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-            </Button>
+          {/* Suggested Career Paths */}
+          <div className="glass-card p-6 animate-in-scale animation-delay-100">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">🚀</span>
+              <h3 className="text-lg font-semibold">Career Paths</h3>
+            </div>
+            <div className="space-y-2">
+              {careerInsights.suggestedPaths.map((path, index) => (
+                <div
+                  key={path}
+                  className="px-3 py-2 bg-gradient-to-r from-primary-indigo/10 to-primary-navy/10 rounded-lg border border-primary-indigo/20 text-sm animate-in-scale"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {path}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Next Steps */}
+          <div className="glass-card p-6 animate-in-scale animation-delay-200">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">📌</span>
+              <h3 className="text-lg font-semibold">Next Steps</h3>
+            </div>
+            <div className="space-y-3">
+              {careerInsights.nextSteps.map((step, index) => (
+                <div
+                  key={step}
+                  className="flex items-start gap-2 animate-in-scale"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-2 h-2 rounded-full bg-accent"></div>
+                  </div>
+                  <p className="text-sm text-foreground/80">{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="glass-card p-8 text-center bg-gradient-to-r from-primary-indigo/5 via-accent/5 to-teal/5 border-2 border-accent/20 animate-in-scale">
+          <h2 className="text-2xl font-bold mb-3">Ready to take the next step?</h2>
+          <p className="text-foreground/70 mb-6 max-w-2xl mx-auto">
+            Complete your career assessment to unlock personalized recommendations and connect with opportunities tailored just for you.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href={ROUTES.assessment}>
+              <Button size="lg" className="bg-gradient-to-r from-accent to-orange-600 hover:scale-105 transition-transform shadow-lg">
+                Start Assessment
+              </Button>
+            </Link>
+            <Link href={ROUTES.mentor}>
+              <Button size="lg" variant="outline" className="border-accent text-accent hover:bg-accent/10">
+                Talk to Mentor
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

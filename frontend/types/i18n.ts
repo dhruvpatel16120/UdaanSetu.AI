@@ -9,7 +9,11 @@ export type TranslationKey =
   | "nav.careerAssessment"
   | "nav.about"
   | "nav.dashboard"
+  | "nav.assessmentResults"
+  | "nav.mentor"
+  | "nav.careerReport"
   | "nav.signIn"
+  | "nav.signUp"
   | "nav.getStarted"
   | "nav.signOut"
   | "nav.resources"
@@ -113,6 +117,8 @@ export type TranslationKey =
   | "chatbot.learningAdvice"
   | "chatbot.defaultResponse"
   | "chatbot.inputPlaceholder"
+  | "chatbot.placeholder"
+  | "chatbot.send"
   // Auth
   | "auth.brand.tagline"
   | "auth.divider.or"
@@ -149,7 +155,7 @@ export type TranslationKey =
   | "auth.error.wrongPassword"
   | "auth.error.emailInUse"
   | "auth.link.backToHome"
-  
+
   // Navigation
   | "nav.assessment"
 
@@ -237,7 +243,7 @@ export type TranslationKey =
   | "assessment.tipDesc"
   | "assessment.questionOf"
   | "assessment.percentComplete"
-  
+
   // Basic Info Form
   | "assessment.welcomeTitle"
   | "assessment.welcomeDesc"
