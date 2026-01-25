@@ -1,39 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  /* Brand Colors */
-  --primary-indigo: #312e81;
-  --primary-navy: #1e3a8a;
-  --accent-orange: #fb923c;
-  --accent-teal: #14b8a6;
-  --accent-cyan: #06b6d4;
-  --accent-green: #22c55e;
-  --highlight-purple: #a855f7;
+  /* Brand Colors - Standardized */
+  --primary-indigo: #4338ca;
+  --primary-navy: #1e1b4b;
+  --accent-orange: #f97316;
+  --accent-teal: #0d9488;
+  --accent-cyan: #0891b2;
+  --accent-green: #16a34a;
+  --highlight-purple: #9333ea;
 
   /* Light Theme Colors */
   --background: #ffffff;
-  --foreground: #171717;
-  --card-bg: rgba(255, 255, 255, 0.8);
-  --card: rgba(255, 255, 255, 0.9);
-  --border-color: rgba(0, 0, 0, 0.1);
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
-  --accent: #fb923c;
-  --accent-foreground: #7c2d12;
-  --destructive: #dc2626;
+  --foreground: #0f172a;
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --card: rgba(255, 255, 255, 0.8);
+  --border-color: rgba(15, 23, 42, 0.1);
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f97316;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
 }
 
 .dark {
-  /* Dark Theme Colors */
-  --background: #06081a;
+  /* Dark Theme Colors - Premium Deep Navy/Slate */
+  --background: #020617;
   --foreground: #f8fafc;
-  --card-bg: rgba(30, 58, 138, 0.1);
-  --card: rgba(30, 58, 138, 0.2);
-  --border-color: rgba(255, 255, 255, 0.1);
+  --card-bg: rgba(15, 23, 42, 0.3);
+  --card: rgba(30, 41, 59, 0.4);
+  --border-color: rgba(148, 163, 184, 0.1);
   --muted: #1e293b;
   --muted-foreground: #94a3b8;
   --accent: #fb923c;
-  --accent-foreground: #fed7aa;
+  --accent-foreground: #0f172a;
   --destructive: #ef4444;
 }
 
@@ -354,4 +354,28 @@ nav::after {
 }
 .delay-300 {
   animation-delay: 300ms;
+}
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 5px;
+  border: 2px solid var(--background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Selection Color */
+::selection {
+  background: var(--accent);
+  color: var(--accent-foreground);
 }

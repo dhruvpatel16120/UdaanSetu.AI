@@ -28,8 +28,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        setUser(mapFirebaseUser(firebaseUser));
+        const mappedUser = mapFirebaseUser(firebaseUser);
+        setUser(mappedUser);
         setStatus("authenticated");
+
+        // Sync with Backend
+        fetch('http://localhost:8000/api/user/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firebase_id: mappedUser.uid,
+            email: mappedUser.email,
+            name: mappedUser.displayName
+          })
+        }).catch(err => console.error("Failed to sync user with backend:", err));
       });
 
       return () => unsubscribe();

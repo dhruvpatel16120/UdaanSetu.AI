@@ -45,16 +45,140 @@ export default function CareerReportPage() {
     const { user, status } = useAuth();
     const { theme } = useTheme();
     const [mounted, setMounted] = useState(false);
-
+    
     // State for Report Data
     const [reportData, setReportData] = useState<ReportData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    useEffect(() => {
+        if (status === "loading") return;
+
+        // In a real app, use user.uid. For demo, we use "demo_user_123" as set in backend
+        const userId = "demo_user_123";
+
+        async function fetchReport() {
+            try {
+                // Fetch full result including traits
+                const res = await fetch(`http://localhost:8000/api/assessment/result/${userId}`);
+                if (!res.ok) {
+                    if (res.status === 404) throw new Error("Report not found. Please complete the assessment first.");
+                    throw new Error("Failed to load report");
+                }
+                const data = await res.json();
+
+                // Transform Backend Data to UI Structure
+                const bio = data.generated_bio || {};
+                const traits = bio.traits || {};
+                const aiReport = bio.ai_report || {};
+
+                // Heuristic Mapping (Logic to make it look real based on traits)
+                const mappedStrengths = [];
+                if (traits.strength === "stamina") mappedStrengths.push("Hardworking & Resilient");
+                if (traits.strength === "logic") mappedStrengths.push("Logical Problem Solving");
+                if (traits.strength === "communication") mappedStrengths.push("Effective Communication");
+                if (traits.strength === "creativity") mappedStrengths.push("Creative Thinking");
+                if (traits.leadership === "high") mappedStrengths.push("Leadership");
+                if (mappedStrengths.length === 0) mappedStrengths.push("Dedication", "Adaptability");
+                
+                // Merge with AI Strengths if available
+                if (aiReport.topStrengths) { 
+                     // If AI gives strengths, use them or mix
+                }
+
+                // Calculate a "Career Readiness" score based on traits
+                let readiness = 60; // Base
+                if (traits.education === "degree") readiness += 20;
+                if (traits.education === "high_school") readiness += 10;
+                if (traits.digital_literacy === "high") readiness += 10;
+                if (traits.confidence === "high") readiness += 5;
+
+                const transformedData: ReportData = {
+                    generatedAt: new Date(data.last_updated?.seconds * 1000 || Date.now()),
+                    careerReadiness: Math.min(readiness, 98),
+                    topStrengths: mappedStrengths,
+                    personalityTraits: [
+                        traits.mindset === "growth" ? "Growth Mindset" : (traits.mindset === "billionaire" ? "Ambitious" : "Stable & Reliable"),
+                        traits.social === "high" ? "Extroverted" : (traits.leadership === "independent" ? "Independent" : "Team Player"),
+                        traits.risk_appetite === "high" ? "Risk Taker" : "Cautious"
+                    ],
+                    // Hybrid Recommendation: Use AI Report if meaningful, else Fallback Heuristic
+                    recommendations: aiReport.primary_career ? 
+                        [
+                            {
+                                title: aiReport.primary_career,
+                                match: parseInt(aiReport.match_percentage || "90"),
+                                description: aiReport.reasoning || "Best fit based on analysis",
+                                requirements: aiReport.required_skills || []
+                            }
+                        ] : (
+                        bio.suggested_paths?.length > 1 && bio.suggested_paths[0] !== "Pending Analysis..."
+                        ? bio.suggested_paths.map((p: string) => ({ title: p, match: 85, description: "Recommended based on your profile", requirements: ["Dedication"] }))
+                        : [
+                            {
+                                title: traits.domain === "tech" ? "Software Developer" : (traits.domain === "commerce" ? "Accountant/Finance" : "General Management"),
+                                match: 92,
+                                description: traits.domain === "tech" ? "Build software and apps" : "Manage finances and business",
+                                requirements: traits.domain === "tech" ? ["Logic", "Coding"] : ["Math", "Management"]
+                            },
+                            {
+                                title: traits.domain === "tech" ? "IT Support Specialist" : (traits.domain === "medical" ? "Healthcare Assistant" : "Digital Marketer"),
+                                match: 85,
+                                description: "Support technical infrastructure or operations",
+                                requirements: ["Problem Solving", "Communication"]
+                            }
+                        ]
+                    ),
+                    currentSkills: [
+                        { name: "Communication", level: traits.strength === "communication" ? 90 : 70 },
+                        { name: "Problem Solving", level: traits.problem_solving === "research_oriented" ? 85 : 65 },
+                        { name: "Digital Literacy", level: traits.digital_literacy === "high" ? 90 : (traits.digital_literacy === "basic" ? 60 : 30) },
+                    ],
+                    recommendedSkills: [
+                         ...(aiReport.required_skills ? aiReport.required_skills.map((s: string) => ({ name: s, priority: "high" })) : 
+                        [
+                            { name: "Time Management", priority: "medium" },
+                            { name: traits.domain === "tech" ? "Python Basics" : "Financial Literacy", priority: "high" }
+                        ])
+                    ],
+                    learningPaths: [
+                        {
+                            title: traits.domain === "tech" ? "Web Development Bootstart" : "Business Fundamentals",
+                            duration: "3 months",
+                            resources: [
+                                { name: "UdaanSetu Modules", url: "/resources" },
+                                { name: "YouTube Playlist", url: "#" }
+                            ]
+                        }
+                    ],
+                    actionPlan: {
+                        shortTerm: aiReport.roadmap_steps ? aiReport.roadmap_steps.map((s: any) => s.step) : ["Complete your profile", "Watch 2 introductory videos"],
+                        longTerm: ["Build a small project", "Apply for an internship"]
+                    }
+                };
+
+                setReportData(transformedData);
+
+            } catch (err) {
+                console.error(err);
+                const errorMessage = err instanceof Error ? err.message : "Failed to load report";
+                setError(errorMessage);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        if (status === "authenticated") {
+             fetchReport();
+        } else if (status === "unauthenticated") {
+             setLoading(false);
+        }
+
+    }, [user, status]);
 
     if (status === "loading" || loading) {
         return (
@@ -108,115 +232,7 @@ export default function CareerReportPage() {
         );
     }
 
-
-    useEffect(() => {
-        setMounted(true);
-        if (status === "loading") return;
-
-        // In a real app, use user.uid. For demo, we use "demo_user_123" as set in backend
-        const userId = "demo_user_123";
-
-        async function fetchReport() {
-            try {
-                const res = await fetch(`http://localhost:8000/api/assessment/result/${userId}`);
-                if (!res.ok) {
-                    if (res.status === 404) throw new Error("Report not found. Please complete the assessment first.");
-                    throw new Error("Failed to load report");
-                }
-                const data = await res.json();
-
-                // Transform Backend Data to UI Structure
-                // If backend data is minimal, we fill gaps with defaults for the "Perfect UI" feel
-                const bio = data.generated_bio || {};
-                const traits = bio.traits || {};
-
-                // Heuristic Mapping (Logic to make it look real based on traits)
-                const mappedStrengths = [];
-                if (traits.strength === "stamina") mappedStrengths.push("Hardworking & Resilient");
-                if (traits.strength === "logic") mappedStrengths.push("Logical Problem Solving");
-                if (traits.strength === "communication") mappedStrengths.push("Effective Communication");
-                if (traits.strength === "creativity") mappedStrengths.push("Creative Thinking");
-                if (traits.leadership === "high") mappedStrengths.push("Leadership");
-                if (mappedStrengths.length === 0) mappedStrengths.push("Dedication", "Adaptability");
-
-                // Calculate a "Career Readiness" score based on traits
-                let readiness = 60; // Base
-                if (traits.education === "degree") readiness += 20;
-                if (traits.education === "high_school") readiness += 10;
-                if (traits.digital_literacy === "high") readiness += 10;
-                if (traits.confidence === "high") readiness += 5;
-
-                const transformedData: ReportData = {
-                    generatedAt: new Date(data.last_updated?.seconds * 1000 || Date.now()),
-                    careerReadiness: Math.min(readiness, 98),
-                    topStrengths: mappedStrengths,
-                    personalityTraits: [
-                        traits.mindset === "growth" ? "Growth Mindset" : (traits.mindset === "billionaire" ? "Ambitious" : "Stable & Reliable"),
-                        traits.social === "high" ? "Extroverted" : (traits.leadership === "independent" ? "Independent" : "Team Player"),
-                        traits.risk_appetite === "high" ? "Risk Taker" : "Cautious"
-                    ],
-                    // Use backend suggested paths if available, else derive
-                    recommendations: bio.suggested_paths?.length > 1 && bio.suggested_paths[0] !== "Pending Analysis..."
-                        ? bio.suggested_paths.map((p: string) => ({ title: p, match: 85, description: "Recommended based on your profile", requirements: ["Dedication"] }))
-                        : [
-                            {
-                                title: traits.domain === "tech" ? "Software Developer" : (traits.domain === "commerce" ? "Accountant/Finance" : "General Management"),
-                                match: 92,
-                                description: traits.domain === "tech" ? "Build software and apps" : "Manage finances and business",
-                                requirements: traits.domain === "tech" ? ["Logic", "Coding"] : ["Math", "Management"]
-                            },
-                            {
-                                title: traits.domain === "tech" ? "IT Support Specialist" : (traits.domain === "medical" ? "Healthcare Assistant" : "Digital Marketer"),
-                                match: 85,
-                                description: "Support technical infrastructure or operations",
-                                requirements: ["Problem Solving", "Communication"]
-                            }
-                        ],
-                    currentSkills: [
-                        { name: "Communication", level: traits.strength === "communication" ? 90 : 70 },
-                        { name: "Problem Solving", level: traits.problem_solving === "research_oriented" ? 85 : 65 },
-                        { name: "Digital Literacy", level: traits.digital_literacy === "high" ? 90 : (traits.digital_literacy === "basic" ? 60 : 30) },
-                    ],
-                    recommendedSkills: [
-                        { name: "Time Management", priority: "medium" },
-                        { name: traits.domain === "tech" ? "Python Basics" : "Financial Literacy", priority: "high" }
-                    ],
-                    learningPaths: [
-                        {
-                            title: traits.domain === "tech" ? "Web Development Bootstart" : "Business Fundamentals",
-                            duration: "3 months",
-                            resources: [
-                                { name: "UdaanSetu Modules", url: "/resources" },
-                                { name: "YouTube Playlist", url: "#" }
-                            ]
-                        }
-                    ],
-                    actionPlan: {
-                        shortTerm: ["Complete your profile", "Watch 2 introductory videos"],
-                        longTerm: ["Build a small project", "Apply for an internship"]
-                    }
-                };
-
-                setReportData(transformedData);
-
-            } catch (err) {
-                console.error(err);
-                const errorMessage = err instanceof Error ? err.message : "Failed to load report";
-                setError(errorMessage);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        fetchReport();
-    }, [user, status]);
-
-    if (!reportData && !loading && !error) {
-        return null; // Should not happen given logic above, but satisfies TS
-    }
-
-    // Fallback for TS if it still thinks reportData is null below
-    const data = reportData!;
+    if (!reportData) return null;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary-indigo/5 py-8">
@@ -229,7 +245,7 @@ export default function CareerReportPage() {
                                 Your Career Report
                             </h1>
                             <p className="text-foreground/60" suppressHydrationWarning>
-                                Generated on {mounted && data.generatedAt.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                Generated on {mounted && reportData.generatedAt.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                             </p>
                         </div>
                         <div className="flex gap-3">

@@ -7,4 +7,5 @@ export const ENV = {
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "",
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? "",
   },
+  apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
 } as const;

@@ -12,7 +12,8 @@ export const assessmentTranslations = {
     
     // Completion
     "assessment.completedTitle": "Assessment Complete!",
-    "assessment.completedDesc": "Thank you for completing the career assessment. Our AI is now analyzing your responses to generate personalized career recommendations.",
+    "assessment.completedDesc": "Thank you for completing the career assessment.",
+    "assessment.analyzing": "Generating your personalized Career Report...",
     "assessment.yourInterests": "Your Interests",
     "assessment.yourPersonality": "Your Personality",
     "assessment.viewRecommendations": "View Career Recommendations",
@@ -66,7 +67,8 @@ export const assessmentTranslations = {
     
     // Completion
     "assessment.completedTitle": "મૂલ્યાંકન પૂર્ણ!",
-    "assessment.completedDesc": "કારકિર્દી મૂલ્યાંકન પૂર્ણ કરવા બદલ આભાર. અમારી AI હવે તમારા જવાબોનું વિશ્લેષણ કરી રહી છે અને વ્યક્તિગત કારકિર્દી ભલામણો બનાવી રહી છે.",
+    "assessment.completedDesc": "કારકિર્દી મૂલ્યાંકન પૂર્ણ કરવા બદલ આભાર.",
+    "assessment.analyzing": "તમારો વ્યક્તિગત કારકિર્દી રિપોર્ટ તૈયાર કરી રહ્યા છીએ...",
     "assessment.yourInterests": "તમારી રુચિઓ",
     "assessment.yourPersonality": "તમારું વ્યક્તિત્વ",
     "assessment.viewRecommendations": "કારકિર્દી ભલામણો જુઓ",
