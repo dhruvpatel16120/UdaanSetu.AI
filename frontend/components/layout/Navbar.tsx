@@ -218,7 +218,9 @@ export function Navbar() {
                   "text-sm font-medium",
                   theme === "light" ? "text-black/90" : "text-white/90"
                 )}>
-                  {user.displayName || user.email}
+                  <Link href="/dashboard/profile" className="hover:underline">
+                    View Profile
+                  </Link>
                 </span>
                 <Button
                   variant="outline"
@@ -339,7 +341,9 @@ export function Navbar() {
                     "px-3 py-2 text-sm",
                     theme === "light" ? "text-black/90" : "text-white/90"
                   )}>
-                    {user.displayName || user.email}
+                    <Link href="/dashboard/profile" className="block w-full hover:underline" onClick={() => setIsMenuOpen(false)}>
+                      View Profile
+                    </Link>
                   </div>
                   <Button
                     variant="outline"
