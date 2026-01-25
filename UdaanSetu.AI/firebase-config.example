@@ -1,0 +1,18 @@
+# Firebase Configuration Template
+# Copy this file to .env.local and fill in your actual Firebase values
+# Get these values from your Firebase project settings
+
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=1234567890
+NEXT_PUBLIC_FIREBASE_APP_ID=1:1234567890:web:abcdef1234567890abcdef12
+
+# Steps to get Firebase config:
+# 1. Go to https://console.firebase.google.com
+# 2. Create a new project or select existing one
+# 3. Go to Project Settings > General > Your apps
+# 4. Add a Web app or select existing one
+# 5. Copy the firebaseConfig values
+# 6. Replace the placeholder values above with your actual values

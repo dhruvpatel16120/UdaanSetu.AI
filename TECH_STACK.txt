@@ -1,0 +1,375 @@
+UDAANSETU.AI — TECH STACK & SYSTEM IMPLEMENTATION CONTEXT
+
+Project Name: udaansetu.ai
+Team: FutureMinds
+Deployment Strategy: Vercel-first (Frontend + Backend on same platform)
+Primary Goal: Fast, scalable, low-cost AI career guidance system for rural youth
+
+1. HIGH-LEVEL SYSTEM PHILOSOPHY
+
+This project follows these principles:
+
+Frontend and backend hosted on the same platform (Vercel) for simplicity.
+
+Serverless architecture to stay within free tiers.
+
+Deterministic logic first, AI later (assessment ≠ LLM).
+
+Explainable AI suitable for judges and real users.
+
+Python-first backend because the developer is strongest in Python.
+
+Minimal moving parts, no over-engineering.
+
+2. FINAL TECH STACK OVERVIEW (ONE TABLE)
+Layer	Technology	Reason
+Frontend UI	Next.js	Fast, SEO-friendly, Vercel native
+Styling	Tailwind CSS	Rapid, responsive UI
+Frontend Hosting	Vercel	Free tier, GitHub deploy
+Backend	Python Serverless Functions	Same platform as frontend
+Backend Framework	FastAPI-style handlers	Clean API design
+AI Orchestration	LangChain (Python)	Standard RAG framework
+LLM	Google Gemini API	Cost-effective, strong reasoning
+Embeddings	Gemini Embeddings	Same ecosystem
+Vector Store	PostgreSQL + pgvector	No extra service needed
+Relational DB	Railway PostgreSQL	Free tier, reliable
+User Auth	Firebase Auth	Secure, fast, free
+User Data	Firestore	Session & response storage
+Deployment	Vercel GitHub CI	Zero-config deploy
+3. FRONTEND STACK (NEXT.JS + TAILWIND)
+Responsibilities
+
+Render UI pages
+
+Handle routing
+
+Render assessment questions
+
+Handle multilingual toggle (Gujarati / English)
+
+Call backend APIs
+
+Display career report and AI chat
+
+Key Pages
+
+Home
+
+About
+
+Resources (manual curation)
+
+Sign-in / Sign-up
+
+Assessment
+
+Career Report
+
+Mentor Chat
+
+UI Design Rules
+
+Mobile-first
+
+One question per screen
+
+Card-based layout
+
+Progress indicator
+
+Calm colors, rural-friendly fonts
+
+No heavy animations that affect performance
+
+Frontend never contains business logic.
+
+4. BACKEND STRATEGY (VERCEL SERVERLESS + PYTHON)
+Core Idea
+
+There is no always-running backend server.
+
+Each API endpoint is a serverless Python function deployed on Vercel.
+
+Example:
+
+/api/assessment/start.py
+/api/assessment/answer.py
+/api/assessment/complete.py
+/api/rag/generate_report.py
+/api/rag/chat.py
+
+
+Each file:
+
+Executes independently
+
+Is stateless
+
+Reads/writes data from Firestore or PostgreSQL
+
+5. WHY PYTHON ON VERCEL
+
+Strong Python ecosystem for AI
+
+Works well with LangChain
+
+Simple mental model
+
+No Docker required
+
+Easy to debug logic
+
+Important constraints of Vercel serverless:
+
+Execution time limit (~10–30 seconds)
+
+No background jobs
+
+No local persistent storage
+
+No heavy in-memory vector DB
+
+Design must respect this.
+
+6. AUTHENTICATION & USER MANAGEMENT
+Tool: Firebase Authentication
+
+Frontend:
+
+Handles login/signup (Google + email)
+
+Receives Firebase ID token
+
+Backend:
+
+Verifies token using Firebase Admin SDK
+
+Extracts user ID (uid)
+
+Uses uid as primary identifier
+
+No custom auth logic needed.
+
+7. USER DATA STORAGE (FIRESTORE)
+
+Firestore is used for dynamic, user-specific data.
+
+Stored Data
+
+Assessment session state
+
+Question answers
+
+Trait scores
+
+Student bio-profile
+
+Language preference
+
+Example Firestore Document
+{
+  "uid": "firebase_uid",
+  "current_stage": 2,
+  "answers": [...],
+  "traits": {
+    "creativity": 6,
+    "logic": 4
+  },
+  "completed": false
+}
+
+
+Firestore is chosen because:
+
+Fast
+
+Schema-flexible
+
+Free tier friendly
+
+Perfect for session-like data
+
+8. ASSESSMENT ENGINE (NO AI USED HERE)
+Key Principle
+
+Assessment must be deterministic, not AI-generated.
+
+Components
+
+Question Bank (JSON)
+
+Branching Logic
+
+Trait Scoring
+
+Progress Tracking
+
+Question Format
+
+Bilingual (English + Gujarati)
+
+Each option maps to traits
+
+Each answer determines next question
+
+This ensures:
+
+Explainability
+
+Fairness
+
+Low cost
+
+No hallucinations
+
+9. STUDENT BIO-PROFILE GENERATION
+
+After assessment completion, backend generates a structured student profile.
+
+Output Type
+
+Pure JSON, for example:
+
+{
+  "education": "12th Science",
+  "interest_domains": ["Technology"],
+  "psychology": {
+    "creativity": "High",
+    "risk": "Low"
+  },
+  "constraints": ["Low income"]
+}
+
+
+This profile becomes the single source of truth for AI.
+
+10. RELATIONAL DATABASE (POSTGRESQL ON RAILWAY)
+
+PostgreSQL is used for structured, reusable knowledge.
+
+Stored Tables
+
+Career roles
+
+Skill requirements
+
+Salary ranges
+
+Industry growth
+
+Roadmaps
+
+Local opportunities
+
+Why PostgreSQL:
+
+Structured queries
+
+Free tier available
+
+Can also store vectors using pgvector
+
+11. VECTOR STORAGE (PGVECTOR)
+
+Instead of FAISS or Chroma (not serverless-friendly), this project uses:
+
+PostgreSQL + pgvector extension
+
+Stored as
+
+Text content
+
+Metadata
+
+Embedding vectors
+
+This allows:
+
+Semantic search
+
+No extra service
+
+Works inside Vercel limits
+
+12. RAG ARCHITECTURE (LANGCHAIN + GEMINI)
+Why LangChain
+
+Industry standard for Python RAG
+
+Manages prompt + retrieval cleanly
+
+Supports pgvector
+
+Avoids manual glue code
+
+RAG Flow
+
+User question OR profile → query
+
+Generate embedding (Gemini)
+
+Similarity search in pgvector
+
+Retrieve top-K chunks
+
+Inject into prompt
+
+Call Gemini LLM
+
+Return grounded response
+
+Two RAG Modes
+
+Career report generation
+
+Interactive mentor chat
+
+13. LLM USAGE RULES (IMPORTANT)
+
+LLM is never used during assessment
+
+LLM only runs after profile is ready
+
+Prompts must be short and structured
+
+Always include student profile
+
+Always include retrieved context
+
+This avoids hallucination and cost spikes.
+
+14. DEPLOYMENT FLOW
+
+Code pushed to GitHub
+
+Vercel auto-builds frontend
+
+Python API routes deployed as serverless functions
+
+Environment variables set in Vercel:
+
+FIREBASE_KEYS
+
+POSTGRES_URL
+
+GEMINI_API_KEY
+
+No manual server management.
+
+15. WHY THIS STACK IS IDEAL FOR YOU
+
+Matches your Python strength
+
+Minimal backend complexity
+
+No DevOps burden
+
+Free-tier friendly
+
+Judges can clearly understand architecture
+
+Easy to extend after hackathon
+
+16. SUMMARY (ONE PARAGRAPH)
+
+Udaansetu.ai uses a Vercel-first serverless architecture with Next.js and Tailwind on the frontend, Python-based serverless APIs on the backend, Firebase for authentication and session data, PostgreSQL with pgvector for structured and semantic knowledge, and LangChain with Gemini for retrieval-augmented AI reasoning. The system separates deterministic assessment logic from AI generation, ensuring explainability, low cost, and realistic career guidance for rural youth.

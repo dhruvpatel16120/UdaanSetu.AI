@@ -1,0 +1,357 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand Colors */
+  --primary-indigo: #312e81;
+  --primary-navy: #1e3a8a;
+  --accent-orange: #fb923c;
+  --accent-teal: #14b8a6;
+  --accent-cyan: #06b6d4;
+  --accent-green: #22c55e;
+  --highlight-purple: #a855f7;
+
+  /* Light Theme Colors */
+  --background: #ffffff;
+  --foreground: #171717;
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card: rgba(255, 255, 255, 0.9);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #fb923c;
+  --accent-foreground: #7c2d12;
+  --destructive: #dc2626;
+}
+
+.dark {
+  /* Dark Theme Colors */
+  --background: #06081a;
+  --foreground: #f8fafc;
+  --card-bg: rgba(30, 58, 138, 0.1);
+  --card: rgba(30, 58, 138, 0.2);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #fb923c;
+  --accent-foreground: #fed7aa;
+  --destructive: #ef4444;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary-indigo);
+  --color-accent: var(--accent);
+  --color-teal: var(--accent-teal);
+  --color-cyan: var(--accent-cyan);
+  --color-green: var(--accent-green);
+  --color-purple: var(--highlight-purple);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border-color);
+  --color-card: var(--card);
+  --color-destructive: var(--destructive);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Glass card effect for both themes */
+.glass-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+}
+
+/* Gradient background for both themes */
+.gradient-bg {
+  background: var(--background);
+}
+
+/* Gradient hero background */
+.gradient-hero {
+  background: linear-gradient(
+    135deg,
+    var(--primary-indigo) 0%,
+    var(--primary-navy) 50%,
+    var(--accent-teal) 100%
+  );
+}
+
+/* Glow effects */
+.glow-orange {
+  box-shadow: 0 0 20px var(--accent-orange);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Animated gradient text */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+/* Hover effects for brand name */
+.brand-name:hover .animate-gradient {
+  animation-duration: 1s;
+}
+
+/* Interactive hover states */
+.brand-name span {
+  transition: all 0.3s ease;
+}
+
+.brand-name:hover span {
+  transform: translateY(-2px);
+}
+
+/* Logo lightning glow effect */
+.logo-glow {
+  position: relative;
+  filter: drop-shadow(0 0 8px rgba(251, 146, 60, 0.6));
+  animation: logo-pulse 2s ease-in-out infinite;
+}
+
+.logo-glow:hover {
+  filter: drop-shadow(0 0 16px rgba(251, 146, 60, 0.9))
+    drop-shadow(0 0 24px rgba(20, 184, 166, 0.6));
+  animation: logo-lightning 0.5s ease-in-out;
+}
+
+@keyframes logo-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(251, 146, 60, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(251, 146, 60, 0.8))
+      drop-shadow(0 0 20px rgba(20, 184, 166, 0.4));
+  }
+}
+
+@keyframes logo-lightning {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(251, 146, 60, 0.6));
+  }
+  25% {
+    filter: drop-shadow(0 0 20px rgba(251, 146, 60, 1))
+      drop-shadow(0 0 30px rgba(20, 184, 166, 0.8))
+      drop-shadow(0 0 40px rgba(168, 85, 247, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(251, 146, 60, 0.9))
+      drop-shadow(0 0 24px rgba(20, 184, 166, 0.6));
+  }
+}
+
+/* Enhanced brand text glow */
+.brand-text-glow {
+  text-shadow:
+    0 0 20px rgba(251, 146, 60, 0.5),
+    0 0 40px rgba(251, 146, 60, 0.3);
+  transition: text-shadow 0.3s ease;
+}
+
+.brand-text-glow:hover {
+  text-shadow:
+    0 0 30px rgba(251, 146, 60, 0.8),
+    0 0 50px rgba(251, 146, 60, 0.5),
+    0 0 70px rgba(20, 184, 166, 0.4);
+}
+
+/* Shimmer effect for logo text */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.shimmer-text {
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Navbar gradient background */
+.navbar-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--primary-indigo) 0%,
+    var(--primary-navy) 50%,
+    var(--accent-teal) 100%
+  );
+}
+
+/* Decorative navbar glow */
+nav::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(251, 146, 60, 0.5) 50%,
+    transparent 100%
+  );
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Ensure primary colors are available */
+.bg-primary-indigo {
+  background-color: var(--primary-indigo);
+}
+
+.bg-primary-navy {
+  background-color: var(--primary-navy);
+}
+
+.from-primary-indigo {
+  --tw-gradient-from: var(--primary-indigo);
+}
+
+.via-primary-navy {
+  --tw-gradient-via: var(--primary-navy);
+}
+
+.to-accent-teal {
+  --tw-gradient-to: var(--accent-teal);
+}
+
+/* --- Advanced Animations --- */
+
+/* 1. Fade In & Scale Up */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-in-scale {
+  animation: fadeInScale 0.4s ease-out forwards;
+}
+
+/* 2. Slide Up Fade */
+@keyframes slideUpFade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slideUpFade 0.5s ease-out forwards;
+}
+
+/* 3. Floating Card Effect */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* 4. Pulse Glow */
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 15px rgba(20, 184, 166, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(20, 184, 166, 0.6);
+  }
+}
+.glow-pulse {
+  animation: pulseGlow 3s infinite;
+}
+
+/* 5. Shimmer Overlay */
+.shimmer-overlay {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-overlay::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-100%);
+  animation: shimmerMove 3s infinite;
+}
+@keyframes shimmerMove {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Staggered Animation Delays */
+.delay-100 {
+  animation-delay: 100ms;
+}
+.delay-200 {
+  animation-delay: 200ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}

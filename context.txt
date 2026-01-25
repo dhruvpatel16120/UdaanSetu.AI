@@ -1,0 +1,288 @@
+UDAANSETU.AI — FINAL SYSTEM CONTEXT
+
+Team: FutureMinds
+Tagline: “Bridging Rural Youth to Their Future.”
+
+1. PRODUCT VISION
+
+udaansetu.ai is an AI-powered career & skill mentor for rural youth (Class 10+, dropouts, early job seekers), built to:
+
+Remove post-school confusion
+
+Provide personalized, realistic career paths
+
+Work in Gujarati & English
+
+Be ethical, practical, and future-focused
+
+Act as a digital mentor, not just a chatbot
+
+The system combines:
+
+Dynamic psychology-based assessment
+
+Judgement + scoring logic
+
+RAG (Retrieval-Augmented Generation)
+
+Contextual conversational AI mentor
+
+2. END-TO-END USER FLOW
+
+User Login
+↓
+Dynamic Adaptive Q&A (background + psychology)
+↓
+Student Bio-Profile Generation
+↓
+Judgement & Scoring Engine
+↓
+Smart Query Builder
+↓
+RAG Retrieval (career + market + roadmap DB)
+↓
+LLM Generation (Gemini)
+↓
+Structured Career Report
+↓
+Interactive AI Career Mentor (Contextual Chat)
+
+3. CORE MODULES
+Module	Purpose
+Auth	Google + Email login
+Q&A Engine	Adaptive, logic-driven questions
+Profile Engine	Structured student bio
+Judgement Layer	Scoring, conflict resolution
+Smart Query Builder	Converts profile → RAG queries
+RAG Engine	Retrieves real career, skill, market data
+Career Output Engine	Structured career report
+Mentor Chat	Context-aware career companion
+Multilingual	Gujarati + English
+Voice (future)	Speech input/output
+4. DYNAMIC ASSESSMENT ENGINE
+4.1 Static Layer
+
+Name
+
+Gender
+
+Date of Birth
+
+District (Gujarat)
+
+4.2 Dynamic Layer 1
+
+Education level
+
+Past grades
+
+Family type (Business / Service / Farming)
+
+Family income range
+
+4.3 Dynamic Layer 2
+
+Area of interest
+
+Hobbies
+
+Work style preference
+
+Vision for future
+
+Expected income
+
+Risk tolerance
+
+4.4 Psychology Mapping (Adaptive)
+
+Examples:
+
+“Do you enjoy playing games or building them?”
+
+“Stable job or high growth risk?”
+
+“Strengths?”
+
+“Weaknesses?”
+
+“Willing to shift cities or careers?”
+
+Mapped traits:
+
+Trait	Scale
+Creativity	Low → High
+Logical thinking	Low → High
+Risk tolerance	Low → High
+Learning speed	Slow → Fast
+Adaptability	Low → High
+Leadership	Low → High
+5. STUDENT BIO PROFILE (STRUCTURED JSON)
+{
+  "location": "Rural Gujarat",
+  "education": "12th Science",
+  "grades": "65%",
+  "family_type": "Service",
+  "family_income": "Low",
+  "interest_domains": ["Technology", "Design"],
+  "hobbies": ["Mobile apps", "Sketching"],
+  "psychology": {
+    "creativity": "High",
+    "logic": "Medium",
+    "risk": "Low",
+    "adaptability": "High",
+    "leadership": "Medium"
+  },
+  "career_expectation": "₹6–8 LPA",
+  "strengths": ["Consistency", "Problem solving"],
+  "weaknesses": ["Low confidence"],
+  "constraints": ["Low income", "Limited exposure"]
+}
+
+6. RAG KNOWLEDGE LAYER
+6.1 Career Database
+
+Role name
+
+Required skills
+
+Education path
+
+Salary range
+
+Growth trend
+
+6.2 Market Database
+
+Job demand (India + Gujarat)
+
+Industry growth
+
+Entry barrier
+
+Salary evolution
+
+6.3 Roadmap Database
+
+Learning paths
+
+Free + paid resources
+
+Certifications
+
+Timeline
+
+All data is:
+
+Chunked
+
+Embedded
+
+Stored in vector DB
+
+Retrieved by semantic search
+
+7. CAREER REPORT GENERATION PROMPT
+
+System Role:
+“You are a career counselor for rural Indian youth.
+Be realistic, motivating, and practical.”
+
+Inputs:
+
+Student Bio Profile
+
+Retrieved RAG chunks (career + market + roadmap)
+
+Output Sections:
+
+Best-fit career options (Top 3)
+
+Why each suits the student
+
+Hard skills table
+
+Soft skills table
+
+Skill gap analysis
+
+Salary projection (3, 5, 8 years)
+
+6–12 month roadmap
+
+Risks & solutions
+
+Local opportunities
+
+Alternative paths
+
+8. INTERACTIVE AI CAREER MENTOR
+Chat Context:
+
+Student Bio
+
+Career Report
+
+RAG Knowledge
+
+User Question
+
+Behavior Rules:
+
+Always personalized
+
+No generic advice
+
+Respect background & constraints
+
+Give clear, realistic steps
+
+9. UI / UX DESIGN DIRECTION
+
+Mood:
+Premium, warm, tech-forward, rural-friendly, hopeful.
+
+Visual Style:
+
+Gradient night-sky → sunrise
+
+Glass cards
+
+Soft glow highlights
+
+Curved bridge shapes
+
+Subtle motion
+
+Section Language
+
+Section	Visual Cue
+Hero	Bird + bridge + fields
+Q&A	Card steps with path animation
+Career Result	Timeline + tables on glass cards
+Mentor Chat	Floating panel with glow
+Footer	Dark gradient + rural skyline
+10. BRAND IDENTITY
+
+Concept:
+Udaan = Flight
+Setu = Bridge
+
+Symbol:
+Rising bird + bridge arc forming “U”
+
+Colors
+
+Role	Meaning
+Deep Indigo	Trust, technology
+Sunrise Orange	Hope, energy
+Teal / Cyan	Growth, learning
+Green	Livelihood, rural roots
+Magenta	Innovation
+
+Typography:
+Bold rounded headings, clean body text.
+
+11. ONE-LINE THEME
+
+“A bridge from rural dreams to digital careers.”
