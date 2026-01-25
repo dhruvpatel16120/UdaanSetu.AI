@@ -51,3 +51,23 @@ def save_assessment_result(user_id: str, data: dict):
     except Exception as e:
         print(f"Error saving to Firestore: {e}")
         return False
+
+def get_assessment_result(user_id: str):
+    """
+    Retrieves assessment result from Firestore.
+    """
+    try:
+        if not firebase_admin._apps:
+            init_firebase()
+            
+        db = firestore.client()
+        user_ref = db.collection("users").document(user_id)
+        doc = user_ref.get()
+        
+        if doc.exists:
+            data = doc.to_dict()
+            return data.get("assessment_result", None)
+        return None
+    except Exception as e:
+        print(f"Error getting from Firestore: {e}")
+        return None

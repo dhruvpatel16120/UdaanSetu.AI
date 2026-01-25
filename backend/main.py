@@ -134,7 +134,19 @@ def submit_assessment(answers: List[Answer]):
     from firebase_utils import save_assessment_result
     save_assessment_result(user_id, student_profile)
     
+    
     return student_profile
+
+@app.get("/api/assessment/result/{user_id}")
+def get_assessment_result_endpoint(user_id: str):
+    """
+    Retrieve the bio-data profile for a specific user.
+    """
+    from firebase_utils import get_assessment_result
+    result = get_assessment_result(user_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Assessment result not found")
+    return result
 
 if __name__ == "__main__":
     import uvicorn
