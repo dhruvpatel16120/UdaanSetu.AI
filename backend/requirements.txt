@@ -1,3 +1,12 @@
 fastapi
 uvicorn
-pydantic
+python-dotenv
+firebase-admin
+google-generativeai
+langchain
+langchain-google-genai
+langchain-community
+psycopg2-binary
+pgvector
+asyncpg
+requests

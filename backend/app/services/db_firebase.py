@@ -8,11 +8,25 @@ def init_firebase():
     if not firebase_admin._apps:
         try:
              # Look for service account file, typical name
-            cred_path = "serviceAccountKey.json" 
+             # Expecting it in the root backend directory or relative to this file
+             # We try multiple paths to be safe
+            possible_paths = [
+                "serviceAccountKey.json",
+                os.path.join(os.getcwd(), "serviceAccountKey.json"),
+                os.path.join(os.path.dirname(__file__), "../../serviceAccountKey.json"),
+                 os.path.join(os.path.dirname(__file__), "../../../serviceAccountKey.json")
+            ]
+            
+            cred_path = possible_paths[0]
+            for p in possible_paths:
+                if os.path.exists(p):
+                    cred_path = p
+                    break
+
             if os.path.exists(cred_path):
                 cred = credentials.Certificate(cred_path)
                 firebase_admin.initialize_app(cred)
-                print("Firebase Admin Initialized with serviceAccountKey.json")
+                print(f"Firebase Admin Initialized with {cred_path}")
             else:
                 print("Warning: serviceAccountKey.json not found. Firestore saving will fail.")
         except Exception as e:

@@ -13,7 +13,7 @@ cd backend
 .\venv\Scripts\activate
 
 # Run the Server (Port 8000)
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn main:app --reload --host [IP_ADDRESS] --port 8000
 
 # Verify it's running: http://localhost:8000/docs
 

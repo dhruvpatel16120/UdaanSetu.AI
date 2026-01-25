@@ -68,17 +68,46 @@ export default function MentorPage() {
         setInput("");
         setIsLoading(true);
 
-        // Simulate AI response (replace with actual API call)
-        setTimeout(() => {
-            const aiMessage: Message = {
+        // Real API Call
+        try {
+            const userId = "demo_user_123";
+            const history = messages.map(m => ({ role: m.role, content: m.content }));
+            
+            const response = await fetch("http://localhost:8000/api/chat/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: userId,
+                    message: userMessage.content,
+                    history: history
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                 const aiMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    role: "assistant",
+                    content: data.response,
+                    timestamp: new Date(),
+                };
+                setMessages((prev) => [...prev, aiMessage]);
+            } else {
+                throw new Error("API request failed");
+            }
+
+        } catch (error) {
+            console.error(error);
+             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: `That's a great question! As your AI mentor, I can help you with:\n\n• Career guidance and planning\n• Skill development recommendations\n• Job market insights\n• Educational pathways\n• Interview preparation\n\nCould you tell me more about what specific area you'd like to explore?`,
+                content: "Sorry, I'm having trouble connecting to the server. Please try again later.",
                 timestamp: new Date(),
             };
-            setMessages((prev) => [...prev, aiMessage]);
+            setMessages((prev) => [...prev, errorMessage]);
+        } finally {
             setIsLoading(false);
-        }, 1500);
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
