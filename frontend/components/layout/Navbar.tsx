@@ -172,7 +172,7 @@ export function Navbar() {
           {status === "authenticated" && user ? (
             <div className="flex items-center space-x-3">
               <Link
-                href="/dashboard/profile"
+                href={ROUTES.profile}
                 className={cn(
                   "hidden lg:block text-sm font-medium hover:text-accent transition-colors",
                   theme === "light" ? "text-black/70" : "text-white/70"

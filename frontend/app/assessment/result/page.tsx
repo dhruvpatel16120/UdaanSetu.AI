@@ -7,6 +7,7 @@ import { useTheme } from "@/store/theme/ThemeProvider";
 import { ENV } from "@/constants/env";
 import { ROUTES } from "@/constants/routes";
 import { motion } from "framer-motion";
+
 import {
   CheckCircle2,
   ArrowRight,
@@ -212,9 +213,9 @@ export default function AssessmentResultPage() {
           transition={{ delay: 0.5 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Link href={ROUTES.careerReport} className="w-full sm:w-auto">
+          <Link href={ROUTES.profile} className="w-full sm:w-auto">
             <Button className="w-full bg-accent hover:bg-accent/90 text-white font-black py-6 px-10 rounded-2xl text-lg shadow-xl shadow-accent/20 transition-all hover:scale-105 active:scale-95">
-              View Full Career Report <ArrowRight className="ml-2 w-6 h-6" />
+              Generate Bio-Profile <ArrowRight className="ml-2 w-6 h-6" />
             </Button>
           </Link>
           <Link href={`${ROUTES.assessment}?retake=true`} className="w-full sm:w-auto">

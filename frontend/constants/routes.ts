@@ -7,6 +7,8 @@ export const ROUTES = {
   careerReport: "/career-report",
   about: "/about",
   resources: "/resources",
+  profile: "/profile",
+  profileEdit: "/profile/edit",
   auth: {
     root: "/auth",
     signIn: "/auth/sign-in",

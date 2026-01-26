@@ -151,19 +151,42 @@ async def process_assessment_submission(answers: List[Answer], user_id: str = "d
                     if opt["id"] in ["average", "mid_tier"]: scores["confidence"] += 10
                     if opt["id"] == "yes": scores["confidence"] += 15  # Relocation = Confidence
 
+    # Cross-Trait Inference (Boost scores based on synergistic traits)
+    if scores["tech_affinity"] > 20: scores["ambition"] += 5
+    if scores["financial_awareness"] > 20: scores["ambition"] += 5
+    if scores["confidence"] > 20: scores["clarity"] += 5
+
     # Normalize scores to 0-100 cap
     profile["scores"] = {k: min(v, 100) for k, v in scores.items()}
     
-    # Calculate overall readiness (average of non-zero scores or base fallbacks)
+    # Calculate overall readiness
     non_zero_scores = [v for v in profile["scores"].values() if v > 5]
     if non_zero_scores:
         profile["overall_score"] = sum(non_zero_scores) // len(non_zero_scores)
     else:
-        profile["overall_score"] = 40 # Basic baseline
+        profile["overall_score"] = 40
+
+    # 3. Construct Narrative Bio for AI Context
+    # This was missing, causing generic recommendations.
+    bio_parts = []
+    bio_parts.append(f"Student ID: {user_id}. Scores: {profile['scores']}.")
+    
+    # Add text answers explicitly
+    for ans in answers:
+        q = questions_map.get(ans.question_id)
+        if q:
+            val = ans.text_answer or ans.selected_option_id
+            bio_parts.append(f"{q['text']['en']}: {val}")
+            
+    profile["full_user_bio_profile"] = "\n".join(bio_parts)
 
     # Generate AI Career Report
     from app.services.gemini_service import generate_career_report
     ai_report = await generate_career_report({"generated_bio": profile})
+    
+    # Ensure ai_report has a readiness score
+    if "careerReadiness" not in ai_report:
+         ai_report["careerReadiness"] = profile["overall_score"]
     
     # Ensure ai_report has a readiness score if it returned fallback
     if "careerReadiness" not in ai_report:
@@ -178,4 +201,16 @@ async def process_assessment_submission(answers: List[Answer], user_id: str = "d
     }
     
     save_assessment_result(user_id, result)
+
+    # Save to PostgreSQL via Prisma
+    if user_id and user_id != "demo_user_123":
+        try:
+             # Importing here to avoid circular imports if any
+            from app.services.user_service import save_assessment_to_profile
+            await save_assessment_to_profile(user_id, result)
+            print(f"Also saved to PostgreSQL/Prisma for user {user_id}")
+        except Exception as e:
+            # We don't want to fail the whole request if PG save fails, as Firebase is primary for now
+            print(f"Warning: Failed to save to Prisma: {e}")
+
     return result

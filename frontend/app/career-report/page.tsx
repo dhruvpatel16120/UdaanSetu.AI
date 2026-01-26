@@ -45,7 +45,7 @@ export default function CareerReportPage() {
     const { user, status } = useAuth();
     const { theme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    
+
     // State for Report Data
     const [reportData, setReportData] = useState<ReportData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -58,10 +58,9 @@ export default function CareerReportPage() {
     useEffect(() => {
         if (status === "loading") return;
 
-        // In a real app, use user.uid. For demo, we use "demo_user_123" as set in backend
-        const userId = "demo_user_123";
-
         async function fetchReport() {
+            if (!user?.uid) return;
+            const userId = user.uid;
             try {
                 // Fetch full result including traits
                 const res = await fetch(`http://localhost:8000/api/assessment/result/${userId}`);
@@ -84,10 +83,10 @@ export default function CareerReportPage() {
                 if (traits.strength === "creativity") mappedStrengths.push("Creative Thinking");
                 if (traits.leadership === "high") mappedStrengths.push("Leadership");
                 if (mappedStrengths.length === 0) mappedStrengths.push("Dedication", "Adaptability");
-                
+
                 // Merge with AI Strengths if available
-                if (aiReport.topStrengths) { 
-                     // If AI gives strengths, use them or mix
+                if (aiReport.topStrengths) {
+                    // If AI gives strengths, use them or mix
                 }
 
                 // Calculate a "Career Readiness" score based on traits
@@ -108,15 +107,15 @@ export default function CareerReportPage() {
                     ],
                     recommendations: aiReport.recommendations || (
                         bio.suggested_paths?.length > 1 && bio.suggested_paths[0] !== "Pending Analysis..."
-                        ? bio.suggested_paths.map((p: string) => ({ title: p, match: 85, description: "Recommended based on your profile", requirements: ["Dedication"] }))
-                        : [
-                            {
-                                title: traits.domain === "tech" ? "Software Developer" : (traits.domain === "commerce" ? "Accountant/Finance" : "General Management"),
-                                match: 92,
-                                description: traits.domain === "tech" ? "Build software and apps" : "Manage finances and business",
-                                requirements: traits.domain === "tech" ? ["Logic", "Coding"] : ["Math", "Management"]
-                            }
-                        ]
+                            ? bio.suggested_paths.map((p: string) => ({ title: p, match: 85, description: "Recommended based on your profile", requirements: ["Dedication"] }))
+                            : [
+                                {
+                                    title: traits.domain === "tech" ? "Software Developer" : (traits.domain === "commerce" ? "Accountant/Finance" : "General Management"),
+                                    match: 92,
+                                    description: traits.domain === "tech" ? "Build software and apps" : "Manage finances and business",
+                                    requirements: traits.domain === "tech" ? ["Logic", "Coding"] : ["Math", "Management"]
+                                }
+                            ]
                     ),
                     currentSkills: aiReport.currentSkills || [
                         { name: "Communication", level: traits.strength === "communication" ? 90 : 70 },
@@ -155,9 +154,9 @@ export default function CareerReportPage() {
         }
 
         if (status === "authenticated") {
-             fetchReport();
+            fetchReport();
         } else if (status === "unauthenticated") {
-             setLoading(false);
+            setLoading(false);
         }
 
     }, [user, status]);

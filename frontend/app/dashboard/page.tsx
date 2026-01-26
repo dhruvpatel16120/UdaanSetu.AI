@@ -118,7 +118,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <Link href="/dashboard/profile">
+              <Link href={ROUTES.profile}>
                 <Button variant="outline" size="sm">View Profile</Button>
               </Link>
             </div>
