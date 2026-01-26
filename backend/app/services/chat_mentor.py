@@ -22,105 +22,171 @@ class MentorChatService:
 
     async def chat_with_mentor(self, history: list, student_profile: dict, query: str, language: str = "en") -> str:
         """
-        Optimized Chat Mentor Logic.
-        Uses explicit 'Lite Context' for follow-ups to save tokens/time.
+        Enhanced Chat Mentor with Advanced Context Intelligence.
+        Features:
+        - Smart context switching (platform vs career queries)
+        - Skills gap analysis
+        - Job market trends integration
+        - Career roadmap guidance
+        - Bilingual optimization (English & Gujarati)
         """
         llm = self._get_llm()
         if not llm:
-            return "AI Service Unavailable."
+            error_msg = {
+                "en": "AI Service is temporarily unavailable. Please try again later.",
+                "gu": "AI સેવા અસ્થાયી રૂપે અનુપલબ્ધ છે. કૃપા કરીને પછીથી ફરી પ્રયાસ કરો."
+            }
+            return error_msg.get(language, error_msg["en"])
 
         # Extract basic info
         bio = student_profile.get("generated_bio", {})
         name = bio.get("name", "Student")
+        education = bio.get("education", "Unknown")
+        location = bio.get("location", "Gujarat")
         
-        # Define Language Instruction
-        lang_instruction = "Answer in ENGLISH."
+        # Enhanced Language Instructions
+        lang_instruction = ""
         if language == "gu":
-             lang_instruction = "IMPORTANT: Answer purely in GUJARATI script (ગુજરાતી). Do not use English unless defining a specific technical term."
-        elif language == "hinglish":
-             lang_instruction = "Answer in Hinglish (Hindi + English mix)."
+            lang_instruction = """
+            CRITICAL LANGUAGE RULE: 
+            - Respond ONLY in GUJARATI script (ગુજરાતી)
+            - Use simple, conversational Gujarati that rural students can understand
+            - For technical terms in English, provide Gujarati explanation alongside
+            - Examples: "Software Developer (સોફ્ટવેર ડેવલપર - કમ્પ્યુટર પ્રોગ્રામ બનાવનાર)"
+            - Use respectful, encouraging tone suitable for rural youth
+            """
+        else:
+            lang_instruction = """
+            LANGUAGE RULE:
+            - Respond in simple, clear ENGLISH
+            - Use conversational tone, avoid jargon
+            - If technical terms needed, explain them simply
+            - Keep sentences short and actionable
+            """
         
         # --- UdaanSetu.AI Platform Context ---
         platform_context = """
         --- ABOUT UDAANSETU.AI PLATFORM ---
-        UdaanSetu.AI (Udaan = Flight, Setu = Bridge) is an AI-powered Career Mentor Platform designed specifically for rural youth in India (Class 10-12 students and dropouts).
+        UdaanSetu.AI (Udaan = Flight, Setu = Bridge / ઉડાન = ઉડાન, સેતુ = પુલ) is Gujarat's first AI-powered Career Mentor for rural youth.
         
-        **Mission**: "Bridging Rural Dreams to Digital Futures" - We help rural students overcome the "Guidance Gap" by providing personalized, actionable, and culturally relevant career guidance.
+        **Mission**: "Bridging Rural Dreams to Digital Futures" / "ગ્રામીણ સપનાઓને ડિજિટલ ભવિષ્ય સાથે જોડવા"
         
         **Core Features**:
-        1. **Gamified Assessment Engine**: 20+ adaptive questions that map traits like Leadership, Mobility, Financial Attitude, Risk-taking, and Creativity
-        2. **Deep Profiling**: Analyzes Psychology (Risk, Creativity), Background (Family Income, Mobility), and Interests
-        3. **Dynamic Factor Analysis**: Scores users on "Billionaire Mindset", "Start-up Aptitude", or "Stable Job Fit"
-        4. **AI Career Reports (RAG)**: Provides SWOT Analysis and 3 tailored career paths:
-           - The Safe Path (Government/Stable Jobs)
-           - The Growth Path (Tech/Private Sector)
-           - The Dream Path (Entrepreneurship/Creative)
-        5. **Actionable Roadmaps**: 6-month step-by-step learning guides
-        6. **Bilingual Support**: Full support for English and Gujarati (ગુજરાતી)
-        7. **Interactive Chat Mentor**: Real-time career counseling with context-aware AI
-        8. **Resource Library**: Curated resources including YouTube videos, websites, government schemes, scholarships
+        1. **Smart Assessment (સ્માર્ટ મૂલ્યાંકન)**: 20+ questions that understand your personality, interests, and goals
+        2. **AI Career Reports**: Get 3 personalized career paths - Safe Path (Government Jobs), Growth Path (Tech/Corporate), Dream Path (Business/Creative)
+        3. **Bilingual Support**: Full Gujarati + English support for rural students
+        4. **Market Intelligence**: Real job market data from Gujarat & India
+        5. **Free Resources**: YouTube tutorials, government schemes, scholarships, free courses
+        6. **24/7 AI Mentor**: Chat anytime for career guidance, skill advice, or motivation
         
-        **Technology Stack**:
-        - Frontend: Next.js 14 with Tailwind CSS and Glassmorphism UI
-        - Backend: Python FastAPI for fast, async API
-        - AI/LLM: Google Gemini Pro for empathetic, context-aware responses
-        - Database: Firebase Firestore for scalable NoSQL storage
+        **Perfect For**:
+        - Class 10-12 students from rural areas
+        - Dropouts seeking alternative career paths
+        - Youth from low-income families needing cost-effective guidance
+        - Students who don't have access to expensive career counselors
         
-        **Problems We Solve**:
-        1. Information Asymmetry: Rural youth have internet but not curated, relevant career paths
-        2. Language Barrier: Most career advice is in English, alienating vernacular speakers
-        3. Generic Advice: Traditional tools give generic advice without considering economic reality, education level, or local constraints
-        
-        **Organization & Team**:
-        - **Organization**: FutureMinds (Social Impact Tech Initiative)
-        - **Lead Developer**: Dhruv Patel
-        - **UI Designer**: Prajwal Yadav
-        - **Frontend Developer**: Vasu Patil
-        -- **Backend Developer**: Sanjarkhan Kaliyani
-        - **Team Goal**: Democratizing career guidance for the next 100 million students in rural India.
-        
-        **Created By**: Team FutureMinds, led by Dhruv Patel 
-        **Made For**: India 🇮🇳 with ❤️
+        **Team**: FutureMinds - Led by Dhruv Patel (Full Stack + AI Engineer)
+        **Made in India 🇮🇳**: For Rural India, With Love ❤️
         """
         
-        # Check if query is about UdaanSetu platform (smart detection)
+        # Smart Query Detection
         query_lower = query.lower()
+        
+        # Platform-related queries
         is_platform_query = any(keyword in query_lower for keyword in [
-            'udaansetu', 'ઉડાનસેતુ', 'platform', 'app', 'પ્લેટફોર્મ', 
-            'what is', 'શું છે', 'features', 'વિશેષતા', 'team', 'ટીમ'
+            'udaansetu', 'ઉડાનસેતુ', 'platform', 'app', 'પ્લેટફોર્મ', 'about', 'વિશે',
+            'what is', 'શું છે', 'features', 'વિશેષતા', 'team', 'ટીમ', 'who made', 'કોણે બનાવ્યું'
+        ])
+        
+        # Skills/Learning queries
+        is_skills_query = any(keyword in query_lower for keyword in [
+            'skill', 'learn', 'study', 'course', 'tutorial', 'certification',
+            'કુશળતા', 'શીખવું', 'અભ્યાસ', 'કોર્સ', 'ટ્યુટોરિયલ'
+        ])
+        
+        # Job market queries
+        is_market_query = any(keyword in query_lower for keyword in [
+            'salary', 'job', 'demand', 'career', 'market', 'trend', 'future',
+            'પગાર', 'નોકરી', 'માંગ', 'કારકિર્દી', 'બજાર', 'ભવિષ્ય'
         ])
         
         # --- Context Strategy ---
         if len(history) > 0:
-            # LITE MODE: User is already chatting - minimal context
+            # FOLLOW-UP CONVERSATION: Optimized for speed
             if is_platform_query:
-                # Only add platform context if asking about the platform
                 context_str = f"""
-                You are a helpful Career Mentor for UdaanSetu.AI, helping {name}.
+                You are an AI Career Mentor for {name} on UdaanSetu.AI.
                 {lang_instruction}
                 
                 {platform_context}
                 
-                Explain our features, mission, and how we help rural students.
-                Keep it concise and focused.
+                Task: Answer questions about UdaanSetu.AI platform, features, and team.
+                Keep it concise (3-4 sentences) and welcoming.
+                """
+            elif is_skills_query:
+                # Skills-focused context
+                interests = bio.get("interest_domains", [])
+                context_str = f"""
+                You are an AI Career Mentor helping {name} learn new skills.
+                {lang_instruction}
+                
+                Student Context:
+                - Education: {education}
+                - Interests: {', '.join(interests) if interests else 'General'}
+                - Location: {location}
+                
+                Task: Recommend SPECIFIC skills, courses, and FREE resources.
+                - Prioritize FREE resources (YouTube, Coursera free courses, government programs)
+                - Give step-by-step roadmap (Week 1, Week 2, etc.)
+                - Include Hindi/Gujarati resources if available
+                
+                Keep responses practical and actionable (3-5 sentences).
+                """
+            elif is_market_query:
+                # Job market context
+                report = bio.get("ai_report", {})
+                if report is None or isinstance(report, str):
+                    report = {}
+                recs = report.get("recommendations", []) if report else []
+                top_rec = recs[0].get("title", "General Path") if recs and len(recs) > 0 else "General Path"
+
+                
+                context_str = f"""
+                You are an AI Career Mentor helping {name} understand job markets.
+                {lang_instruction}
+                
+                Student's Top Career Path: {top_rec}
+                Location: {location}
+                
+                Task: Provide REALISTIC job market insights:
+                - Entry-level salary ranges in Gujarat/India
+                - Current demand (High/Medium/Low)
+                - Skills needed
+                - Growth prospects (1 year, 3 years, 5 years)
+                
+                Be honest about challenges but encouraging. Keep responses concise (4-5 sentences).
                 """
             else:
-                # Ultra-lite mode for career questions - FAST
+                # General career guidance - Ultra-lite
                 context_str = f"""
-                You are a helpful Career Mentor for {name}.
+                You are a supportive Career Mentor for {name}.
                 {lang_instruction}
-                Keep responses short (2-3 sentences), practical, and encouraging.
-                Focus on actionable advice based on previous conversation context.
+                
+                Provide practical, encouraging advice based on conversation context.
+                Keep responses brief (2-3 sentences) and actionable.
                 """
         else:
-            # RICH MODE: First interaction.
-            # We inject the full computed report to "seed" the conversation.
+            # FIRST INTERACTION: Rich context to seed the conversation
             report = bio.get("ai_report", {})
-            if isinstance(report, str): report = {} # Safety check
+            if report is None or isinstance(report, str):
+                report = {}  # Safety check
             
-            # Extract top recommendation safely
-            recs = report.get("recommendations", [])
-            top_rec = recs[0].get("title", "General Path") if recs else "General Path"
+            # Extract comprehensive profile
+            recs = report.get("recommendations", []) if report else []
+            top_rec = recs[0].get("title", "General Path") if recs and len(recs) > 0 else "General Path"
+            strengths = report.get("topStrengths", []) if report else []
+            skills = report.get("recommendedSkills", []) if report else []
+
             
             if is_platform_query:
                 # First message about platform
@@ -130,29 +196,44 @@ class MentorChatService:
                 {platform_context}
                 
                 --- USER PROFILE ---
-                Education: {bio.get("education", "Unknown")}
-                Location: {bio.get("location", "Gujarat")}
+                Education: {education}
+                Location: {location}
                 
                 {lang_instruction}
-                Explain how UdaanSetu.AI helps rural students. Be welcoming and concise.
+                
+                Task: Welcome them and explain how UdaanSetu.AI helps rural students.
+                Be warm, concise (3-4 sentences), and inspiring.
                 """
             else:
-                # First message about career - focused context, FASTER
+                # First career guidance message - Rich context
+                interests = bio.get("interest_domains", [])
                 context_str = f"""
                 You are an AI Career Mentor for {name} on UdaanSetu.AI.
-                
-                --- USER PROFILE ---
-                Education: {bio.get("education", "Unknown")}
-                Location: {bio.get("location", "Gujarat")}
-                Interests: {bio.get("interest_domains", [])}
-                
-                --- CAREER SUMMARY ---
-                Top Path: {top_rec}
-                Readiness: {report.get("careerReadiness", "Unknown")}%
-                Strengths: {", ".join(report.get("topStrengths", [])[:3])}
-                
                 {lang_instruction}
-                Help with career guidance. Be friendly and practical. Keep responses concise (3-4 sentences).
+                
+                --- COMPREHENSIVE STUDENT PROFILE ---
+                Education: {education}
+                Location: {location}
+                Interests: {', '.join(interests) if interests else 'Exploring options'}
+                
+                --- AI ASSESSMENT RESULTS ---
+                Top Career Path: {top_rec}
+                Career Readiness: {report.get("careerReadiness", "Under evaluation")}%
+                Top Strengths: {', '.join(strengths[:3]) if strengths else 'Being assessed'}
+                Priority Skills to Learn: {', '.join([s.get('name', '') for s in skills[:3]]) if skills else 'To be determined'}
+                
+                --- YOUR ROLE ---
+                - Provide personalized, practical career guidance
+                - Suggest FREE learning resources (YouTube, Coursera, government schemes)
+                - Be honest about challenges but always encouraging
+                - Help with skills, roadmaps, salary expectations, and career paths
+                - Keep responses concise (3-5 sentences) and actionable
+                
+                Remember: {name} is from a rural area with limited resources. Prioritize:
+                1. Low-cost or FREE learning options
+                2. Remote/online opportunities
+                3. Realistic timelines (3-6 months for basic skills)
+                4. Local Gujarat opportunities when relevant
                 """
         
         # Build Message Chain

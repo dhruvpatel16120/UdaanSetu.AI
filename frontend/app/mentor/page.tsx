@@ -281,38 +281,141 @@ export default function MentorPage() {
                                         className={cn(
                                             "px-4 py-3 rounded-2xl shadow-lg transition-all duration-200",
                                             message.role === "assistant"
-                                                ? "glass-card bg-white/80 dark:bg-foreground/10 text-foreground border border-foreground/20 dark:border-foreground/10 backdrop-blur-xl"
-                                                : "bg-gradient-to-r from-primary-indigo to-primary-navy text-white shadow-xl shadow-primary-indigo/30"
+                                                ? "bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600"
+                                                : "bg-gradient-to-r from-primary-indigo to-primary-navy shadow-xl shadow-primary-indigo/30"
                                         )}
+                                        style={message.role === "assistant" ? {
+                                            backgroundColor: 'rgb(255, 255, 255)',
+                                            color: 'rgb(0, 0, 0)'
+                                        } : {
+                                            background: 'linear-gradient(to right, rgb(67, 56, 202), rgb(30, 27, 75))',
+                                            color: 'rgb(255, 255, 255)'
+                                        }}
                                     >
-                                        <div className={cn(
-                                            "text-[15px] leading-relaxed prose prose-sm max-w-none",
-                                            message.role === "assistant" ? "text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-strong:font-bold prose-li:text-foreground" : "text-white prose-headings:text-white prose-strong:text-white prose-strong:font-bold prose-li:text-white"
-                                        )}>
+                                        <div 
+                                            className={cn(
+                                                "text-[16px] leading-relaxed prose prose-sm max-w-none font-bold",
+                                                message.role === "assistant" 
+                                                    ? "text-black dark:text-white" 
+                                                    : "text-white"
+                                            )}
+                                            style={message.role === "assistant" ? {
+                                                color: 'rgb(0, 0, 0)'
+                                            } : {
+                                                color: 'rgb(255, 255, 255)'
+                                            }}
+                                        >
                                             <ReactMarkdown
                                                 remarkPlugins={[remarkGfm]}
                                                 components={{
-                                                    // Custom styling for markdown elements
-                                                    p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
-                                                    strong: ({node, ...props}) => <strong className="font-bold text-accent" {...props} />,
-                                                    ul: ({node, ...props}) => <ul className="list-disc list-inside my-2 space-y-1" {...props} />,
-                                                    ol: ({node, ...props}) => <ol className="list-decimal list-inside my-2 space-y-1" {...props} />,
-                                                    li: ({node, ...props}) => <li className="ml-2" {...props} />,
-                                                    h1: ({node, ...props}) => <h1 className="text-xl font-bold mb-2 mt-3 first:mt-0" {...props} />,
-                                                    h2: ({node, ...props}) => <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0" {...props} />,
-                                                    h3: ({node, ...props}) => <h3 className="text-base font-bold mb-1 mt-2 first:mt-0" {...props} />,
-                                                    code: ({node, ...props}: any) => 
-                                                        (props as any).inline ? 
-                                                            <code className="bg-foreground/10 px-1 py-0.5 rounded text-sm" {...props} /> : 
-                                                            <code className="block bg-foreground/10 p-2 rounded my-2" {...props} />,
-                                                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-accent pl-3 italic my-2" {...props} />,
+                                                    p: ({node, children, ...props}) => (
+                                                        <p 
+                                                            className="mb-2 last:mb-0 font-bold"
+                                                            style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
+                                                            {...props}
+                                                        >
+                                                            {children}
+                                                        </p>
+                                                    ),
+                                                    strong: ({node, children, ...props}) => (
+                                                        <strong 
+                                                            className="font-extrabold"
+                                                            style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 200, 100)' }}
+                                                            {...props}
+                                                        >
+                                                            {children}
+                                                        </strong>
+                                                    ),
+                                                    ul: ({node, children, ...props}) => (
+                                                        <ul 
+                                                            className="list-disc list-inside my-2 space-y-1 font-bold"
+                                                            style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
+                                                            {...props}
+                                                        >
+                                                            {children}
+                                                        </ul>
+                                                    ),
+                                                    ol: ({node, children, ...props}) => (
+                                                        <ol 
+                                                            className="list-decimal list-inside my-2 space-y-1 font-bold"
+                                                            style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
+                                                            {...props}
+                                                        >
+                                                            {children}
+                                                        </ol>
+                                                    ),
+                                                    li: ({node, children, ...props}) => (
+                                                        <li 
+                                                            className="ml-2 font-bold"
+                                                            style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
+                                                            {...props}
+                                                        >
+                                                            {children}
+                                                        </li>
+                                                    ),
+                                                    h1: ({node, children, ...props}) => (
+                                                        <h1 
+                                                            className="text-xl font-extrabold mb-2 mt-3 first:mt-0"
+                                                            style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
+                                                            {...props}
+                                                        >
+                                                            {children}
+                                                        </h1>
+                                                    ),
+                                                    h2: ({node, children, ...props}) => (
+                                                        <h2 
+                                                            className="text-lg font-extrabold mb-2 mt-3 first:mt-0"
+                                                            style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
+                                                            {...props}
+                                                        >
+                                                            {children}
+                                                        </h2>
+                                                    ),
+                                                    h3: ({node, children, ...props}) => (
+                                                        <h3 
+                                                            className="text-base font-extrabold mb-1 mt-2 first:mt-0"
+                                                            style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
+                                                            {...props}
+                                                        >
+                                                            {children}
+                                                        </h3>
+                                                    ),
+                                                    code: ({node, inline, children, ...props}: any) => {
+                                                        const isInline = inline;
+                                                        return isInline ? (
+                                                            <code 
+                                                                className="px-1 py-0.5 rounded text-sm font-bold bg-slate-200 dark:bg-slate-700"
+                                                                style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
+                                                                {...props}
+                                                            >
+                                                                {children}
+                                                            </code>
+                                                        ) : (
+                                                            <code 
+                                                                className="block p-2 rounded my-2 text-sm font-bold bg-slate-200 dark:bg-slate-700"
+                                                                style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
+                                                                {...props}
+                                                            >
+                                                                {children}
+                                                            </code>
+                                                        );
+                                                    },
+                                                    blockquote: ({node, children, ...props}) => (
+                                                        <blockquote 
+                                                            className="border-l-4 border-accent pl-3 italic my-2 font-bold"
+                                                            style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
+                                                            {...props}
+                                                        >
+                                                            {children}
+                                                        </blockquote>
+                                                    ),
                                                 }}
                                             >
                                                 {message.content}
                                             </ReactMarkdown>
                                         </div>
                                     </motion.div>
-                                    <span className="text-xs text-foreground/60 dark:text-foreground/50 mt-1 px-2" suppressHydrationWarning>
+                                    <span className="text-xs text-slate-600 dark:text-slate-400 mt-1 px-2" suppressHydrationWarning>
                                         {message.timestamp.toLocaleTimeString([], {
                                             hour: "2-digit",
                                             minute: "2-digit",

@@ -30,9 +30,11 @@ def read_root():
 
 # Include Routers
 app.include_router(assessment.router, prefix="/api/assessment", tags=["Assessment"])
-from app.api.routers import chat, user
+from app.api.routers import chat, user, roadmap
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 app.include_router(user.router, prefix="/api/user", tags=["User"])
+app.include_router(roadmap.router, prefix="/api/roadmap", tags=["Career Roadmap"])
 
 from app.api.routers import market
 app.include_router(market.router, prefix="/api/market", tags=["Market Intelligence"])
+
