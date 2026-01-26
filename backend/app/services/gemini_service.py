@@ -114,29 +114,12 @@ async def generate_career_report(student_profile: dict) -> dict:
     # Construct the prompt
     bio = student_profile.get("generated_bio", {})
     
-    # --- 1. RAG LAYER A: Live Market Research ---
-    from app.services.market_intelligence import market_service
+    # --- OPTIMIZATION: Skip Live Web Research for Speed ---
+    # The user reported "too long time". Web research via DuckDuckGo is the bottleneck.
+    # We will rely on the LLM's internal knowledge base for now.
     
-    interests = bio.get("interest_domains", [])
-    if not interests and "traits" in bio:
-            interests = [bio["traits"].get("interest_domain", "General")]
-    
-    user_query = f"Career opportunities for {', '.join(interests)} with {bio.get('education', '12th')} background"
-    
-    print(f"Performing Live RAG Web Research for: {user_query}...")
-    web_research = await market_service.perform_web_research(user_query)
-    
-    # --- 2. RAG LAYER B: Vector Knowledge Retrieval ---
-    from app.services.vector_store import vector_service
-    
+    web_research = {"stats_context": "Using internal knowledge base for speed optimization."}
     rag_context = ""
-    try:
-        search_query = user_query
-        docs = await vector_service.similarity_search(search_query, k=3)
-        if docs:
-            rag_context = "\n".join([f"- {d.page_content}" for d in docs])
-    except Exception as e:
-        print(f"Vector Retrieval Failed: {e}")
 
     # --- 3. SYNTHESIS LAYER: Construct The Agent Prompt ---
     prompt = f"""

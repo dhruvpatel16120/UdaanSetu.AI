@@ -57,11 +57,11 @@ export function Navbar() {
       "sticky top-0 left-0 right-0 z-50 transition-all duration-500 w-full border-b backdrop-blur-2xl backdrop-saturate-150",
       scrolled
         ? theme === "light"
-          ? "bg-white/80 border-black/10 shadow-lg shadow-black/5"
-          : "bg-primary-navy/80 border-white/10 shadow-2xl shadow-black/40"
+          ? "bg-white/90 border-black/10 shadow-lg shadow-black/5"
+          : "bg-slate-950/90 border-white/10 shadow-2xl shadow-black/40"
         : theme === "light"
-          ? "bg-muted/60 border-black/5 shadow-sm"
-          : "bg-muted/20 border-white/5 shadow-sm"
+          ? "bg-white/40 border-black/5 shadow-sm"
+          : "bg-slate-950/20 border-white/5 shadow-sm"
     )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative">
         {/* Animated Background Highlight for Links */}
@@ -172,7 +172,7 @@ export function Navbar() {
           {status === "authenticated" && user ? (
             <div className="flex items-center space-x-3">
               <Link
-                href="/dashboard/profile"
+                href={ROUTES.profile}
                 className={cn(
                   "hidden lg:block text-sm font-medium hover:text-accent transition-colors",
                   theme === "light" ? "text-black/70" : "text-white/70"
@@ -247,8 +247,8 @@ export function Navbar() {
             "absolute top-full left-0 right-0 mt-4 mx-2 p-6 rounded-3xl border md:hidden animate-in-scale",
             "backdrop-blur-3xl shadow-2xl",
             theme === "light"
-              ? "bg-white/90 border-black/5 shadow-black/10"
-              : "bg-primary-navy/90 border-white/5 shadow-black/50"
+              ? "bg-white/95 border-black/5 shadow-black/10"
+              : "bg-slate-900/95 border-white/5 shadow-black/50"
           )}>
             <div className="flex flex-col space-y-4">
               {navigation.map((item) => (

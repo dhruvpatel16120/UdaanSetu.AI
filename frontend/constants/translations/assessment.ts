@@ -7,12 +7,32 @@ export const assessmentTranslations = {
     "assessment.signInRequired": "Sign In Required",
     "assessment.signInRequiredDesc": "You must be signed in to access the career assessment.",
     "assessment.signInToContinue": "Sign In to Continue",
-    
+
     // Navigation
     "assessment.previous": "Previous",
     "assessment.next": "Next",
     "assessment.complete": "Complete",
-    
+
+    // Modern Assessment Keys
+    "assessment.discoveryTitle": "Unlock your future with India's most advanced career assessment engine. Guided by AI, built for you.",
+    "assessment.startDiscovery": "Start Discovery",
+    "assessment.basicProfile": "Basic Profile",
+    "assessment.basicProfileDesc": "Tell us a bit about yourself to seed the AI engine.",
+    "assessment.fullName": "Full Name",
+    "assessment.birthDate": "Birth Date",
+    "assessment.location": "Location (Gujarat)",
+    "assessment.selectDistrict": "Select District",
+    "assessment.back": "Back",
+    "assessment.continue": "Continue",
+    "assessment.stepCounter": "Step {current} of {total}",
+    "assessment.finishJourney": "Finish Journey",
+    "assessment.thinking": "The AI is thinking...",
+    "assessment.journeyComplete": "Journey Complete!",
+    "assessment.blueprintReady": "Your personal career blueprint is ready.",
+    "assessment.redirectingDashboard": "Redirecting to your dashboard...",
+    "assessment.missionHalted": "Something went wrong",
+    "assessment.retryQuest": "Retry Quest",
+
     // Completion
     "assessment.completedTitle": "Assessment Complete!",
     "assessment.completedDesc": "Thank you for completing the career assessment.",
@@ -21,11 +41,11 @@ export const assessmentTranslations = {
     "assessment.yourPersonality": "Your Personality",
     "assessment.viewRecommendations": "View Career Recommendations",
     "assessment.retakeAssessment": "Retake Assessment",
-    
+
     // Tips
     "assessment.tipTitle": "Tip:",
     "assessment.tipDesc": "Answer honestly based on your true preferences. There are no right or wrong answers!",
-    
+
     // Categories
     "assessment.interests": "Interests",
     "assessment.personality": "Personality",
@@ -45,7 +65,7 @@ export const assessmentTranslations = {
     "assessment.male": "Male",
     "assessment.female": "Female",
     "assessment.other": "Other",
-    
+
     // Errors & States
     "assessment.loading": "Loading Assessment...",
     "assessment.errorTitle": "Something went wrong",
@@ -56,6 +76,37 @@ export const assessmentTranslations = {
     "assessment.errorDob": "Date of birth is required",
     "assessment.errorAge": "Age must be between 10 and 50 years",
     "assessment.errorLocation": "Please select your location",
+    "assessment.education": "Education",
+    "assessment.familybackground": "Family Background",
+    "assessment.familyincome": "Family Income",
+    "assessment.interest": "Interest",
+    "assessment.hobbies": "Hobbies",
+    "assessment.psychology": "Psychology",
+    "assessment.vision": "Vision",
+    "assessment.expectations": "Expectations",
+    "assessment.selfreflection": "Self Reflection",
+    "assessment.mobility": "Mobility",
+    "assessment.processing": "Processing...",
+    "assessment.analyzingPath": "Analyzing your path...",
+    "assessment.craftingRoadmap": "Crafting your personalized career roadmap...",
+    "assessment.errorStart": "Failed to start assessment",
+    "assessment.errorConnect": "Could not connect to the AI engine. Please try again.",
+    "assessment.errorConnectionLost": "Connection lost",
+    "assessment.errorTimeout": "AI Engine timeout. Please check your internet.",
+    "assessment.errorSubmit": "Submission failed",
+    "assessment.errorGenerateReport": "Failed to generate report. Please try again.",
+    "assessment.statusAnalyzing": "Analyzing your responses...",
+    "assessment.statusMapping": "Mapping your traits to industry profiles...",
+    "assessment.statusSearching": "Searching for your best career matches...",
+    "assessment.statusContextualizing": "Contextualizing based on market trends...",
+    "assessment.statusGenerating": "Generating next personalized question...",
+    "assessment.placeholderPerspective": "Type your perspective here...",
+    "assessment.sectionDesc": "This data helps our AI understand your unique DNA to map paths that truly resonate with your life.",
+    "assessment.district.ahmedabad": "Ahmedabad",
+    "assessment.district.surat": "Surat",
+    "assessment.district.vadodara": "Vadodara",
+    "assessment.district.rajkot": "Rajkot",
+    "assessment.district.other": "Other",
   },
   gu: {
     // Progress
@@ -65,12 +116,32 @@ export const assessmentTranslations = {
     "assessment.signInRequired": "સાઇન ઇન કરવું જરૂરી છે",
     "assessment.signInRequiredDesc": "કારકિર્દી મૂલ્યાંકન શરૂ કરવા માટે તમારે સાઇન ઇન કરવું આવશ્યક છે.",
     "assessment.signInToContinue": "ચાલુ રાખવા માટે સાઇન ઇન કરો",
-    
+
     // Navigation
     "assessment.previous": "પાછળ",
     "assessment.next": "આગળ",
     "assessment.complete": "પૂર્ણ",
-    
+
+    // Modern Assessment Keys
+    "assessment.discoveryTitle": "ભારતના સૌથી અદ્યતન કારકિર્દી મૂલ્યાંકન એન્જિન સાથે તમારું ભવિષ્ય અનલૉક કરો. AI દ્વારા સંચાલિત, તમારા માટે બનાવેલ.",
+    "assessment.startDiscovery": "શોધ શરૂ કરો",
+    "assessment.basicProfile": "મૂળભૂત માહિતી",
+    "assessment.basicProfileDesc": "AI એન્જિન શરૂ કરવા માટે તમારા વિશે થોડું જણાવો.",
+    "assessment.fullName": "પૂરું નામ",
+    "assessment.birthDate": "જન્મ તારીખ",
+    "assessment.location": "સ્થાન (ગુજરાત)",
+    "assessment.selectDistrict": "જિલ્લો પસંદ કરો",
+    "assessment.back": "પાછળ",
+    "assessment.continue": "ચાલુ રાખો",
+    "assessment.stepCounter": "પગલું {current} માંથી {total}",
+    "assessment.finishJourney": "યાત્રા પૂર્ણ કરો",
+    "assessment.thinking": "AI વિચારી રહ્યું છે...",
+    "assessment.journeyComplete": "યાત્રા પૂર્ણ!",
+    "assessment.blueprintReady": "તમારી વ્યક્તિગત કારકિર્દી બ્લૂપ્રિન્ટ તૈયાર છે.",
+    "assessment.redirectingDashboard": "તમારા ડેશબોર્ડ પર લઈ જઈ રહ્યા છીએ...",
+    "assessment.missionHalted": "કંઈક ખોટું થયું",
+    "assessment.retryQuest": "ફરી પ્રયાસ કરો",
+
     // Completion
     "assessment.completedTitle": "મૂલ્યાંકન પૂર્ણ!",
     "assessment.completedDesc": "કારકિર્દી મૂલ્યાંકન પૂર્ણ કરવા બદલ આભાર.",
@@ -79,11 +150,11 @@ export const assessmentTranslations = {
     "assessment.yourPersonality": "તમારું વ્યક્તિત્વ",
     "assessment.viewRecommendations": "કારકિર્દી ભલામણો જુઓ",
     "assessment.retakeAssessment": "મૂલ્યાંકન ફરીથી લો",
-    
+
     // Tips
     "assessment.tipTitle": "ટિપ:",
     "assessment.tipDesc": "તમારી સાચી પસંદગીઓના આધારે પ્રામાણિકપણે જવાબ આપો. કોઈ સાચા કે ખોટા જવાબો નથી!",
-    
+
     // Categories
     "assessment.interests": "રુચિઓ",
     "assessment.personality": "વ્યક્તિત્વ",
@@ -104,7 +175,7 @@ export const assessmentTranslations = {
     "assessment.male": "પુરુષ",
     "assessment.female": "સ્ત્રી",
     "assessment.other": "અન્ય",
-    
+
     // Errors & States
     "assessment.loading": "મૂલ્યાંકન લોડ કરી રહ્યું છે...",
     "assessment.errorTitle": "કંઈક ખોટું થયું",
@@ -115,5 +186,36 @@ export const assessmentTranslations = {
     "assessment.errorDob": "જન્મ તારીખ આવશ્યક છે",
     "assessment.errorAge": "ઉંમર 10 થી 50 વર્ષની વચ્ચે હોવી જોઈએ",
     "assessment.errorLocation": "કૃપા કરીને તમારું સ્થાન પસંદ કરો",
+    "assessment.education": "શિક્ષણ",
+    "assessment.familybackground": "કૌટુંબિક પૃષ્ઠભૂમિ",
+    "assessment.familyincome": "કૌટુંબિક આવક",
+    "assessment.interest": "રુચિ",
+    "assessment.hobbies": "શોખ",
+    "assessment.psychology": "મનોવિજ્ઞાન",
+    "assessment.vision": "દ્રષ્ટિકોણ",
+    "assessment.expectations": "અપેક્ષાઓ",
+    "assessment.selfreflection": "આત્મ-નિરીક્ષણ",
+    "assessment.mobility": "ગતિશીલતા",
+    "assessment.processing": "પ્રક્રિયા કરી રહ્યાં છીએ...",
+    "assessment.analyzingPath": "તમારા માર્ગનું વિશ્લેષણ કરી રહ્યાં છીએ...",
+    "assessment.craftingRoadmap": "તમારા વ્યક્તિગત કારકિર્દી રોડમેપ બનાવી રહ્યાં છીએ...",
+    "assessment.errorStart": "મૂલ્યાંકન શરૂ કરવામાં નિષ્ફળ",
+    "assessment.errorConnect": "AI એન્જિન સાથે કનેક્ટ થઈ શક્યું નથી. કૃપા કરીને ફરી પ્રયાસ કરો.",
+    "assessment.errorConnectionLost": "કનેક્શન કપાઈ ગયું",
+    "assessment.errorTimeout": "AI એન્જિન સમય સમાપ્ત થઈ ગયો. કૃપા કરીને તમારું ઇન્ટરનેટ તપાસો.",
+    "assessment.errorSubmit": "સબમિશન નિષ્ફળ",
+    "assessment.errorGenerateReport": "રિપોર્ટ જનરેટ કરવામાં નિષ્ફળ. કૃપા કરીને ફરી પ્રયાસ કરો.",
+    "assessment.statusAnalyzing": "તમારા જવાબોનું વિશ્લેષણ કરી રહ્યાં છીએ...",
+    "assessment.statusMapping": "તમારા લક્ષણોને ઉદ્યોગ પ્રોફાઇલ્સ સાથે જોડી રહ્યાં છીએ...",
+    "assessment.statusSearching": "તમારા માટે શ્રેષ્ઠ કારકિર્દી મેચો શોધી રહ્યાં છીએ...",
+    "assessment.statusContextualizing": "બજારના વલણોના આધારે વિશ્લેષણ કરી રહ્યાં છીએ...",
+    "assessment.statusGenerating": "આગામી વ્યક્તિગત પ્રશ્ન તૈયાર કરી રહ્યાં છીએ...",
+    "assessment.placeholderPerspective": "તમારો પરિપ્રેક્ષ્ય અહીં લખો...",
+    "assessment.sectionDesc": "આ ડેટા અમારા AI ને તમારી અનન્ય ક્ષમતા સમજવામાં મદદ કરે છે જેથી તમારા જીવન સાથે ખરેખર પડઘો પાડતા માર્ગો શોધી શકાય.",
+    "assessment.district.ahmedabad": "અમદાવાદ",
+    "assessment.district.surat": "સુરત",
+    "assessment.district.vadodara": "વડોદરા",
+    "assessment.district.rajkot": "રાજકોટ",
+    "assessment.district.other": "અન્ય",
   }
 } as const;

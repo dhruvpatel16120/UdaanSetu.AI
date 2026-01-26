@@ -42,6 +42,14 @@ async def create_or_update_user(firebase_id: str, email: str, name: Optional[str
 async def update_user_profile(user_id: str, profile_data: Dict[str, Any]):
     db = await get_db()
     try:
+        # Separate 'name' which belongs to User model
+        name = profile_data.pop("name", None)
+        if name:
+            await db.user.update(
+                where={"id": user_id},
+                data={"name": name}
+            )
+
         # Check if profile exists
         profile = await db.profile.find_unique(where={"userId": user_id})
         
