@@ -33,7 +33,7 @@ function Write-Section {
 function Setup-Backend {
     try {
         # Get the script directory (backend folder)
-        $BackendPath = Split-Path -Parent $MyInvocation.ScriptName
+        $BackendPath = $PSScriptRoot
         if (-not $BackendPath) {
             $BackendPath = Get-Location
         }
@@ -49,7 +49,7 @@ function Setup-Backend {
         $VenvPath = Join-Path $BackendPath "venv"
         
         if (Test-Path $VenvPath) {
-            Write-ColorOutput "✓ Virtual environment already exists at: $VenvPath" $SuccessColor
+            Write-ColorOutput "[OK] Virtual environment already exists at: $VenvPath" $SuccessColor
         } else {
             Write-ColorOutput "Creating new virtual environment..." $WarningColor
             
@@ -58,9 +58,9 @@ function Setup-Backend {
                 if ($LASTEXITCODE -ne 0) {
                     throw "Failed to create virtual environment"
                 }
-                Write-ColorOutput "✓ Virtual environment created successfully" $SuccessColor
+                Write-ColorOutput "[OK] Virtual environment created successfully" $SuccessColor
             } catch {
-                Write-ColorOutput "✗ Error creating virtual environment: $_" $ErrorColor
+                Write-ColorOutput "[ERROR] Error creating virtual environment: $_" $ErrorColor
                 Write-ColorOutput "Trying alternative method..." $WarningColor
                 
                 # Try with virtualenv package
@@ -70,7 +70,7 @@ function Setup-Backend {
                 if (-not (Test-Path $VenvPath)) {
                     throw "Failed to create virtual environment with alternative method"
                 }
-                Write-ColorOutput "✓ Virtual environment created with virtualenv" $SuccessColor
+                Write-ColorOutput "[OK] Virtual environment created with virtualenv" $SuccessColor
             }
         }
 
@@ -89,16 +89,16 @@ function Setup-Backend {
             # Activate venv
             & $ActivateScript
             
-            Write-ColorOutput "✓ Virtual environment activated" $SuccessColor
+            Write-ColorOutput "[OK] Virtual environment activated" $SuccessColor
             
             # Upgrade pip
             Write-ColorOutput "Upgrading pip..." $InfoColor
             & python -m pip install --upgrade pip
             
             if ($LASTEXITCODE -ne 0) {
-                Write-ColorOutput "⚠ Warning: Failed to upgrade pip, continuing anyway..." $WarningColor
+                Write-ColorOutput "[WARNING] Warning: Failed to upgrade pip, continuing anyway..." $WarningColor
             } else {
-                Write-ColorOutput "✓ Pip upgraded successfully" $SuccessColor
+                Write-ColorOutput "[OK] Pip upgraded successfully" $SuccessColor
             }
             
             # Check if requirements.txt exists
@@ -114,10 +114,10 @@ function Setup-Backend {
                 throw "Failed to install requirements"
             }
             
-            Write-ColorOutput "✓ All requirements installed successfully" $SuccessColor
+            Write-ColorOutput "[OK] All requirements installed successfully" $SuccessColor
             
         } catch {
-            Write-ColorOutput "✗ Error during requirements installation: $_" $ErrorColor
+            Write-ColorOutput "[ERROR] Error during requirements installation: $_" $ErrorColor
             throw
         }
 
@@ -138,10 +138,10 @@ function Setup-Backend {
                 throw "Prisma generate failed"
             }
             
-            Write-ColorOutput "✓ Prisma client generated successfully" $SuccessColor
+            Write-ColorOutput "[OK] Prisma client generated successfully" $SuccessColor
             
         } catch {
-            Write-ColorOutput "✗ Error generating Prisma client: $_" $ErrorColor
+            Write-ColorOutput "[ERROR] Error generating Prisma client: $_" $ErrorColor
             Write-ColorOutput "This might be due to missing Prisma CLI. Installing..." $WarningColor
             
             try {
@@ -152,9 +152,9 @@ function Setup-Backend {
                     throw "Prisma generate failed after reinstall"
                 }
                 
-                Write-ColorOutput "✓ Prisma client generated successfully" $SuccessColor
+                Write-ColorOutput "[OK] Prisma client generated successfully" $SuccessColor
             } catch {
-                Write-ColorOutput "✗ Failed to generate Prisma client: $_" $ErrorColor
+                Write-ColorOutput "[ERROR] Failed to generate Prisma client: $_" $ErrorColor
                 throw
             }
         }
@@ -166,10 +166,10 @@ function Setup-Backend {
             $EnvPath = Join-Path $BackendPath ".env"
             
             if (-not (Test-Path $EnvPath)) {
-                Write-ColorOutput "⚠ Warning: .env file not found at: $EnvPath" $WarningColor
+                Write-ColorOutput "[WARNING] Warning: .env file not found at: $EnvPath" $WarningColor
                 Write-ColorOutput "Please create a .env file with DATABASE_URL and other required variables" $WarningColor
             } else {
-                Write-ColorOutput "✓ .env file found" $SuccessColor
+                Write-ColorOutput "[OK] .env file found" $SuccessColor
                 
                 # Check for required variables
                 $EnvContent = Get-Content $EnvPath -Raw
@@ -184,14 +184,14 @@ function Setup-Backend {
                 }
                 
                 if ($MissingVars.Count -gt 0) {
-                    Write-ColorOutput "⚠ Warning: Missing environment variables: $($MissingVars -join ', ')" $WarningColor
+                    Write-ColorOutput "[WARNING] Warning: Missing environment variables: $($MissingVars -join ', ')" $WarningColor
                 } else {
-                    Write-ColorOutput "✓ All required environment variables are present" $SuccessColor
+                    Write-ColorOutput "[OK] All required environment variables are present" $SuccessColor
                 }
             }
             
         } catch {
-            Write-ColorOutput "⚠ Warning: Error checking environment variables: $_" $WarningColor
+            Write-ColorOutput "[WARNING] Warning: Error checking environment variables: $_" $WarningColor
         }
 
         # Step 5: Test Database Connection
@@ -214,7 +214,7 @@ try:
     async def test_connection():
         db = Prisma()
         await db.connect()
-        print("✓ Database connection successful")
+        print("[OK] Database connection successful")
         await db.disconnect()
         return True
     
@@ -223,12 +223,12 @@ try:
     sys.exit(0)
     
 except ImportError as e:
-    print(f"✗ Import error: {e}")
+    print(f"[ERROR] Import error: {e}")
     print("Make sure all dependencies are installed")
     sys.exit(1)
     
 except Exception as e:
-    print(f"✗ Database connection failed: {e}")
+    print(f"[ERROR] Database connection failed: {e}")
     print("Please check your DATABASE_URL in .env file")
     sys.exit(1)
 "@
@@ -240,9 +240,9 @@ except Exception as e:
             & python $TestScriptPath
             
             if ($LASTEXITCODE -eq 0) {
-                Write-ColorOutput "✓ Database connection test passed" $SuccessColor
+                Write-ColorOutput "[OK] Database connection test passed" $SuccessColor
             } else {
-                Write-ColorOutput "✗ Database connection test failed" $ErrorColor
+                Write-ColorOutput "[ERROR] Database connection test failed" $ErrorColor
                 Write-ColorOutput "Please verify your DATABASE_URL in the .env file" $WarningColor
             }
             
@@ -250,7 +250,7 @@ except Exception as e:
             Remove-Item $TestScriptPath -ErrorAction SilentlyContinue
             
         } catch {
-            Write-ColorOutput "✗ Error testing database connection: $_" $ErrorColor
+            Write-ColorOutput "[ERROR] Error testing database connection: $_" $ErrorColor
             Write-ColorOutput "Please manually verify your database connection" $WarningColor
         }
 
@@ -269,20 +269,20 @@ except Exception as e:
                     throw "Prisma db push failed"
                 }
                 
-                Write-ColorOutput "✓ Database schema synced successfully" $SuccessColor
+                Write-ColorOutput "[OK] Database schema synced successfully" $SuccessColor
             } catch {
-                Write-ColorOutput "✗ Error syncing database schema: $_" $ErrorColor
+                Write-ColorOutput "[ERROR] Error syncing database schema: $_" $ErrorColor
                 Write-ColorOutput "You can manually run 'prisma db push' later" $WarningColor
             }
         } else {
-            Write-ColorOutput "⊘ Skipping database schema sync" $InfoColor
+            Write-ColorOutput "[SKIP] Skipping database schema sync" $InfoColor
             Write-ColorOutput "You can run 'prisma db push' manually when needed" $InfoColor
         }
 
         # Final Summary
         Write-Section "Setup Complete!"
         
-        Write-ColorOutput "✓ Backend setup completed successfully!" $SuccessColor
+        Write-ColorOutput "[OK] Backend setup completed successfully!" $SuccessColor
         Write-Host ""
         Write-ColorOutput "Next Steps:" $InfoColor
         Write-ColorOutput "1. Activate the virtual environment: .\venv\Scripts\Activate.ps1" $InfoColor
@@ -292,7 +292,7 @@ except Exception as e:
         
     } catch {
         Write-Section "Setup Failed"
-        Write-ColorOutput "✗ Backend setup failed with error:" $ErrorColor
+        Write-ColorOutput "[ERROR] Backend setup failed with error:" $ErrorColor
         Write-ColorOutput $_.Exception.Message $ErrorColor
         Write-ColorOutput $_.ScriptStackTrace $ErrorColor
         exit 1
