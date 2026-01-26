@@ -14,26 +14,26 @@ const mergeTranslations = (...translationObjects: Record<string, string>[]) => {
 };
 
 export const translations = {
-  en: mergeTranslations(
-    navTranslations.en,
-    heroTranslations.en,
-    homeTranslations.en,
-    aboutTranslations.en,
-    authTranslations.en,
-    chatbotTranslations.en,
-    assessmentTranslations.en,
-    resourcesTranslations.en
-  ),
-  gu: mergeTranslations(
-    navTranslations.gu,
-    heroTranslations.gu,
-    homeTranslations.gu,
-    aboutTranslations.gu,
-    authTranslations.gu,
-    chatbotTranslations.gu,
-    assessmentTranslations.gu,
-    resourcesTranslations.gu
-  )
+  en: {
+    ...navTranslations.en,
+    ...heroTranslations.en,
+    ...homeTranslations.en,
+    ...aboutTranslations.en,
+    ...authTranslations.en,
+    ...chatbotTranslations.en,
+    ...assessmentTranslations.en,
+    ...resourcesTranslations.en,
+  },
+  gu: {
+    ...navTranslations.gu,
+    ...heroTranslations.gu,
+    ...homeTranslations.gu,
+    ...aboutTranslations.gu,
+    ...authTranslations.gu,
+    ...chatbotTranslations.gu,
+    ...assessmentTranslations.gu,
+    ...resourcesTranslations.gu,
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations.en;

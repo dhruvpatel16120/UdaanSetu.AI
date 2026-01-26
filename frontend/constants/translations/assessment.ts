@@ -4,6 +4,9 @@ export const assessmentTranslations = {
     "assessment.questionOf": "Question {current} of {total}",
     "assessment.percentComplete": "{percent}% Complete",
     "assessment.required": "Required",
+    "assessment.signInRequired": "Sign In Required",
+    "assessment.signInRequiredDesc": "You must be signed in to access the career assessment.",
+    "assessment.signInToContinue": "Sign In to Continue",
     
     // Navigation
     "assessment.previous": "Previous",
@@ -59,6 +62,9 @@ export const assessmentTranslations = {
     "assessment.questionOf": "પ્રશ્ન {current} માંથી {total}",
     "assessment.percentComplete": "{percent}% પૂર્ણ",
     "assessment.required": "આવશ્યક",
+    "assessment.signInRequired": "સાઇન ઇન કરવું જરૂરી છે",
+    "assessment.signInRequiredDesc": "કારકિર્દી મૂલ્યાંકન શરૂ કરવા માટે તમારે સાઇન ઇન કરવું આવશ્યક છે.",
+    "assessment.signInToContinue": "ચાલુ રાખવા માટે સાઇન ઇન કરો",
     
     // Navigation
     "assessment.previous": "પાછળ",
