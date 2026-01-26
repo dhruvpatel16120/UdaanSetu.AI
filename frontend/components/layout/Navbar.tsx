@@ -60,8 +60,8 @@ export function Navbar() {
           ? "bg-white/80 border-black/10 shadow-lg shadow-black/5"
           : "bg-primary-navy/80 border-white/10 shadow-2xl shadow-black/40"
         : theme === "light"
-          ? "bg-white/40 border-black/5"
-          : "bg-white/5 border-white/5"
+          ? "bg-muted/60 border-black/5 shadow-sm"
+          : "bg-muted/20 border-white/5 shadow-sm"
     )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative">
         {/* Animated Background Highlight for Links */}
@@ -113,7 +113,7 @@ export function Navbar() {
                   "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full overflow-hidden group/link",
                   pathname === item.href
                     ? theme === "light" ? "text-primary-indigo" : "text-white"
-                    : theme === "light" ? "text-black/60 hover:text-black" : "text-white/60 hover:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <span className="relative z-10">{item.name}</span>
