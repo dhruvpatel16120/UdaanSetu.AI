@@ -114,100 +114,44 @@ async def generate_career_report(student_profile: dict) -> dict:
     # Construct the prompt
     bio = student_profile.get("generated_bio", {})
     
-    # --- 1. RAG LAYER A: Live Market Research ---
-    from app.services.market_intelligence import market_service
+    # --- OPTIMIZATION: Skip Live Web Research for Speed ---
+    # The user reported "too long time". Web research via DuckDuckGo is the bottleneck.
+    # We will rely on the LLM's internal knowledge base for now.
     
-    interests = bio.get("interest_domains", [])
-    if not interests and "traits" in bio:
-            interests = [bio["traits"].get("interest_domain", "General")]
-    
-    user_query = f"Career opportunities for {', '.join(interests)} with {bio.get('education', '12th')} background"
-    
-    print(f"Performing Live RAG Web Research for: {user_query}...")
-    web_research = await market_service.perform_web_research(user_query)
-    
-    # --- 2. RAG LAYER B: Vector Knowledge Retrieval ---
-    from app.services.vector_store import vector_service
-    
+    web_research = {"stats_context": "Using internal knowledge base for speed optimization."}
     rag_context = ""
-    try:
-        search_query = user_query
-        docs = await vector_service.similarity_search(search_query, k=3)
-        if docs:
-            rag_context = "\n".join([f"- {d.page_content}" for d in docs])
-    except Exception as e:
-        print(f"Vector Retrieval Failed: {e}")
 
     # --- 3. SYNTHESIS LAYER: Construct The Agent Prompt ---
     prompt = f"""
-    Act as an Expert AI Career Mentor for UdaanSetu.AI (Rural India Focus).
+    Role: AI Career Mentor for Rural India (UdaanSetu).
+    Task: Create Career Report (JSON) based on Profile & Market Data.
     
-    --- STUDENT PROFILE ---
+    -- PROFILE --
     Bio: {bio.get("full_user_bio_profile", "N/A")}
-    Scores: {json.dumps(bio.get("scores", {}))}
     Traits: {json.dumps(bio.get("traits", {}))}
     
-    --- REAL-TIME MARKET INTELLIGENCE (Web Source) ---
-    {web_research.get('stats_context', 'No Data')}
+    -- MARKET DATA --
+    {web_research.get('stats_context', 'N/A')[:2000]}
     
-    --- KNOWLEDGE BASE (Vector Source) ---
-    {rag_context}
+    -- KNOWLEDGE BASE --
+    {rag_context[:1000]}
     
-    --- TASK ---
-    Generate a personalized, data-driven Career Guidance Report.
-    1. PRIORITIZE careers found in the 'KNOWLEDGE BASE' or 'MARKET INTELLIGENCE' that match the student.
-    2. BE REALISTIC: If the student has low financial resources, suggest cost-effective paths (e.g., ITI, Diploma, Online Certs) rather than expensive degrees.
-    3. LANGUAGE: Provide key text in English, but you must ensure the content is simple and easy to explain.
-    
-    REQUIRED JSON OUTPUT FORMAT:
+    -- OUTPUT (JSON ONLY) --
+    Generate realistic career paths (prioritize low-cost/free options).
+    Structure:
     {{
         "careerReadiness": 85, 
-        "topStrengths": ["Strength 1", "Strength 2", "Strength 3"],
-        "personalityTraits": ["Trait 1", "Trait 2", "Trait 3"],
+        "topStrengths": ["S1", "S2"],
         "recommendations": [
             {{
-                "title": "Primary Career Option",
-                "title_gu": "Guajarati Translation",
-                "match": 95,
-                "description": "Short explanation of why this fits.",
-                "description_gu": "Gujarati explanation.",
-                "requirements": ["Skill/Degree 1", "Skill/Degree 2"],
-                "salary_range": "e.g. 15k-25k INR/month (derived from market data)"
-            }},
-             {{
-                "title": "Alternative Career Option",
-                "title_gu": "Guajarati Translation",
-                "match": 80,
-                "description": "Short explanation.",
-                "description_gu": "Gujarati explanation.",
-                "requirements": ["Req A", "Req B"],
-                "salary_range": "e.g. 10k-20k INR/month"
+                "title": "Role Name", "title_gu": "Gujarati Name",
+                "match": 90, "description": "Why fits", "description_gu": "Guj explanation",
+                "requirements": ["Req1", "Req2"], "salary_range": "e.g. 15k-25k"
             }}
         ],
-        "currentSkills": [
-            {{ "name": "Skill from bio", "level": 70 }},
-            {{ "name": "Soft skill", "level": 80 }}
-        ],
-        "recommendedSkills": [
-            {{ "name": "High Priority Skill from Market Data", "priority": "high" }},
-            {{ "name": "Useful Skill", "priority": "medium" }}
-        ],
-        "learningPaths": [
-            {{
-                "title": "Roadmap Name",
-                "duration": "e.g. 6 Months",
-                "resources": [
-                    {{ "name": "Best Resource from Web Research", "url": "Actual URL if found, else generic name" }}
-                ]
-            }}
-        ],
-        "actionPlan": {{
-            "shortTerm": ["Immediate step 1", "Immediate step 2"],
-            "longTerm": ["Goal 1", "Goal 2"]
-        }}
+        "recommendedSkills": [ {{ "name": "Skill", "priority": "high" }} ],
+        "learningPaths": [ {{ "title": "Path", "duration": "6m", "resources": [ {{ "name": "Res", "url": "URL" }} ] }} ]
     }}
-    
-    Return ONLY valid JSON. Do not use markdown blocks.
     """
     
     try:

@@ -105,7 +105,7 @@ export default function MentorPage() {
         setInput("");
         setIsLoading(true);
 
-        // Real API Call with language parameter
+        // Real API Call with streaming
         try {
             const userId = "demo_user_123";
             const history = messages.map(m => ({ role: m.role, content: m.content }));
@@ -121,17 +121,34 @@ export default function MentorPage() {
                 })
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                 const aiMessage: Message = {
-                    id: (Date.now() + 1).toString(),
-                    role: "assistant",
-                    content: data.response,
-                    timestamp: new Date(),
-                };
-                setMessages((prev) => [...prev, aiMessage]);
-            } else {
-                throw new Error("API request failed");
+            if (!response.ok) throw new Error("API request failed");
+            if (!response.body) throw new Error("No response body");
+
+            // Create placeholder for AI response
+            const aiMessageId = (Date.now() + 1).toString();
+            const aiMessage: Message = {
+                id: aiMessageId,
+                role: "assistant",
+                content: "",
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, aiMessage]);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                setMessages((prev) => 
+                    prev.map((msg) => 
+                        msg.id === aiMessageId 
+                            ? { ...msg, content: msg.content + chunk }
+                            : msg
+                    )
+                );
             }
 
         } catch (error) {

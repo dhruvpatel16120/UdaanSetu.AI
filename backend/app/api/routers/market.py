@@ -21,15 +21,16 @@ async def analyze_market(request: MarketQuery, x_firebase_id: Optional[str] = He
     try:
         data = get_assessment_result(user_id)
         if data and "generated_bio" in data:
-            user_bio = data["generated_bio"].get("full_user_bio_profile", "Student")
+            # Pass the full structured bio object for better context
+            user_profile = data["generated_bio"]
         else:
-            user_bio = "A generic student from Gujarat seeking career advice."
+            user_profile = {"name": "Student", "location": "Gujarat", "education": "Unknown"}
     except:
-        user_bio = "A generic student from Gujarat."
+        user_profile = {"name": "Student", "location": "Gujarat"}
 
     result = await market_service.generate_market_analysis(
         user_query=request.query,
-        user_bio=user_bio
+        user_profile=user_profile
     )
     
     return result

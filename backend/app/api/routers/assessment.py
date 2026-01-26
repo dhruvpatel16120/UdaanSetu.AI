@@ -1,111 +1,79 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, Header, HTTPException, Body
 from typing import List, Optional
-import random
-import os
-from app.models.schemas import Question, Answer
+from app.models.schemas import Answer
 from app.data.question_bank import get_questions
-from app.services.assessment_engine import process_assessment_submission
+from app.services.assessment_engine import get_next_dynamic_question, process_assessment_submission, QUESTION_LIMIT
+from app.services.db_firebase import get_assessment_result
 
 router = APIRouter()
 
-@router.get("/questions", response_model=List[Question])
-def get_all_questions():
+@router.get("/config")
+async def get_assessment_config():
+    return {
+        "max_questions": QUESTION_LIMIT,
+        "features": ["ai_branching", "random_start"]
+    }
+
+@router.get("/question/{question_id}")
+async def get_question(question_id: str):
     """
-    Get questions for the assessment.
-    Returns:
-    - Static questions (managed by frontend logic mostly, but sent here if needed)
-    - Random selection of 15 dynamic questions from the larger bank
+    Get a specific question by ID. 
+    If 'random' is passed, pick an initial question randomly.
     """
     all_questions = get_questions()
     
-    # Separate static and dynamic
-    static_qs = [q for q in all_questions if q["section"] == "Static Layer"]
-    dynamic_qs = [q for q in all_questions if q["section"] != "Static Layer"]
-    
-    # Randomly select dynamic questions based on env variable
-    env_count = os.getenv("ASSESSMENT_QUESTION_COUNT")
-    try:
-        max_dynamic = int(env_count) if env_count else 15
-    except ValueError:
-        max_dynamic = 15
-        
-    count = min(len(dynamic_qs), max_dynamic)
-    selected_dynamic = random.sample(dynamic_qs, count)
-    
-    # Return combined list (Static + 15 Random Dynamic)
-    # The frontend filters out 'Static Layer' anyway if Basic Info is used,
-    # but this ensures the API contract remains valid.
-    return static_qs + selected_dynamic
+    if question_id == "start" or question_id == "random":
+        # Simulate an empty session to get the first dynamic question
+        q = await get_next_dynamic_question([])
+        return q
 
-@router.get("/question/{question_id}", response_model=Question)
-def get_question(question_id: str):
-    questions = get_questions()
-    for q in questions:
-        if q["id"] == question_id:
-            return q
-    raise HTTPException(status_code=404, detail="Question not found")
+    q = next((q for q in all_questions if q["id"] == question_id), None)
+    if not q:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return q
 
-@router.post("/next-question", response_model=Optional[Question])
-def get_next_question(answer: Answer):
+@router.post("/next-question")
+async def next_question(
+    # history: List[Answer] = Body(...),
+    # For now, frontend might only send current answer. 
+    # We ideally need history to make it "AI powered".
+    # I'll update the expected body to handle history if provided.
+    payload: dict = Body(...)
+):
     """
-    Get the next question based on the current answer.
+    Determines the next question based on the history of answers.
+    Payload should include 'answers' list.
     """
-    from app.services.assessment_engine import get_next_question_id
-    next_id = get_next_question_id(answer.question_id, answer.selected_option_id)
+    answers_raw = payload.get("answers", [])
+    # If the frontend only sends the last answer, we can't easily do AI branching without session state.
+    # However, I'll adapt to both.
     
-    if not next_id:
-        return None
-        
-    questions = get_questions()
-    for q in questions:
-        if q["id"] == next_id:
-            return q
-            
-    return None
+    current_answers = []
+    for a in answers_raw:
+        current_answers.append(Answer(**a))
 
+    # If payload only has one answer as 'current', wrap it
+    if not answers_raw and "question_id" in payload:
+        current_answers = [Answer(**payload)]
+
+    next_q = await get_next_dynamic_question(current_answers)
+    return next_q
 
 @router.post("/submit")
-async def submit_assessment(answers: List[Answer], x_firebase_id: Optional[str] = Header(None)):
-    """
-    Receive answers and generate a bio-data profile.
-    This is where the 'Logic' happens.
-    """
-    # Use x_firebase_id as user_id if present
-    return await process_assessment_submission(answers, user_id=x_firebase_id or "demo_user_123")
-
-@router.get("/report/{user_id}")
-def get_assessment_report(user_id: str):
-    """
-    Get the generate report for a user.
-    """
-    from app.services.db_firebase import init_firebase
-    from firebase_admin import firestore
-    import firebase_admin
-
-    try:
-        if not firebase_admin._apps:
-            init_firebase()
+async def submit_assessment(
+    answers: List[Answer],
+    x_firebase_id: Optional[str] = Header(None)
+):
+    if not x_firebase_id:
+        # Fallback for testing
+        x_firebase_id = "demo_user_123"
         
-        db = firestore.client()
-        doc = db.collection("users").document(user_id).get()
-        
-        if doc.exists:
-            data = doc.to_dict()
-            return data.get("assessment_result", {}).get("generated_bio", {}).get("ai_report", {})
-        else:
-            raise HTTPException(status_code=404, detail="Report not found")
-            
-    except Exception as e:
-        print(f"Error: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    result = await process_assessment_submission(answers, x_firebase_id)
+    return result
 
 @router.get("/result/{user_id}")
-def get_assessment_result_endpoint(user_id: str):
-    """
-    Retrieve the bio-data profile for a specific user.
-    """
-    from app.services.db_firebase import get_assessment_result
+async def get_result(user_id: str):
     result = get_assessment_result(user_id)
     if not result:
-        raise HTTPException(status_code=404, detail="Assessment result not found")
+        raise HTTPException(status_code=404, detail="Result not found")
     return result

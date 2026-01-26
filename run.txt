@@ -9,8 +9,12 @@
 # ------------------------------------------
 cd backend
 
+# setup_backend
+powershell -ExecutionPolicy Bypass -File setup_backend.ps1
+
 # Activate Virtual Environment (Windows)
 .\venv\Scripts\activate
+prisma generate
 
 # Run the Server (Port 8000)
 python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
@@ -30,3 +34,21 @@ npm install
 npm run dev
 
 # Open App: http://localhost:3000
+
+
+# ------------------------------------------
+# TERMINAL 2: BACKEND (Python FastAPI)
+# ------------------------------------------
+cd backend
+
+Method 1: Run with Execution Policy Bypass
+-------------------------------------------
+powershell -ExecutionPolicy Bypass -File .\setup_backend.ps1
+
+# step 1
+.\venv\Scripts\Activate.ps1
+prisma generate
+
+# step 2
+python -m uvicorn main:app --reload --host [IP_ADDRESS] --port 8000
+

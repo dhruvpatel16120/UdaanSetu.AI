@@ -1,6 +1,7 @@
 from typing import Optional, Dict, Any
 import json
 from app.db import get_db
+from app.core.exceptions import DatabaseException
 
 async def get_user_by_firebase_id(firebase_id: str):
     print(f"Connecting to DB for user: {firebase_id}")
@@ -14,7 +15,7 @@ async def get_user_by_firebase_id(firebase_id: str):
         return user
     except Exception as e:
         print(f"Error in get_user_by_firebase_id: {e}")
-        raise e
+        raise DatabaseException(message="Failed to retrieve user", details={"error": str(e)})
 
 async def create_or_update_user(firebase_id: str, email: str, name: Optional[str] = None):
     db = await get_db()
@@ -36,7 +37,7 @@ async def create_or_update_user(firebase_id: str, email: str, name: Optional[str
         return user
     except Exception as e:
         print(f"Error in create_or_update_user: {e}")
-        raise e
+        raise DatabaseException(message="Failed to create or update user", details={"error": str(e)})
 
 async def update_user_profile(user_id: str, profile_data: Dict[str, Any]):
     db = await get_db()
@@ -59,7 +60,7 @@ async def update_user_profile(user_id: str, profile_data: Dict[str, Any]):
         return updated_profile
     except Exception as e:
         print(f"Error in update_user_profile: {e}")
-        raise e
+        raise DatabaseException(message="Failed to update user profile", details={"error": str(e)})
 
 async def save_assessment_to_profile(user_id: str, student_profile: Dict[str, Any]):
     """
@@ -100,4 +101,4 @@ async def save_assessment_to_profile(user_id: str, student_profile: Dict[str, An
         )
     except Exception as e:
         print(f"Error in save_assessment_to_profile: {e}")
-        raise e
+        raise DatabaseException(message="Failed to save assessment", details={"error": str(e)})

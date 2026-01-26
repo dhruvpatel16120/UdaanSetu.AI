@@ -1,210 +1,126 @@
 from typing import List, Dict, Any
+import random
 
-# Updated 15-Question Bank strictly following User Request
-# Categories: Education, Interest, Mindset, Family Income, Hobbies, Vision
+# Categories for dynamic selection
+# 1. Education: q1_edu_level, q2_grades
+# 2. Family: q3_family_type, q4_income
+# 3. Interests: q5_interest, q6_hobbies
+# 4. Psychology: q7_mindset_games
+# 5. Future: q9_vision, q10_package
+# 6. Reflection: q11_positive, q12_negative
+# 7. Mobility: q13_shifting
 
-INITIAL_QUESTIONS = [
-    # --- STATIC LAYER (Hidden in Logic, collected via Form) ---
-    {
-        "id": "static_name",
-        "section": "Static Layer",
-        "type": "text",
-        "text": {"en": "Full Name", "gu": "પૂરું નામ"},
-        "next_question_id": "static_gender"
-    },
-    {
-        "id": "static_gender",
-        "section": "Static Layer",
-        "type": "single_choice",
-        "text": {"en": "Gender", "gu": "લિંગ"},
-        "options": [
-            {"id": "male", "text": {"en": "Male", "gu": "પુરુષ"}},
-            {"id": "female", "text": {"en": "Female", "gu": "સ્ત્રી"}},
-            {"id": "other", "text": {"en": "Other", "gu": "અન્ય"}}
-        ],
-        "next_question_id": "static_dob"
-    },
-    {
-        "id": "static_dob",
-        "section": "Static Layer",
-        "type": "text",
-        "text": {"en": "Date of Birth", "gu": "જન્મ તારીખ"},
-        "next_question_id": "static_district"
-    },
-    {
-        "id": "static_district",
-        "section": "Static Layer",
-        "type": "single_choice",
-        "text": {"en": "District in Gujarat", "gu": "ગુજરાતનો જિલ્લો"},
-        "options": [
-            {"id": "ahmedabad", "text": {"en": "Ahmedabad", "gu": "અમદાવાદ"}},
-            {"id": "surat", "text": {"en": "Surat", "gu": "સુરત"}},
-            {"id": "rajkot", "text": {"en": "Rajkot", "gu": "રાજકોટ"}},
-            {"id": "vadodara", "text": {"en": "Vadodara", "gu": "વડોદરા"}},
-            {"id": "other", "text": {"en": "Other", "gu": "અન્ય"}}
-        ],
-        "next_question_id": "q1_edu_level"
-    },
-
-    # --- DYNAMIC SECTION 2: Background ---
+QUESTIONS = [
     {
         "id": "q1_edu_level",
         "section": "Education",
         "type": "single_choice",
-        "text": {
-            "en": "What is your current education level?",
-            "gu": "તમારું વર્તમાન શિક્ષણ સ્તર શું છે?"
-        },
+        "text": {"en": "What is your current education level?", "gu": "તમારું વર્તમાન શિક્ષણ સ્તર શું છે?"},
         "options": [
-            {"id": "below_10", "text": {"en": "Class 8-10", "gu": "ધોરણ 8-10"}, "traits": {"education_level": "school"}, "next_question_id": "q2_grades"},
-            {"id": "11_12", "text": {"en": "Class 11-12", "gu": "ધોરણ 11-12"}, "traits": {"education_level": "high_school"}, "next_question_id": "q2_grades"},
-            {"id": "diploma", "text": {"en": "Diploma / ITI", "gu": "ડિપ્લોમા / આઈટીઆઈ"}, "traits": {"education_level": "vocational"}, "next_question_id": "q2_grades"},
-            {"id": "graduate", "text": {"en": "Graduate / Pursuing Degree", "gu": "સ્નાતક / ડિગ્રી"}, "traits": {"education_level": "degree"}, "next_question_id": "q2_grades"},
-            {"id": "dropout", "text": {"en": "Dropout", "gu": "અભ્યાસ છોડી દીધો"}, "traits": {"education_level": "dropout"}, "next_question_id": "q2_grades"}
+            {"id": "school", "text": {"en": "Class 8-10", "gu": "ધોરણ 8-10"}, "traits": {"edu": "school"}},
+            {"id": "high_school", "text": {"en": "Class 11-12", "gu": "ધોરણ 11-12"}, "traits": {"edu": "high_school"}},
+            {"id": "degree", "text": {"en": "Graduate / Degree", "gu": "સ્નાતક / ડિગ્રી"}, "traits": {"edu": "degree"}}
         ]
     },
     {
         "id": "q2_grades",
         "section": "Education",
         "type": "single_choice",
-        "text": {
-            "en": "How were your academic grades in the last major exam?",
-            "gu": "તમારી છેલ્લી પરીક્ષામાં તમારા શૈક્ષણિક ગ્રેડ કેવા હતા?"
-        },
+        "text": {"en": "How would you describe your academic performance?", "gu": "તમે તમારા શૈક્ષણિક પ્રદર્શનનું વર્ણન કેવી રીતે કરશો?"},
         "options": [
-            {"id": "top_tier", "text": {"en": "Excellent (Above 80%)", "gu": "શ્રેષ્ઠ (80% થી વધુ)"}, "traits": {"academic_performance": "high"}, "next_question_id": "q3_family_type"},
-            {"id": "mid_tier", "text": {"en": "Good (60% - 80%)", "gu": "સારું (60% - 80%)"}, "traits": {"academic_performance": "medium"}, "next_question_id": "q3_family_type"},
-            {"id": "avg_tier", "text": {"en": "Average (40% - 60%)", "gu": "સરેરાશ (40% - 60%)"}, "traits": {"academic_performance": "average"}, "next_question_id": "q3_family_type"},
-            {"id": "low_tier", "text": {"en": "Below Average (Less than 40%)", "gu": "સરેરાશથી ઓછું (40% થી ઓછું)"}, "traits": {"academic_performance": "low"}, "next_question_id": "q3_family_type"}
+            {"id": "excellent", "text": {"en": "Excellent (80%+)", "gu": "ઉત્કૃષ્ટ (80%+)"}, "traits": {"performance": "high"}},
+            {"id": "average", "text": {"en": "Average (50-70%)", "gu": "સરેરાશ (50-70%)"}, "traits": {"performance": "average"}},
+            {"id": "low", "text": {"en": "Below Average", "gu": "સરેરાશથી ઓછું"}, "traits": {"performance": "low"}}
         ]
     },
     {
         "id": "q3_family_type",
         "section": "Family Background",
         "type": "single_choice",
-        "text": {
-            "en": "What is your family's primary occupation type?",
-            "gu": "તમારા પરિવારનો મુખ્ય વ્યવસાય કેવો છે?"
-        },
+        "text": {"en": "What is your family's primary background?", "gu": "તમારા પરિવારની મુખ્ય પૃષ્ઠભૂમિ શું છે?"},
         "options": [
-            {"id": "business", "text": {"en": "Business Class", "gu": "વ્યવસાયિક વર્ગ"}, "traits": {"family_background": "business"}, "next_question_id": "q4_income"},
-            {"id": "service", "text": {"en": "Service or Job Class", "gu": "નોકરી અથવા સેવા વર્ગ"}, "traits": {"family_background": "service"}, "next_question_id": "q4_income"},
-            {"id": "farming", "text": {"en": "Farming / Agriculture", "gu": "ખેતી / કૃષિ"}, "traits": {"family_background": "agriculture"}, "next_question_id": "q4_income"}
+            {"id": "business", "text": {"en": "Business Class", "gu": "વ્યવસાયિક વર્ગ"}, "traits": {"family": "business"}},
+            {"id": "job", "text": {"en": "Service or Job Class", "gu": "નોકરી અથવા સેવા વર્ગ"}, "traits": {"family": "service"}}
         ]
     },
     {
         "id": "q4_income",
         "section": "Family Income",
         "type": "single_choice",
-        "text": {
-            "en": "What is your family's approximate yearly income?",
-            "gu": "તમારા પરિવારની આશરે વાર્ષિક આવક કેટલી છે?"
-        },
+        "text": {"en": "What is your family's yearly income range?", "gu": "તમારા પરિવારની વાર્ષિક આવક કેટલી છે?"},
         "options": [
-            {"id": "low", "text": {"en": "Below ₹2.5 Lakh", "gu": "₹2.5 લાખથી ઓછી"}, "traits": {"financial_status": "low"}, "next_question_id": "q5_interest"},
-            {"id": "mid", "text": {"en": "₹2.5 Lakh - ₹5 Lakh", "gu": "₹2.5 લાખ - ₹5 લાખ"}, "traits": {"financial_status": "medium"}, "next_question_id": "q5_interest"},
-            {"id": "high", "text": {"en": "Above ₹5 Lakh", "gu": "₹5 લાખથી વધુ"}, "traits": {"financial_status": "high"}, "next_question_id": "q5_interest"}
+            {"id": "low", "text": {"en": "Below ₹3 Lakh", "gu": "₹3 લાખથી ઓછી"}, "traits": {"income": "low"}},
+            {"id": "mid", "text": {"en": "₹3 Lakh - ₹7 Lakh", "gu": "₹3 લાખ - ₹7 લાખ"}, "traits": {"income": "medium"}},
+            {"id": "high", "text": {"en": "Above ₹7 Lakh", "gu": "₹7 લાખથી વધુ"}, "traits": {"income": "high"}}
         ]
     },
-
-    # --- DYNAMIC SECTION 3: Interest & Psychology ---
     {
         "id": "q5_interest",
         "section": "Interest",
         "type": "single_choice",
-        "text": {
-            "en": "Which field interests you the most?",
-            "gu": "તમને કયા ક્ષેત્રમાં સૌથી વધુ રસ છે?"
-        },
+        "text": {"en": "Which field excites you the most?", "gu": "તમને કયા ક્ષેત્રમાં સૌથી વધુ રસ છે?"},
         "options": [
-            {"id": "tech", "text": {"en": "Technology & Computers", "gu": "ટેકનોલોજી અને કોમ્પ્યુટર"}, "traits": {"interest_domain": "tech"}, "next_question_id": "q7_mindset_games"},
-            {"id": "arts", "text": {"en": "Creative Arts & Design", "gu": "સર્જનાત્મક કલા અને ડિઝાઇન"}, "traits": {"interest_domain": "arts"}, "next_question_id": "q6_hobbies"},
-            {"id": "science", "text": {"en": "Science & Medicine", "gu": "વિજ્ઞાન અને દવા"}, "traits": {"interest_domain": "science"}, "next_question_id": "q11_positive"},
-            {"id": "business", "text": {"en": "Management & Business", "gu": "મેનેજમેન્ટ અને બિઝનેસ"}, "traits": {"interest_domain": "business"}, "next_question_id": "q9_vision"}
+            {"id": "tech", "text": {"en": "Technology & AI", "gu": "ટેકનોલોજી અને AI"}, "traits": {"field": "tech"}},
+            {"id": "business", "text": {"en": "Business & Startups", "gu": "બિઝનેસ અને સ્ટાર્ટઅપ્સ"}, "traits": {"field": "business"}},
+            {"id": "arts", "text": {"en": "Design & Creativity", "gu": "ડિઝાઇન અને સર્જનાત્મકતા"}, "traits": {"field": "arts"}}
         ]
     },
     {
         "id": "q6_hobbies",
         "section": "Hobbies",
         "type": "text",
-        "text": {
-            "en": "What are your main hobbies? (e.g., Drawing, Playing Cricket, Reading)",
-            "gu": "તમારા મુખ્ય શોખ કયા છે? (દા.ત. ચિત્રકામ, ક્રિકેટ રમવું, વાંચન)"
-        },
-        "next_question_id": "q11_positive"
+        "text": {"en": "Tell us about your main hobbies.", "gu": "તમારા મુખ્ય શોખ વિશે અમને જણાવો."},
     },
     {
         "id": "q7_mindset_games",
         "section": "Psychology",
         "type": "single_choice",
-        "text": {
-            "en": "In games or apps, are you interested in just playing or how they are built?",
-            "gu": "ગેમ્સ કે એપ્સમાં, તમને માત્ર રમવામાં રસ છે કે તે કેવી રીતે બની હશે તેમાં?"
-        },
+        "text": {"en": "When using an app/game, are you interested in playing or how it was built?", "gu": "એપ્લિકેશન/ગેમનો ઉપયોગ કરતી વખતે, શું તમને તે રમવામાં રસ છે કે તે કેવી રીતે બની હશે તેમાં?"},
         "options": [
-            {"id": "playing", "text": {"en": "Just playing and enjoying", "gu": "માત્ર રમવું અને આનંદ લેવો"}, "traits": {"tech_mindset": "consumer"}, "next_question_id": "q9_vision"},
-            {"id": "building", "text": {"en": "Curious about how they are built", "gu": "તે કેવી રીતે બની હશે તેની જિજ્ઞાસા"}, "traits": {"tech_mindset": "creator"}, "next_question_id": "q9_vision"}
+            {"id": "playing", "text": {"en": "Interested in just playing", "gu": "માત્ર રમવામાં રસ છે"}, "traits": {"mindset": "consumer"}},
+            {"id": "building", "text": {"en": "Interested in how it works/built", "gu": "તે કેવી રીતે કાર્ય કરે છે/બની છે તેમાં રસ છે"}, "traits": {"mindset": "creator"}}
         ]
     },
     {
         "id": "q9_vision",
         "section": "Vision",
         "type": "text",
-        "text": {
-            "en": "What is your vision for your career? Where do you see yourself in 10 years?",
-            "gu": "તમારી કારકિર્દી માટે તમારી દ્રષ્ટિ શું છે? 10 વર્ષ પછી તમે તમારી જાતને ક્યાં જુઓ છો?"
-        },
-        "next_question_id": "q10_package"
+        "text": {"en": "Where do you see yourself in 5 years?", "gu": "તમે તમારી જાતને 5 વર્ષમાં ક્યાં જુઓ છો?"},
     },
     {
         "id": "q10_package",
         "section": "Expectations",
         "type": "single_choice",
-        "text": {
-            "en": "What is your expected monthly income (Package) in your first job?",
-            "gu": "તમારી પ્રથમ નોકરીમાં તમારી અપેક્ષિત માસિક આવક (પેકેજ) કેટલી છે?"
-        },
+        "text": {"en": "What is your expected starting monthly salary?", "gu": "તમારો અપેક્ષિત પ્રારંભિક માસિક પગાર કેટલો છે?"},
         "options": [
-            {"id": "entry", "text": {"en": "₹15,000 - ₹25,000", "gu": "₹15,000 - ₹25,000"}, "traits": {"income_expectation": "low"}, "next_question_id": "q11_positive"},
-            {"id": "mid", "text": {"en": "₹25,000 - ₹50,000", "gu": "₹25,000 - ₹50,000"}, "traits": {"income_expectation": "medium"}, "next_question_id": "q11_positive"},
-            {"id": "high", "text": {"en": "Above ₹50,000", "gu": "₹50,000 થી વધુ"}, "traits": {"income_expectation": "high"}, "next_question_id": "q11_positive"}
+            {"id": "entry", "text": {"en": "₹20,000 - ₹40,000", "gu": "₹20,000 - ₹40,000"}},
+            {"id": "high", "text": {"en": "Above ₹50,000", "gu": "₹50,000 થી વધુ"}}
         ]
     },
     {
         "id": "q11_positive",
         "section": "Self Reflection",
         "type": "text",
-        "text": {
-            "en": "What are the positive points about you? (Your Strengths)",
-            "gu": "તમારામાં સારા ગુણો (સકારાત્મક પાસાઓ) કયા છે? (તમારી શક્તિઓ)"
-        },
-        "next_question_id": "q12_negative"
+        "text": {"en": "What are your top 3 strengths?", "gu": "તમારી મુખ્ય 3 શક્તિઓ કઈ છે?"},
     },
     {
         "id": "q12_negative",
         "section": "Self Reflection",
         "type": "text",
-        "text": {
-            "en": "What are the negative points about you? (Areas of Improvement)",
-            "gu": "તમારામાં નકારાત્મક પાસાઓ કયા છે? (સુધારણા માટેના ક્ષેત્રો)"
-        },
-        "next_question_id": "q13_shifting"
+        "text": {"en": "What is one area you want to improve in yourself?", "gu": "તમારામાં એક એવું ક્ષેત્ર કયું છે જેમાં તમે સુધારો કરવા માંગો છો?"},
     },
     {
         "id": "q13_shifting",
         "section": "Mobility",
         "type": "single_choice",
-        "text": {
-            "en": "Are you able to shift to another city for your career?",
-            "gu": "શું તમે તમારી કારકિર્દી માટે બીજા શહેરમાં જવા માટે તૈયાર છો?"
-        },
+        "text": {"en": "Are you comfortable relocating to another city for a better job?", "gu": "શું તમે સારી નોકરી માટે બીજા શહેરમાં જવા માટે તૈયાર છો?"},
         "options": [
-            {"id": "yes", "text": {"en": "Yes, I can relocate anywhere", "gu": "હા, હું ક્યાંય પણ જઈ શકું છું"}, "traits": {"mobility": "yes"}},
-            {"id": "no", "text": {"en": "No, I want to stay in my current location", "gu": "ના, મારે મારા વર્તમાન સ્થાને જ રહેવું છે"}, "traits": {"mobility": "no"}},
-            {"id": "maybe", "text": {"en": "Only within Gujarat", "gu": "માત્ર ગુજરાતમાં જ"}, "traits": {"mobility": "partial"}}
+            {"id": "yes", "text": {"en": "Yes, anywhere", "gu": "હા, ક્યાંય પણ"}},
+            {"id": "gujarat", "text": {"en": "Only within Gujarat", "gu": "માત્ર ગુજરાતમાં જ"}},
+            {"id": "no", "text": {"en": "No, I prefer my current location", "gu": "ના, હું મારા વર્તમાન સ્થાને જ રહેવા માંગુ છું"}}
         ]
     }
 ]
 
 def get_questions():
-    return INITIAL_QUESTIONS
+    return QUESTIONS

@@ -21,7 +21,16 @@ app.add_middleware(
 )
 
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.exceptions import RequestValidationError
+from app.core.exceptions import BaseAPIException
+from app.core.handlers import api_exception_handler, validation_exception_handler, generic_exception_handler
+
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Exception Handlers
+app.add_exception_handler(BaseAPIException, api_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
 
 
 @app.get("/")
