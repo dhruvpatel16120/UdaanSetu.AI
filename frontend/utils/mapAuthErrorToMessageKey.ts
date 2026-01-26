@@ -24,5 +24,29 @@ export function mapAuthErrorToMessageKey(error: unknown): TranslationKey {
     return "auth.error.invalidEmail";
   }
 
+  if (code === "auth/email-already-in-use") {
+    return "auth.error.emailInUse";
+  }
+
+  if (code === "auth/network-request-failed") {
+    return "auth.error.network";
+  }
+
+  if (code === "auth/too-many-requests") {
+    return "auth.error.tooManyRequests";
+  }
+
+  if (code === "auth/user-disabled") {
+    return "auth.error.userDisabled";
+  }
+
+  if (code === "auth/weak-password") {
+    return "auth.error.weakPassword";
+  }
+
+  if (code === "auth/operation-not-allowed") {
+    return "auth.error.operationNotAllowed";
+  }
+
   return "auth.error.generic";
 }

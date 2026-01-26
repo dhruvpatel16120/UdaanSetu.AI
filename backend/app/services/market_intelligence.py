@@ -33,7 +33,6 @@ class MarketIntelligenceService:
             if os.path.exists(self.csv_path):
                 self._csv_cache = pd.read_csv(self.csv_path)
             else:
-                print(f"Dataset not found at {self.csv_path}")
                 self._csv_cache = pd.DataFrame() # Empty DF
         except Exception as e:
             print(f"Error loading CSV: {e}")
@@ -44,25 +43,25 @@ class MarketIntelligenceService:
         try:
             with DDGS() as ddgs:
                 results = list(ddgs.text(query, max_results=max_results))
-                return results # [{'title':..., 'href':..., 'body':...}]
+                return results 
         except Exception as e:
             print(f"Search error: {e}")
             return []
 
     async def _run_search(self, query: str, max_results: int = 3) -> list:
-        """Run search in a separate thread to avoid blocking the event loop."""
+        """Run search in a separate thread."""
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, self._run_search_sync, query, max_results)
 
     def _load_web_content_sync(self, urls: list) -> str:
-        """Helper to load web content using WebBaseLoader."""
+        """Helper to load web content using WebBaseLoader with STRICT TOKEN LIMITS."""
         if not urls:
             return ""
         try:
             loader = WebBaseLoader(urls)
-            # Use load() which returns a list of Documents
             docs = loader.load()
-            content = "\n\n".join([f"--- Content from {d.metadata.get('source', 'URL')} ---\n{d.page_content[:2000]}..." for d in docs])
+            # OPTIMIZATION: Take only first 1500 chars to save tokens
+            content = "\n\n".join([f"--- Source: {d.metadata.get('source', 'URL')} ---\n{d.page_content[:1500]}..." for d in docs])
             return content
         except Exception as e:
             return f"Error loading web pages: {str(e)}"
@@ -73,56 +72,51 @@ class MarketIntelligenceService:
         return await loop.run_in_executor(None, self._load_web_content_sync, urls)
 
     def get_csv_context(self, sector_filter: str = None) -> str:
-        """
-        Retrieves relevant job data from the cached CSV.
-        """
+        """Retrieves relevant job data from the cached CSV."""
         try:
             df = self._csv_cache
             if df.empty:
-                return "No specific local data found in CSV records."
+                return "No local data."
 
-            # Filter by sector if provided (searching in Job Title or Description)
+            # Filter by sector if provided 
             if sector_filter:
                 mask = df['Job Title'].str.contains(sector_filter, case=False, na=False) | \
                        df['Description'].str.contains(sector_filter, case=False, na=False)
                 df = df[mask]
             
-            # Limit to top 20 relevant results to avoid context overflow
-            return df.head(20).to_string(index=False)
+            # OPTIMIZATION: Limit to top 10 rows only
+            return df.head(10).to_string(index=False)
         except Exception as e:
             return f"Error reading local data: {str(e)}"
 
     async def perform_web_research(self, query: str) -> dict:
         """
-        RAG Pipeline: Search -> Select Top URLs -> Load Full Content -> Return Context.
+        RAG Pipeline with Optimized Token Usage.
         """
-        # Search 1: Hard Numbers (Salaries, Demand) - Indeed, Naukri, Glassdoor
-        # Specifically targeting Gujarat for local market data
-        stats_query = f"{query} Gujarat India salary data demand trends 2025 site:indeed.in OR site:naukri.com OR site:glassdoor.co.in"
+        # Search 1: Hard Numbers (Salaries, Demand) 
+        stats_query = f"{query} salary demand trends Gujarat India 2025"
         
-        # Search 2: Content & Roadmap (Skills, Future, Learning)
-        learning_query = f"{query} career roadmap skills path 2025 tutorial site:youtube.com OR site:linkedin.com/pulse OR site:medium.com"
+        # Search 2: Learning Roadmap
+        learning_query = f"{query} learning path free courses roadmap"
         
         try:
-            # 1. Run Initial Searches in Parallel (Limit to 3 results for speed)
+            # 1. Run Searches (Limit results)
             stats_results_list, learning_results_list = await asyncio.gather(
-                self._run_search(stats_query), # Max results default is 5, but we rely on _run_search_sync logic if updated
-                self._run_search(learning_query)
+                self._run_search(stats_query, max_results=3),
+                self._run_search(learning_query, max_results=3)
             )
             
-            # 2. Extract Top URLs for Deep Dive (RAG)
-            # We take ONLY top 1 stats URL to optimize speed (deep reading is slow)
+            # 2. Extract Top URLs (Limit to 1 for deep dive)
             top_stats_urls = [r['href'] for r in stats_results_list[:1] if 'href' in r]
             
-            # 3. Load Full Content for these URLs (The "WebLoader" part)
+            # 3. Load Full Content (Truncated)
             full_stats_content = await self._load_full_page_content(top_stats_urls)
             
-            # 4. Prepare Context
-            # We use snippets for learning (usually enough) and Full Content for Stats (need numbers)
+            # 4. Prepare Context (Use Snippets for the rest)
             stats_snippets = "\n".join([f"- {r.get('title')}: {r.get('body')}" for r in stats_results_list])
             learning_snippets = "\n".join([f"- {r.get('title')}: {r.get('body')}" for r in learning_results_list])
             
-            combined_stats_context = f"search_snippets:\n{stats_snippets}\n\ndeep_dive_content:\n{full_stats_content}"
+            combined_stats_context = f"Snippets:\n{stats_snippets}\n\nDeep Dive:\n{full_stats_content}"
 
             return {
                 "stats_context": combined_stats_context,
@@ -130,72 +124,70 @@ class MarketIntelligenceService:
             }
         except Exception as e:
             print(f"Web Research Error: {e}")
-            return {"stats_context": "Error fetching web data.", "learning_context": "Error fetching web data."}
+            return {"stats_context": "Error", "learning_context": "Error"}
 
-    async def generate_market_analysis(self, user_query: str, user_bio: str) -> dict:
+    async def generate_market_analysis(self, user_query: str, user_profile: dict) -> dict:
         """
-        Synthesizes a Comprehensive Market Intelligence Report (7-Part Strategy).
+        Synthesizes Market Intelligence using User Context.
+        Arguments:
+            user_query: The specific question (e.g., "Is Python good?")
+            user_profile: Dict containing {education, location, interests, skills, etc.}
         """
-        # 1. Gather Context
+        # 1. Extract Context
+        # Clean up profile to essential strings for prompt
+        education = user_profile.get("education", "Unknown")
+        location = user_profile.get("location", "Gujarat")
+        skills = user_profile.get("traits", {}).get("top_skills", []) or user_profile.get("skills", [])
+        if isinstance(skills, list): skills = ", ".join(skills)
+        
+        # 2. Gather Data
         csv_data = self.get_csv_context()
         web_search_context = await self.perform_web_research(user_query)
         
-        # 2. Construct Prompt
+        # 3. Construct Optimized Prompt
         template = """
-        You are an Expert Career Strategist & Market Analyst for Gujarat, India.
+        Role: Career Strategist for Rural India.
+        Task: Analyze Job Market based on User Profile & Data.
         
-        Analyze the following multi-source data to answer the User's Query.
+        --- USER PROFILE ---
+        Edu: {education} | Loc: {location} | Skills: {skills}
+        Query: {query}
         
-        --- SOURCE 1: HISTORICAL BASELINE (Local CSV) ---
-        {csv_context}
+        --- MARKET DATA ---
+        [Historical]: {csv_context}
+        [Live Stats]: {web_stats}
+        [Learning]: {web_learning}
         
-        --- SOURCE 2: LIVE MARKET STATS (Web Search + Full Page Content) ---
-        {web_stats}
-        
-        --- SOURCE 3: LEARNING & TRENDS (Snippet Data) ---
-        {web_learning}
-        
-        --- USER CONTEXT ---
-        User Bio: {user_bio}
-        User Query: {query}
-        
-        --- THE TASK ---
-        Generate a highly detailed strategic report in JSON format.
-        You MUST synthesize data from all sources. If YouTube/Learning context suggests a specific tool or roadmap, include it.
-        
-        REQUIRED JSON STRUCTURE:
+        --- OUTPUT REQUIREMENT (JSON) ---
+        Generate a strategic JSON report matching the user's skills to the market.
         {{
             "market_snapshot": {{
                 "demand_level": "High/Medium/Low",
-                "salary_range": "e.g. 25k - 50k INR",
-                "trend_direction": "Rising/Stable/Declining",
-                "key_insight": "One sentence summary of the market reality vs history."
+                "salary_range": "e.g. 25k - 40k INR",
+                "trend": "Growth/Stable",
+                "insight": "1-sentence reality check for this user."
             }},
             "skills_matrix": {{
-                "must_have": ["Skill 1", "Skill 2"],
-                "good_to_have": ["Skill 3", "Skill 4"],
-                "emerging_tech": ["New Tool mentioned in 2025 trends"]
+                "user_has": ["Skills from profile that act as assets"],
+                "missing": ["Critical skills demanded by market data"],
+                "emerging": ["New tools mentioned in live stats"]
             }},
             "learning_roadmap": [
-                {{ "step": "Phase 1: Foundations", "action": "What to learn first", "duration": "e.g. 1 month" }},
-                {{ "step": "Phase 2: Advanced", "action": "Next steps", "duration": "e.g. 2 months" }}
+                {{ "step": "Phase 1", "action": "Foundations", "duration": "1 month" }}
             ],
             "career_path": {{
-                "entry_role": "Junior Title",
-                "progression": "Senior Title -> Lead Title",
-                "future_outlook": "Where this industry is heading in 5 years"
+                "role": "Entry Level Title",
+                "growth": "Senior Title",
+                "future": "5-year outlook"
             }},
             "resources": [
-                {{ "name": "Recommended YouTube Topic/Channel", "type": "Video" }},
-                {{ "name": "Recommended Certification/Course", "type": "Course" }}
+                {{ "name": "Specific Course/Video", "type": "Free Resource" }}
             ]
         }}
-        
-        Return ONLY valid JSON.
         """
         
         prompt = PromptTemplate(
-            input_variables=["csv_context", "web_stats", "web_learning", "user_bio", "query"],
+            input_variables=["csv_context", "web_stats", "web_learning", "education", "location", "skills", "query"],
             template=template
         )
         
@@ -204,18 +196,19 @@ class MarketIntelligenceService:
         try:
             response = await chain.ainvoke({
                 "csv_context": csv_data,
-                "web_stats": web_search_context.get("stats_context", ""),
-                "web_learning": web_search_context.get("learning_context", ""),
-                "user_bio": user_bio,
+                "web_stats": web_search_context.get("stats_context", "")[:3000], # HARD CAP CONTEXT
+                "web_learning": web_search_context.get("learning_context", "")[:1000],
+                "education": education,
+                "location": location,
+                "skills": str(skills),
                 "query": user_query
             })
             
-            # Simple text parsing for the JSON
             content = response.content.replace("```json", "").replace("```", "").strip()
             return json.loads(content)
             
         except Exception as e:
-            print(f"Market Intelligence Error: {e}")
+            print(f"Analysis Error: {e}")
             return {"error": str(e)}
 
 # Singleton instance

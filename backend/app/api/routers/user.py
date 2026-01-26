@@ -20,11 +20,8 @@ async def sync_user(data: UserSyncRequest):
     """
     Sync user data from Firebase after login/signup.
     """
-    try:
-        user = await create_or_update_user(data.firebase_id, data.email, data.name)
-        return user
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    user = await create_or_update_user(data.firebase_id, data.email, data.name)
+    return user
 
 @router.get("/me")
 async def get_my_profile(x_firebase_id: str = Header(...)):
@@ -45,8 +42,5 @@ async def update_my_profile(data: ProfileUpdateRequest, x_firebase_id: str = Hea
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    try:
-        profile = await update_user_profile(user.id, data.dict(exclude_unset=True))
-        return profile
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    profile = await update_user_profile(user.id, data.dict(exclude_unset=True))
+    return profile

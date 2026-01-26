@@ -154,6 +154,12 @@ export type TranslationKey =
   | "auth.error.userNotFound"
   | "auth.error.wrongPassword"
   | "auth.error.emailInUse"
+  | "auth.error.network"
+  | "auth.error.tooManyRequests"
+  | "auth.error.userDisabled"
+  | "auth.error.weakPassword"
+  | "auth.error.invalidCredential"
+  | "auth.error.operationNotAllowed"
   | "auth.link.backToHome"
 
   // Navigation
