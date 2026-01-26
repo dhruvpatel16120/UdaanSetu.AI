@@ -1,0 +1,146 @@
+[
+  {
+    "scheme_id": "gov_001",
+    "name": "Pradhan Mantri Kaushal Vikas Yojana (PMKVY)",
+    "name_gujarati": "પ્રધાનમંત્રી કૌશલ્ય વિકાસ યોજના",
+    "category": "Skill Development",
+    "description": "Free skill training program for youth with certification and placement assistance",
+    "eligibility": "10th pass or school dropout",
+    "benefits": [
+      "Free training in 40+ sectors",
+      "Government certification",
+      "Monetary reward on completion",
+      "Placement assistance"
+    ],
+    "how_to_apply": "Visit www.pmkvyofficial.org or nearest training center",
+    "target_audience": "Youth aged 15-45",
+    "suitable_for_rural": true,
+    "website": "https://www.pmkvyofficial.org"
+  },
+  {
+    "scheme_id": "gov_002",
+    "name": "Stand Up India Scheme",
+    "name_gujarati": "સ્ટેન્ડ અપ ઇન્ડિયા યોજના",
+    "category": "Entrepreneurship",
+    "description": "Bank loans for SC/ST and women entrepreneurs",
+    "eligibility": "SC/ST/Women, 18+ years",
+    "benefits": [
+      "Loans between ₹10 lakh to ₹1 crore",
+      "For greenfield enterprises",
+      "Manufacturing, services, or trading sector",
+      "Handholding support"
+    ],
+    "how_to_apply": "Apply through bank branches or www.standupmitra.in",
+    "target_audience": "First-time entrepreneurs",
+    "suitable_for_rural": true,
+    "website": "https://www.standupmitra.in"
+  },
+  {
+    "scheme_id": "gov_003",
+    "name": "National Rural Livelihood Mission (NRLM)",
+    "name_gujarati": "રાષ્ટ્રીય ગ્રામીણ આજીવિકા મિશન",
+    "category": "Rural Employment",
+    "description": "Promotes self-employment and skill development in rural areas",
+    "eligibility": "Rural poor households",
+    "benefits": [
+      "Self-Help Group formation",
+      "Skill training",
+      "Financial assistance",
+      "Market linkages"
+    ],
+    "how_to_apply": "Contact local Block Development Office",
+    "target_audience": "Rural poor",
+    "suitable_for_rural": true,
+    "website": "https://nrlm.gov.in"
+  },
+  {
+    "scheme_id": "gov_004",
+    "name": "Mukhyamantri Apprenticeship Yojana (Gujarat)",
+    "name_gujarati": "મુખ્યમંત્રી અપ્રેન્ટિસશીપ યોજના",
+    "category": "Employment",
+    "description": "Gujarat government scheme providing apprenticeship with stipend",
+    "eligibility": "12th pass Gujarat residents",
+    "benefits": [
+      "₹3,000-8,000 monthly stipend",
+      "On-the-job training",
+      "Industry experience",
+      "Placement opportunities"
+    ],
+    "how_to_apply": "Register on Gujarat government portal",
+    "target_audience": "Youth 18-30 years",
+    "suitable_for_rural": true,
+    "website": "https://www.digitalgujarat.gov.in"
+  },
+  {
+    "scheme_id": "gov_005",
+    "name": "Deen Dayal Upadhyaya Grameen Kaushalya Yojana (DDU-GKY)",
+    "name_gujarati": "દીનદયાળ ઉપાધ્યાય ગ્રામીણ કૌશલ્ય યોજના",
+    "category": "Skill Development",
+    "description": "Placement-linked skill training for rural poor youth",
+    "eligibility": "Rural youth aged 15-35 from poor families",
+    "benefits": [
+      "Free residential training",
+      "Placement guarantee (minimum 70%)",
+      "Post-placement support",
+      "Certification"
+    ],
+    "how_to_apply": "Contact local Project Implementing Agency (PIA)",
+    "target_audience": "Rural poor youth",
+    "suitable_for_rural": true,
+    "website": "http://ddugky.gov.in"
+  },
+  {
+    "scheme_id": "gov_006",
+    "name": "Startup India Scheme",
+    "name_gujarati": "સ્ટાર્ટઅપ ઇન્ડિયા યોજના",
+    "category": "Entrepreneurship",
+    "description": "Support for innovative startups with tax benefits and funding",
+    "eligibility": "Registered startups less than 10 years old",
+    "benefits": [
+      "Tax exemptions for 3 years",
+      "Funding support",
+      "IPR fast-tracking",
+      "Networking opportunities"
+    ],
+    "how_to_apply": "Register on www.startupindia.gov.in",
+    "target_audience": "Entrepreneurs and innovators",
+    "suitable_for_rural": true,
+    "website": "https://www.startupindia.gov.in"
+  },
+  {
+    "scheme_id": "gov_007",
+    "name": "Pradhan Mantri Mudra Yojana (PMMY)",
+    "name_gujarati": "પ્રધાનમંત્રી મુદ્રા યોજના",
+    "category": "Finance",
+    "description": "Loans up to ₹10 lakh for small businesses",
+    "eligibility": "Non-corporate, non-farm small/micro enterprises",
+    "benefits": [
+      "Shishu: up to ₹50,000",
+      "Kishore: ₹50,000 to ₹5 lakh",
+      "Tarun: ₹5 lakh to ₹10 lakh",
+      "No collateral required"
+    ],
+    "how_to_apply": "Apply through banks, NBFCs, or MFIs",
+    "target_audience": "Small business owners",
+    "suitable_for_rural": true,
+    "website": "https://www.mudra.org.in"
+  },
+  {
+    "scheme_id": "gov_008",
+    "name": "Paramparagat Krishi Vikas Yojana (PKVY)",
+    "name_gujarati": "પરંપરાગત કૃષિ વિકાસ યોજના",
+    "category": "Agriculture",
+    "description": "Promotes organic farming with financial assistance",
+    "eligibility": "Farmers willing to adopt organic farming",
+    "benefits": [
+      "₹50,000 per hectare for 3 years",
+      "Cluster-based approach",
+      "Organic certification support",
+      "Market linkage"
+    ],
+    "how_to_apply": "Contact local Agriculture Department",
+    "target_audience": "Farmers",
+    "suitable_for_rural": true,
+    "website": "https://pgsindia-ncof.gov.in"
+  }
+]

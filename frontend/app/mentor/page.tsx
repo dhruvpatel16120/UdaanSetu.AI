@@ -107,7 +107,7 @@ export default function MentorPage() {
 
         // Real API Call with streaming
         try {
-            const userId = "demo_user_123";
+            const userId = user?.uid || "demo_user_123";
             const history = messages.map(m => ({ role: m.role, content: m.content }));
             
             const response = await fetch("http://localhost:8000/api/chat/", {

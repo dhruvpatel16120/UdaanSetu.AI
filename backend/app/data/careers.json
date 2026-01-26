@@ -1,0 +1,254 @@
+[
+  {
+    "career_id": "tech_001",
+    "title": "Software Developer",
+    "category": "Technology",
+    "description": "Design, develop, and maintain software applications and systems",
+    "education_required": "12th Science / BTech CS / BCA / Self-taught",
+    "skills": [
+      "Programming (Python, Java, JavaScript)",
+      "Problem Solving",
+      "Data Structures",
+      "Version Control (Git)",
+      "Database Management"
+    ],
+    "salary_range_inr": {
+      "entry_level": "25000-40000",
+      "mid_level": "50000-100000",
+      "senior_level": "100000-300000"
+    },
+    "demand_level": "Very High",
+    "growth_trend": "Growing",
+    "suitable_for_rural": true,
+    "remote_work_possible": true,
+    "entry_barrier": "Medium",
+    "learning_duration_months": "6-12"
+  },
+  {
+    "career_id": "tech_002",
+    "title": "Web Developer",
+    "category": "Technology",
+    "description": "Create and maintain websites and web applications",
+    "education_required": "12th / Any Degree / Self-taught",
+    "skills": [
+      "HTML, CSS, JavaScript",
+      "React or Angular",
+      "Backend (Node.js or PHP)",
+      "Responsive Design",
+      "API Integration"
+    ],
+    "salary_range_inr": {
+      "entry_level": "20000-35000",
+      "mid_level": "40000-80000",
+      "senior_level": "80000-200000"
+    },
+    "demand_level": "Very High",
+    "growth_trend": "Growing",
+    "suitable_for_rural": true,
+    "remote_work_possible": true,
+    "entry_barrier": "Low to Medium",
+    "learning_duration_months": "4-8"
+  },
+  {
+    "career_id": "design_001",
+    "title": "Graphic Designer",
+    "category": "Design",
+    "description": "Create visual content for digital and print media",
+    "education_required": "12th / Diploma in Design / Self-taught",
+    "skills": [
+      "Adobe Photoshop",
+      "Adobe Illustrator",
+      "Creativity",
+      "Color Theory",
+      "Typography"
+    ],
+    "salary_range_inr": {
+      "entry_level": "15000-25000",
+      "mid_level": "30000-60000",
+      "senior_level": "60000-150000"
+    },
+    "demand_level": "High",
+    "growth_trend": "Stable",
+    "suitable_for_rural": true,
+    "remote_work_possible": true,
+    "entry_barrier": "Low",
+    "learning_duration_months": "3-6"
+  },
+  {
+    "career_id": "agri_001",
+    "title": "Organic Farming Specialist",
+    "category": "Agriculture",
+    "description": "Practice sustainable farming methods and organic crop production",
+    "education_required": "10th / 12th / Agriculture Diploma",
+    "skills": [
+      "Crop Management",
+      "Soil Health",
+      "Pest Control (Natural)",
+      "Marketing",
+      "Business Planning"
+    ],
+    "salary_range_inr": {
+      "entry_level": "15000-30000",
+      "mid_level": "30000-60000",
+      "senior_level": "60000-150000"
+    },
+    "demand_level": "Growing",
+    "growth_trend": "Growing",
+    "suitable_for_rural": true,
+    "remote_work_possible": false,
+    "entry_barrier": "Medium",
+    "learning_duration_months": "6-12",
+    "government_schemes": ["PMKSY", "Paramparagat Krishi Vikas Yojana"]
+  },
+  {
+    "career_id": "biz_001",
+    "title": "Digital Marketing Specialist",
+    "category": "Business",
+    "description": "Promote products and services through digital channels",
+    "education_required": "12th / Any Degree / Certification",
+    "skills": [
+      "Social Media Marketing",
+      "SEO/SEM",
+      "Content Creation",
+      "Analytics",
+      "Email Marketing"
+    ],
+    "salary_range_inr": {
+      "entry_level": "18000-30000",
+      "mid_level": "35000-70000",
+      "senior_level": "70000-180000"
+    },
+    "demand_level": "Very High",
+    "growth_trend": "Growing",
+    "suitable_for_rural": true,
+    "remote_work_possible": true,
+    "entry_barrier": "Low",
+    "learning_duration_months": "3-6"
+  },
+  {
+    "career_id": "health_001",
+    "title": "Healthcare Assistant",
+    "category": "Healthcare",
+    "description": "Provide basic healthcare support in clinics and hospitals",
+    "education_required": "12th Science / Nursing Diploma",
+    "skills": [
+      "Patient Care",
+      "First Aid",
+      "Medical Terminology",
+      "Communication",
+      "Empathy"
+    ],
+    "salary_range_inr": {
+      "entry_level": "12000-20000",
+      "mid_level": "20000-35000",
+      "senior_level": "35000-60000"
+    },
+    "demand_level": "High",
+    "growth_trend": "Stable",
+    "suitable_for_rural": true,
+    "remote_work_possible": false,
+    "entry_barrier": "Medium",
+    "learning_duration_months": "6-12"
+  },
+  {
+    "career_id": "edu_001",
+    "title": "Online Tutor",
+    "category": "Education",
+    "description": "Teach students online in various subjects",
+    "education_required": "12th / Graduate in subject area",
+    "skills": [
+      "Subject Expertise",
+      "Communication",
+      "Online Tools (Zoom, Google Meet)",
+      "Patience",
+      "Curriculum Planning"
+    ],
+    "salary_range_inr": {
+      "entry_level": "10000-20000",
+      "mid_level": "20000-40000",
+      "senior_level": "40000-100000"
+    },
+    "demand_level": "High",
+    "growth_trend": "Growing",
+    "suitable_for_rural": true,
+    "remote_work_possible": true,
+    "entry_barrier": "Low",
+    "learning_duration_months": "1-3"
+  },
+  {
+    "career_id": "trade_001",
+    "title": "Electrician",
+    "category": "Skilled Trade",
+    "description": "Install and maintain electrical systems",
+    "education_required": "10th / ITI Electrician",
+    "skills": [
+      "Electrical Wiring",
+      "Circuit Testing",
+      "Safety Protocols",
+      "Problem Solving",
+      "Tool Handling"
+    ],
+    "salary_range_inr": {
+      "entry_level": "12000-18000",
+      "mid_level": "18000-35000",
+      "senior_level": "35000-70000"
+    },
+    "demand_level": "High",
+    "growth_trend": "Stable",
+    "suitable_for_rural": true,
+    "remote_work_possible": false,
+    "entry_barrier": "Low to Medium",
+    "learning_duration_months": "6-12",
+    "government_schemes": ["PMKVY", "ITI Programs"]
+  },
+  {
+    "career_id": "creative_001",
+    "title": "Content Creator / YouTuber",
+    "category": "Creative",
+    "description": "Create engaging content for social media and video platforms",
+    "education_required": "Any / Self-taught",
+    "skills": [
+      "Video Editing",
+      "Storytelling",
+      "Social Media",
+      "Consistency",
+      "Audience Engagement"
+    ],
+    "salary_range_inr": {
+      "entry_level": "5000-15000",
+      "mid_level": "20000-60000",
+      "senior_level": "60000-500000"
+    },
+    "demand_level": "High",
+    "growth_trend": "Growing",
+    "suitable_for_rural": true,
+    "remote_work_possible": true,
+    "entry_barrier": "Very Low",
+    "learning_duration_months": "2-6"
+  },
+  {
+    "career_id": "data_001",
+    "title": "Data Entry Operator",
+    "category": "Administrative",
+    "description": "Enter and manage data in computer systems",
+    "education_required": "12th / Basic Computer Knowledge",
+    "skills": [
+      "Typing Speed",
+      "MS Office",
+      "Attention to Detail",
+      "Data Accuracy",
+      "Time Management"
+    ],
+    "salary_range_inr": {
+      "entry_level": "10000-15000",
+      "mid_level": "15000-25000",
+      "senior_level": "25000-40000"
+    },
+    "demand_level": "Medium",
+    "growth_trend": "Stable",
+    "suitable_for_rural": true,
+    "remote_work_possible": true,
+    "entry_barrier": "Very Low",
+    "learning_duration_months": "1-2"
+  }
+]

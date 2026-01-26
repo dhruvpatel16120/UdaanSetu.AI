@@ -1,0 +1,245 @@
+[
+  {
+    "skill_id": "tech_python",
+    "skill_name": "Python Programming",
+    "category": "Technology",
+    "difficulty": "Beginner to Advanced",
+    "careers": ["Software Developer", "Data Analyst", "AI/ML Engineer", "Backend Developer"],
+    "learning_resources": [
+      {
+        "name": "Python.org Tutorial",
+        "type": "Documentation",
+        "cost": "Free",
+        "language": "English",
+        "url": "https://docs.python.org/3/tutorial/"
+      },
+      {
+        "name": "Codecademy Python",
+        "type": "Interactive Course",
+        "cost": "Free + Paid",
+        "language": "English"
+      },
+      {
+        "name": "Python Tutorials (Hindi)",
+        "type": "YouTube",
+        "cost": "Free",
+        "language": "Hindi",
+        "channel": "CodeWithHarry"
+      }
+    ],
+    "time_to_learn": "3-6 months",
+    "job_demand": "Very High",
+    "average_salary_inr": "30000-80000"
+  },
+  {
+    "skill_id": "design_photoshop",
+    "skill_name": "Adobe Photoshop",
+    "category": "Design",
+    "difficulty": "Beginner to Advanced",
+    "careers": ["Graphic Designer", "UI Designer", "Photo Editor", "Content Creator"],
+    "learning_resources": [
+      {
+        "name": "Adobe Photoshop Tutorials",
+        "type": "Official Tutorials",
+        "cost": "Free",
+        "language": "English"
+      },
+      {
+        "name": "Piximperfect YouTube",
+        "type": "Video Tutorials",
+        "cost": "Free",
+        "language": "English"
+      },
+      {
+        "name": "Photoshop in Hindi",
+        "type": "YouTube",
+        "cost": "Free",
+        "language": "Hindi"
+      }
+    ],
+    "time_to_learn": "2-4 months",
+    "job_demand": "High",
+    "average_salary_inr": "20000-50000"
+  },
+  {
+    "skill_id": "marketing_seo",
+    "skill_name": "SEO (Search Engine Optimization)",
+    "category": "Digital Marketing",
+    "difficulty": "Beginner to Intermediate",
+    "careers": ["Digital Marketer", "SEO Specialist", "Content Strategist"],
+    "learning_resources": [
+      {
+        "name": "Google SEO Starter Guide",
+        "type": "Documentation",
+        "cost": "Free",
+        "language": "English"
+      },
+      {
+        "name": "Moz Beginner's Guide to SEO",
+        "type": "Guide",
+        "cost": "Free",
+        "language": "English"
+      },
+      {
+        "name": "SEO in Hindi",
+        "type": "YouTube",
+        "cost": "Free",
+        "language": "Hindi"
+      }
+    ],
+    "time_to_learn": "2-3 months",
+    "job_demand": "Very High",
+    "average_salary_inr": "25000-60000"
+  },
+  {
+    "skill_id": "data_excel",
+    "skill_name": "Microsoft Excel (Advanced)",
+    "category": "Data & Analytics",
+    "difficulty": "Beginner to Advanced",
+    "careers": ["Data Analyst", "Business Analyst", "Accountant", "MIS Executive"],
+    "learning_resources": [
+      {
+        "name": "Excel Easy",
+        "type": "Tutorial Website",
+        "cost": "Free",
+        "language": "English"
+      },
+      {
+        "name": "Excel Campus YouTube",
+        "type": "Video Tutorials",
+        "cost": "Free",
+        "language": "English"
+      },
+      {
+        "name": "Excel in Hindi",
+        "type": "YouTube",
+        "cost": "Free",
+        "language": "Hindi"
+      }
+    ],
+    "time_to_learn": "1-3 months",
+    "job_demand": "High",
+    "average_salary_inr": "15000-40000"
+  },
+  {
+    "skill_id": "web_html_css",
+    "skill_name": "HTML & CSS",
+    "category": "Web Development",
+    "difficulty": "Beginner",
+    "careers": ["Web Developer", "Frontend Developer", "Email Developer"],
+    "learning_resources": [
+      {
+        "name": "freeCodeCamp",
+        "type": "Interactive Platform",
+        "cost": "Free",
+        "language": "English"
+      },
+      {
+        "name": "W3Schools",
+        "type": "Tutorial Website",
+        "cost": "Free",
+        "language": "English"
+      },
+      {
+        "name": "HTML CSS in Hindi",
+        "type": "YouTube",
+        "cost": "Free",
+        "language": "Hindi",
+        "channel": "CodeWithHarry"
+      }
+    ],
+    "time_to_learn": "1-2 months",
+    "job_demand": "Very High",
+    "average_salary_inr": "20000-50000"
+  },
+  {
+    "skill_id": "agri_organic",
+    "skill_name": "Organic Farming Techniques",
+    "category": "Agriculture",
+    "difficulty": "Intermediate",
+    "careers": ["Organic Farmer", "Agriculture Consultant", "Farm Manager"],
+    "learning_resources": [
+      {
+        "name": "ICAR e-Learning",
+        "type": "Online Courses",
+        "cost": "Free",
+        "language": "Hindi, English"
+      },
+      {
+        "name": "Krishi Vigyan Kendra",
+        "type": "Training Center",
+        "cost": "Free",
+        "language": "Local Language"
+      },
+      {
+        "name": "Organic Farming YouTube",
+        "type": "Video Tutorials",
+        "cost": "Free",
+        "language": "Hindi, Gujarati"
+      }
+    ],
+    "time_to_learn": "3-6 months",
+    "job_demand": "Growing",
+    "average_salary_inr": "20000-50000"
+  },
+  {
+    "skill_id": "comm_english",
+    "skill_name": "English Communication",
+    "category": "Soft Skills",
+    "difficulty": "Beginner to Intermediate",
+    "careers": ["All careers benefit from this skill"],
+    "learning_resources": [
+      {
+        "name": "BBC Learning English",
+        "type": "Website & App",
+        "cost": "Free",
+        "language": "English"
+      },
+      {
+        "name": "Duolingo",
+        "type": "App",
+        "cost": "Free",
+        "language": "Multiple"
+      },
+      {
+        "name": "English Speaking Course (Hindi)",
+        "type": "YouTube",
+        "cost": "Free",
+        "language": "Hindi"
+      }
+    ],
+    "time_to_learn": "3-6 months",
+    "job_demand": "Very High",
+    "average_salary_inr": "Increases base salary by 20-30%"
+  },
+  {
+    "skill_id": "trade_electrical",
+    "skill_name": "Electrical Work",
+    "category": "Skilled Trade",
+    "difficulty": "Intermediate",
+    "careers": ["Electrician", "Maintenance Technician", "Solar Panel Installer"],
+    "learning_resources": [
+      {
+        "name": "ITI Electrician Course",
+        "type": "Government Training",
+        "cost": "Free/Subsidized",
+        "language": "Local Language"
+      },
+      {
+        "name": "PMKVY Electrical Training",
+        "type": "Skill Development",
+        "cost": "Free",
+        "language": "Hindi, Local"
+      },
+      {
+        "name": "Electrical Work YouTube",
+        "type": "Video Tutorials",
+        "cost": "Free",
+        "language": "Hindi"
+      }
+    ],
+    "time_to_learn": "6-12 months",
+    "job_demand": "High",
+    "average_salary_inr": "15000-35000"
+  }
+]

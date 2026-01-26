@@ -1,0 +1,251 @@
+[
+  {
+    "career": "Software Developer",
+    "roadmap": {
+      "phase_1": {
+        "title": "Foundations (Months 1-3)",
+        "skills": [
+          "Programming Basics (Python or JavaScript)",
+          "Data Structures & Algorithms",
+          "Git & GitHub",
+          "Problem Solving"
+        ],
+        "resources": [
+          {
+            "name": "CS50 Introduction to Computer Science",
+            "type": "Free Course",
+            "platform": "edX",
+            "language": "English with subtitles"
+          },
+          {
+            "name": "Python for Everybody",
+            "type": "Free Course",
+            "platform": "Coursera",
+            "language": "English"
+          },
+          {
+            "name": "FreeCodeCamp",
+            "type": "Interactive Platform",
+            "platform": "freeCodeCamp.org",
+            "language": "English"
+          }
+        ]
+      },
+      "phase_2": {
+        "title": "Specialization (Months 4-6)",
+        "skills": [
+          "Web Development (Frontend or Backend)",
+          "Database Management",
+          "API Development",
+          "Testing"
+        ],
+        "resources": [
+          {
+            "name": "The Odin Project",
+            "type": "Free Curriculum",
+            "platform": "theodinproject.com",
+            "language": "English"
+          },
+          {
+            "name": "Full Stack Open",
+            "type": "Free Course",
+            "platform": "University of Helsinki",
+            "language": "English"
+          }
+        ]
+      },
+      "phase_3": {
+        "title": "Portfolio & Job Prep (Months 7-12)",
+        "skills": [
+          "Build 3-5 Projects",
+          "Deploy Applications",
+          "Resume Building",
+          "Interview Preparation"
+        ],
+        "resources": [
+          {
+            "name": "GitHub Portfolio",
+            "type": "Platform",
+            "platform": "github.com",
+            "language": "Any"
+          },
+          {
+            "name": "LeetCode",
+            "type": "Practice Platform",
+            "platform": "leetcode.com",
+            "language": "English"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "career": "Digital Marketing Specialist",
+    "roadmap": {
+      "phase_1": {
+        "title": "Basics (Months 1-2)",
+        "skills": [
+          "Digital Marketing Fundamentals",
+          "Social Media Platforms",
+          "Content Writing",
+          "Basic Analytics"
+        ],
+        "resources": [
+          {
+            "name": "Google Digital Garage",
+            "type": "Free Certification",
+            "platform": "Google",
+            "language": "English, Hindi"
+          },
+          {
+            "name": "HubSpot Academy",
+            "type": "Free Courses",
+            "platform": "HubSpot",
+            "language": "English"
+          }
+        ]
+      },
+      "phase_2": {
+        "title": "Specialization (Months 3-5)",
+        "skills": [
+          "SEO/SEM",
+          "Facebook & Instagram Ads",
+          "Email Marketing",
+          "Google Analytics"
+        ],
+        "resources": [
+          {
+            "name": "Google Analytics Certification",
+            "type": "Free Certification",
+            "platform": "Google",
+            "language": "English"
+          },
+          {
+            "name": "Meta Blueprint",
+            "type": "Free Courses",
+            "platform": "Facebook",
+            "language": "English"
+          }
+        ]
+      },
+      "phase_3": {
+        "title": "Practice (Months 6+)",
+        "skills": [
+          "Run Campaigns for Local Businesses",
+          "Build Portfolio",
+          "Freelancing"
+        ],
+        "resources": [
+          {
+            "name": "Fiverr / Upwork",
+            "type": "Freelance Platform",
+            "platform": "Online",
+            "language": "Any"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "career": "Graphic Designer",
+    "roadmap": {
+      "phase_1": {
+        "title": "Tools & Basics (Months 1-2)",
+        "skills": [
+          "Adobe Photoshop",
+          "Adobe Illustrator",
+          "Color Theory",
+          "Typography"
+        ],
+        "resources": [
+          {
+            "name": "Canva Design School",
+            "type": "Free Tutorials",
+            "platform": "Canva",
+            "language": "English"
+          },
+          {
+            "name": "YouTube - Piximperfect",
+            "type": "Video Tutorials",
+            "platform": "YouTube",
+            "language": "English"
+          }
+        ]
+      },
+      "phase_2": {
+        "title": "Portfolio Building (Months 3-6)",
+        "skills": [
+          "Logo Design",
+          "Social Media Graphics",
+          "Print Design",
+          "UI Basics"
+        ],
+        "resources": [
+          {
+            "name": "Behance",
+            "type": "Portfolio Platform",
+            "platform": "Adobe",
+            "language": "Any"
+          },
+          {
+            "name": "Daily UI Challenge",
+            "type": "Practice",
+            "platform": "dailyui.co",
+            "language": "Any"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "career": "Organic Farming Specialist",
+    "roadmap": {
+      "phase_1": {
+        "title": "Knowledge (Months 1-3)",
+        "skills": [
+          "Soil Health Management",
+          "Organic Pest Control",
+          "Crop Selection",
+          "Water Management"
+        ],
+        "resources": [
+          {
+            "name": "ICAR e-Learning",
+            "type": "Free Courses",
+            "platform": "ICAR",
+            "language": "Hindi, English"
+          },
+          {
+            "name": "Agriculture Department Gujarat",
+            "type": "Training Programs",
+            "platform": "Government",
+            "language": "Gujarati, Hindi"
+          }
+        ]
+      },
+      "phase_2": {
+        "title": "Practice (Months 4-12)",
+        "skills": [
+          "Start Small Plot",
+          "Market Linkage",
+          "Certification Process",
+          "Business Planning"
+        ],
+        "resources": [
+          {
+            "name": "PMKVY Scheme",
+            "type": "Government Scheme",
+            "platform": "Government of India",
+            "language": "Hindi, Gujarati"
+          },
+          {
+            "name": "Local Krishi Vigyan Kendra",
+            "type": "Training Center",
+            "platform": "ICAR",
+            "language": "Local Language"
+          }
+        ]
+      }
+    }
+  }
+]

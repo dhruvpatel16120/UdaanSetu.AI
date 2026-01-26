@@ -22,101 +22,108 @@ class MentorChatService:
 
     async def chat_with_mentor(self, history: list, student_profile: dict, query: str, language: str = "en"):
         """
-        Streaming Chat Mentor with Context.
+        Hyper-Personalized Advanced Generator [v2.5]
+        Uses Gemini 2.5 Flash with Recursive Personalization Logic.
         """
+        from app.services.rag_engine import get_rag_engine
+
         llm = self._get_llm()
         if not llm:
-            yield "AI Service Unavailable."
+            yield "SYSTEM_ERROR: Mentor offline. Check connection."
             return
 
-        # Extract basic info
-        bio = student_profile.get("generated_bio", {})
+        # 1. DEEP USER ANALYSIS (Profile Parsing)
+        bio = student_profile.get("generated_bio", student_profile)
         name = bio.get("name", "Student")
-        education = bio.get("education", "Unknown")
+        education = bio.get("education", "Unknown Class")
         location = bio.get("location", "Gujarat")
-        
-        # Enhanced Language Instructions
-        lang_instruction = ""
-        if language == "gu":
-            lang_instruction = "Respond in GUJARATI (ગુજરાતી). Use simple words. Explain English terms."
-        else:
-            lang_instruction = "Respond in SIMPLE English. Avoid jargon."
-        
-        # --- UdaanSetu.AI Platform Context (COMPRESSED) ---
-        platform_context = """
-        UdaanSetu.AI: AI Career Mentor for Rural Gujarat.
-        Mission: Bridge Rural Dreams to Digital Futures.
-        Features: Smart Assessment, AI Career Reports, Bilingual (Gu/En), Job Market Data, Free Resources.
-        Target: Rural usage, Class 10-12, Dropouts.
-        Team: FutureMinds (Dhruv Patel).
-        """
-        
-        # Smart Query Detection
-        query_lower = query.lower()
-        
-        # Platform-related queries
-        is_platform_query = any(keyword in query_lower for keyword in [
-            'udaansetu', 'ઉડાનસેતુ', 'platform', 'app', 'about', 'what is', 'features', 'team'
-        ])
-        
-        # Skills/Learning queries
-        is_skills_query = any(keyword in query_lower for keyword in [
-            'skill', 'learn', 'course', 'tutorial', 'certification', 'study'
-        ])
-        
-        # Job market queries
-        is_market_query = any(keyword in query_lower for keyword in [
-            'salary', 'job', 'demand', 'market', 'future', 'scope'
-        ])
-        
-        # --- Context Strategy ---
-        if len(history) > 0:
-            # FOLLOW-UP: Minimal Context
-            if is_platform_query:
-                context_str = f"System: UdaanSetu.AI Bot. {lang_instruction}. Context: {platform_context}."
-            elif is_skills_query:
-                interests = bio.get("interest_domains", [])
-                context_str = f"System: Skill Mentor for {name}. {lang_instruction}. Interests: {interests}. Recommend free resources."
-            elif is_market_query:
-                 context_str = f"System: Career Advisor for {name} ({location}). {lang_instruction}. discuss job trends/salary briefly."
-            else:
-                 context_str = f"System: Mentor for {name}. {lang_instruction}. Be encouraging."
-        else:
-            # FIRST INTERACTION: Targeted Context
-            if is_platform_query:
-                context_str = f"System: UdaanSetu Bot. {lang_instruction}. {platform_context}. Welcome {name}."
-            else:
-                # Career Guidance - Focused
-                top_rec = "General"
-                report = bio.get("ai_report", {})
-                if report and "recommendations" in report:
-                     top_rec = report["recommendations"][0].get("title", "General")
+        interests = bio.get("interest_domains", [])
+        constraints = bio.get("constraints", [])
+        family_income = bio.get("family_income", "Unknown")
 
-                context_str = f"""
-                Role: AI Mentor for {name} ({location}).
-                Context: {lang_instruction}
-                Profile: {education}, Top Path: {top_rec}.
-                Task: Guide on career/skills. Prioritize FREE resources & Rural context.
-                """
+        # 2. SEMANTIC RETRIEVAL (The Precision Engine)
+        rag_context = ""
+        try:
+            rag_engine = get_rag_engine()
+            # Multi-stage retrieval: Vector Search -> Cross-Encoder Reranking
+            rag_context = rag_engine.get_context_for_query(query=query, user_profile=bio, k=4)
+        except Exception as e:
+            logger.error(f"RAG_ERROR: {e}")
+            rag_context = "<status>KNOWLEDGE_BASE_OFFLINE</status>"
+
+        # 3. PERSONALIZED MAGIC FORMULA ARCHITECTURE
+        lang_instruction = "Output Language: SIMPLE ENGLISH with very clear and simple understanding."
+        if language == "gu":
+            lang_instruction = "Output Language: Normal, polite, and easily understandable GUJARATI (ગુજરાતી) with technical terms translated/bracketed."
+
+        system_message = f"""
+<persona>
+You are 'UdaanSetu', a hyper-personalized Career Mentor for rural Gujarati youth. 
+You are more than an AI; you are an elder sibling (Mota Bhai/Bena) who understands the struggle of limited resources.
+Tone: Encouraging, ultra-clear, pragmatic, and culturally rooted.
+</persona>
+
+<knowledge_context>
+{rag_context}
+</knowledge_context>
+
+<internal_reasoning>
+1. IDENTIFY: What is {name} actually asking? (Intent Analysis)
+2. MATCH: Which parts of the 2026-2027 Gujarat job market {rag_context} fit {name}'s {interests}?
+3. FILTER: Only suggest paths that {name} can achieve given their {constraints} and {education}.
+4. SOLVE: If {name} has a barrier (like "No Laptop"), find a way in the context to solve it (e.g., ITIs, Skill Centers).
+</internal_reasoning>
+
+<user_profile>
+- NAME: {name}
+- EDUCATION: {education}
+- LOCATION: {location}
+- INTERESTS: {interests}
+- FAMILY_INCOME: {family_income}
+- BARRIERS/CONSTRAINTS: {constraints}
+</user_profile>
+
+<task_objective>
+Synthesize the <knowledge_context> to provide {name} with a personalized career strategy for the 2026-2027 job market in Gujarat.
+Prioritize high-demand sectors like IT, Green Energy, Organic Agriculture, and Healthcare.
+</task_objective>
+
+<guardrails>
+- TRUTH_ONLY: No hallucinations. Cite source file/chunk after every claim [Source: ...].
+- LANGUAGE: {lang_instruction}
+- ACCESSIBILITY: If a career requires a degree {name} doesn't have, show the 'Setu' (Bridge) — vocational training or certificates.
+- SAFETY: Warn against "Quick Money" schemes or high-fee unverified coaching.
+</guardrails>
+
+<format_requirements>
+- Start with a warm, personalized greeting mentioning {name}'s goals.
+- Use **Bold** for skills and job titles.
+- Max Word Count: 280 words.
+- Use simple analogies (e.g., comparing software building to agriculture or construction).
+- End with: "Tell me, {name}, what is the first small step you want to take today?"
+</format_requirements>
+"""
+
+        # 4. MEMORY & MESSAGE CHAIN
+        messages = [SystemMessage(content=system_message)]
+        for msg in history[-8:]:
+            role = msg.get("role")
+            content = msg.get("content", "")
+            if role == "user":
+                messages.append(HumanMessage(content=content))
+            elif role == "assistant":
+                messages.append(AIMessage(content=content))
         
-        # Build Message Chain
-        messages = [SystemMessage(content=context_str)]
-        
-        # Add History (Last 6 turns is usually enough for context)
-        for msg in history[-6:]:
-            if msg.get("role") == "user":
-                messages.append(HumanMessage(content=msg.get("content", "")))
-            else:
-                messages.append(AIMessage(content=msg.get("content", "")))
-                
-        # Add Current Query
         messages.append(HumanMessage(content=query))
-        
+
+        # 5. STREAMING GENERATION
         try:
             async for chunk in llm.astream(messages):
                 yield chunk.content
         except Exception as e:
-            yield f"Error: {str(e)}"
+            logger.error(f"GEN_ERROR: {e}")
+            yield "The Mentor is currently thinking deeply. Please wait a moment."
+
 
 # Singleton
 mentor_service = MentorChatService()

@@ -12,25 +12,38 @@ router = APIRouter()
 class ChatRequest(BaseModel):
     user_id: str
     message: str
-    language: str = "en" # "en" or "gu"
-    history: List[Dict[str, str]] = [] # [{"role": "user", "content": "..."}, ...]
+    language: str = "en"  # "en" or "gu"
+    history: List[Dict[str, str]] = []  # [{"role": "user", "content": "..."}, ...]
+    user_bio_profile: Optional[Dict] = None
 
 @router.post("/")
 async def chat_endpoint(request: ChatRequest):
     """
     Streaming Chat with the AI Mentor.
     """
-    # 1. Fetch User's Assessment Data
-    try:
-        if not firebase_admin._apps:
-            init_firebase()
-        
-        db = firestore.client()
-        doc = db.collection("users").document(request.user_id).get()
-        student_data = doc.to_dict().get("assessment_result", {}) if doc.exists else {}
-    except Exception as e:
-        print(f"DB Error: {e}")
-        student_data = {}
+    # 1. Determine User Profile
+    student_data = {}
+    if request.user_bio_profile:
+        # Use provided profile if available
+        student_data = request.user_bio_profile
+    else:
+        # Fallback to Firestore
+        try:
+            if not firebase_admin._apps:
+                init_firebase()
+            
+            db = firestore.client()
+            doc = db.collection("users").document(request.user_id).get()
+            if doc.exists:
+                student_data = doc.to_dict().get("assessment_result", {})
+                # Also try to get 'profile' or 'bio' if 'assessment_result' is missing logic
+                if not student_data:
+                     data = doc.to_dict()
+                     student_data = data.get("student_profile", data.get("profile", {}))
+
+        except Exception as e:
+            print(f"DB Error: {e}")
+            student_data = {}
 
     # 2. Return Streaming Response
     async def generate():

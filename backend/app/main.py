@@ -44,6 +44,7 @@ app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 app.include_router(user.router, prefix="/api/user", tags=["User"])
 app.include_router(roadmap.router, prefix="/api/roadmap", tags=["Career Roadmap"])
 
-from app.api.routers import market
+from app.api.routers import market, knowledge
 app.include_router(market.router, prefix="/api/market", tags=["Market Intelligence"])
+app.include_router(knowledge.router, prefix="/api/knowledge", tags=["Knowledge Base"])
 
