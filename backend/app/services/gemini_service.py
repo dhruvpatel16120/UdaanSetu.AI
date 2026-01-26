@@ -15,93 +15,37 @@ if not api_key:
 # Initialize Model via LangChain
 def get_llm(model_name="gemini-2.5-flash"):
     """
-    Get LLM instance. Defaults to Flash for speed.
+    Get LLM instance. Defaults to Flash for speed and intelligence.
     """
     if api_key:
         return ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model=model_name,
             google_api_key=api_key,
-            temperature=0.2
+            temperature=0.3, # Slightly more creative for reports
+            max_output_tokens=4096 # Allow longer reports
         )
     return None
 
 async def chat_with_mentor(history: list, student_profile: dict, query: str) -> str:
     """
-    Handles chat turns with optimization for speed.
-    - First Turn: Injects comprehensive student bio + career report context.
-    - Follow-ups: Injects minimal persona context to save tokens and latency.
+    Legacy/Fallback Chat Function. 
+    (Note: Primary chat logic is in `chat_mentor.py` which supports streaming).
     """
-    # Try Flash first for speed
-    llm = get_llm("gemini-2.5-flash")
-    if not llm:
-         return "AI Service Unavailable."
-
-    # Data Extraction
-    bio = student_profile.get("generated_bio", {})
-    name = bio.get("name", "Student")
-    edu = bio.get("education", "12th Grade")
+    # ... (Kept simple as fallback)
+    llm = get_llm()
+    if not llm: return "AI Service Unavailable."
     
-    # --- Context Optimization Logic ---
-    if len(history) > 0:
-        # LITE MODE (Follow-up): Just remind AI of the persona.
-        # "Job context... not required... llm already have that [in history]"
-        context_str = f"""
-        Act as a Mentor for {name} ({edu}).
-        Keep answers short, encouraging, and direct.
-        """
-    else:
-        # RICH MODE (First Run): Full Context Injection
-        report = bio.get("ai_report", {})
-        if isinstance(report, str): report = {}
-        
-        top_career = "General Career"
-        if isinstance(report, dict) and "recommendations" in report and len(report["recommendations"]) > 0:
-            top_career = report["recommendations"][0].get("title", "General Path")
-
-        context_str = f"""
-        You are an AI Mentor for {name}.
-        
-        Student Profile:
-        - Education: {edu}
-        - Location: {bio.get('location', 'Gujarat')}
-        - Interests: {bio.get('interest_domains', [])}
-        - Top Recommended Career: {top_career}
-        
-        Guidelines:
-        - Be friendly and encouraging (mentor-like).
-        - Use simple language (English/Gujarati mixed is okay if helpful).
-        - Answer the user's question based on their profile.
-        """
-    
-    messages = [SystemMessage(content=context_str)]
-    
-    # Add history
-    for msg in history[-10:]: # Keep last 10 turns max to manage context window
-        role = msg.get("role", "user")
-        content = msg.get("content", "")
-        if role == "user":
-            messages.append(HumanMessage(content=content))
-        else:
-            messages.append(AIMessage(content=content))
-            
-    # Add current query
+    messages = [SystemMessage(content="You are a helpful AI Career Mentor.")]
     messages.append(HumanMessage(content=query))
-    
     try:
-        response = await llm.ainvoke(messages)
-        return response.content
-    except Exception as e:
-        print(f"Gemini Flash Error: {e}, falling back to Pro...")
-        # Fallback to Pro if Flash fails (e.g. region lock)
-        try:
-            fallback_llm = get_llm("gemini-pro")
-            response = await fallback_llm.ainvoke(messages)
-            return response.content
-        except Exception as e2:
-             return f"Sorry, I am having trouble thinking right now. ({str(e2)})"
+        res = await llm.ainvoke(messages)
+        return res.content
+    except:
+        return "I'm having trouble connecting right now."
+
 async def generate_career_report(student_profile: dict) -> dict:
     """
-    Generates a personalized career report using Google Gemini via LangChain.
+    Generates a personalized, premium career report using Google Gemini.
     """
     llm = get_llm()
     
@@ -114,43 +58,33 @@ async def generate_career_report(student_profile: dict) -> dict:
     # Construct the prompt
     bio = student_profile.get("generated_bio", {})
     
-    # --- OPTIMIZATION: Skip Live Web Research for Speed ---
-    # The user reported "too long time". Web research via DuckDuckGo is the bottleneck.
-    # We will rely on the LLM's internal knowledge base for now.
-    
-    web_research = {"stats_context": "Using internal knowledge base for speed optimization."}
-    rag_context = ""
-
-    # --- 3. SYNTHESIS LAYER: Construct The Agent Prompt ---
+    # --- 3. SYNTHESIS LAYER: High-Speed Agent Prompt ---
     prompt = f"""
-    Role: AI Career Mentor for Rural India (UdaanSetu).
-    Task: Create Career Report (JSON) based on Profile & Market Data.
+    IDENTITY: Senior Career Strategist (Udaan).
+    TASK: Generate a Career Report (JSON) for a Rural Indian Student.
+    MODE: SPEED & IMPACT. Keep all text concise (max 2 sentences per field).
     
-    -- PROFILE --
+    PROFILE:
     Bio: {bio.get("full_user_bio_profile", "N/A")}
     Traits: {json.dumps(bio.get("traits", {}))}
     
-    -- MARKET DATA --
-    {web_research.get('stats_context', 'N/A')[:2000]}
-    
-    -- KNOWLEDGE BASE --
-    {rag_context[:1000]}
-    
-    -- OUTPUT (JSON ONLY) --
-    Generate realistic career paths (prioritize low-cost/free options).
-    Structure:
+    OUTPUT JSON STRUCTURE (Strictly follow this):
     {{
         "careerReadiness": 85, 
-        "topStrengths": ["S1", "S2"],
+        "topStrengths": ["Strength1", "Strength2"],
         "recommendations": [
             {{
-                "title": "Role Name", "title_gu": "Gujarati Name",
-                "match": 90, "description": "Why fits", "description_gu": "Guj explanation",
-                "requirements": ["Req1", "Req2"], "salary_range": "e.g. 15k-25k"
+                "title": "Role Name", 
+                "title_gu": "Gujarati Name",
+                "match": 90, 
+                "description": "Why it fits (Short).", 
+                "description_gu": "Gujarati translation.",
+                "requirements": ["Req1", "Req2"], 
+                "salary_range": "e.g. 15k-25k"
             }}
         ],
         "recommendedSkills": [ {{ "name": "Skill", "priority": "high" }} ],
-        "learningPaths": [ {{ "title": "Path", "duration": "6m", "resources": [ {{ "name": "Res", "url": "URL" }} ] }} ]
+        "learningPaths": [ {{ "title": "Path Name", "duration": "3m", "resources": [ {{ "name": "Resource", "url": "URL" }} ] }} ]
     }}
     """
     
@@ -159,6 +93,26 @@ async def generate_career_report(student_profile: dict) -> dict:
         text_response = response.content.replace("```json", "").replace("```", "").strip()
         data = json.loads(text_response)
         return data
+    except Exception as e:
+        print(f"Gemini API Error: {e}")
+        # Return Fallback
+        return {
+            "careerReadiness": 50,
+            "topStrengths": ["Resilience", "Adaptability"],
+            "recommendations": [
+                {
+                    "title": "General Career Guidance",
+                    "title_gu": "સામાન્ય કારકિર્દી માર્ગદર્શન",
+                    "match": 60,
+                    "description": "We couldn't generate a specific report right now, but focus on building digital skills.",
+                    "description_gu": "ડિજિટલ કૌશલ્યો શીખવા પર ધ્યાન આપો.",
+                    "requirements": ["Basic Literacy", "Internet Access"],
+                    "salary_range": "Variable"
+                }
+            ],
+            "recommendedSkills": [],
+            "learningPaths": []
+        }
     except Exception as e:
         print(f"Gemini API Error: {e}")
         # Return Fallback (Keep existing fallback)

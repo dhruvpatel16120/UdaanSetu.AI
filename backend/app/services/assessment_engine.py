@@ -46,7 +46,8 @@ async def get_next_dynamic_question(current_answers: List[Answer]) -> Optional[d
 
     # 3. AI Selection for next question
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # Upgrade to latest Flash model for better logic
+        model = genai.GenerativeModel("gemini-2.5-flash")
         history = get_session_history_summary(current_answers)
         available_qs = [q for q in all_questions if q["id"] not in asked_ids]
         
@@ -56,16 +57,22 @@ async def get_next_dynamic_question(current_answers: List[Answer]) -> Optional[d
         q_list_str = "\n".join([f"- {q['id']}: {q['text']['en']} (Section: {q['section']})" for q in available_qs])
         
         prompt = f"""
-        You are the logic engine for UdaanSetu.AI career assessment. 
-        Based on the user's previous answers, pick the single most relevant next question ID from the list below.
+        ROLE: Expert Career Counselor & Psychologist.
+        TASK: Select the NEXT BEST question to ask a student to determine their ideal career path.
         
-        Previous History:
+        STRATEGY:
+        - If they show technical interest, drill down into technical topics.
+        - If they show artistic interest, ask about creativity.
+        - If they are unsure, ask broad psychological questions.
+        
+        Previous Dialog:
         {history}
         
-        Available Questions:
+        Available Questions to Choose From:
         {q_list_str}
         
-        Return ONLY the question ID. No explanation.
+        OUTPUT:
+        Return ONLY the exact ID of the question to ask next. Do not output anything else.
         """
         
         response = model.generate_content(prompt)
@@ -98,7 +105,15 @@ async def process_assessment_submission(answers: List[Answer], user_id: str = "d
     }
     
     # Extract traits and calculate scores
-    scores = {"tech_affinity": 5, "clarity": 5, "ambition": 5, "confidence": 5, "financial_awareness": 5}
+    # Base scores start at 10 to avoid 0s
+    scores = {
+        "tech_affinity": 10,       # Interest in Tech
+        "tech_competence": 10,     # 'Tech' - Actual skill/knowledge
+        "clarity": 10,            # Clarity of thought
+        "ambition": 10,           # Drive/Goals
+        "confidence": 10,         # Self-belief
+        "financial_awareness": 10 # Money smarts
+    }
     
     # 1. Analyze text answers for clarity and depth
     total_words = 0
@@ -114,16 +129,26 @@ async def process_assessment_submission(answers: List[Answer], user_id: str = "d
              word_count = len(ans.text_answer.split())
              total_words += word_count
              text_answer_count += 1
-             if word_count > 10: scores["clarity"] += 15
-             elif word_count > 5: scores["clarity"] += 8
              
-             # Vision / Ambition keyword check
-             if "vision" in ans.question_id or "positive" in ans.question_id:
-                 lower_ans = ans.text_answer.lower()
-                 if any(w in lower_ans for w in ["leader", "business", "company", "ceo", "crore", "rich"]):
-                     scores["ambition"] += 20
-                 if any(w in lower_ans for w in ["help", "service", "teach", "doctor", "police"]):
-                     scores["ambition"] += 10
+             # Clarity based on length (but not too long)
+             if word_count > 8: scores["clarity"] += 10
+             elif word_count > 4: scores["clarity"] += 5
+             
+             lower_ans = ans.text_answer.lower()
+             
+             # Tech Competence & Affinity Keywords
+             if any(w in lower_ans for w in ["code", "python", "java", "computer", "software", "app", "web"]):
+                 scores["tech_competence"] += 15
+                 scores["tech_affinity"] += 10
+                 
+             # Ambition Keywords
+             if any(w in lower_ans for w in ["leader", "business", "company", "ceo", "crore", "rich", "start", "own"]):
+                 scores["ambition"] += 15
+                 scores["financial_awareness"] += 5
+                 
+             # Service/Social Keywords
+             if any(w in lower_ans for w in ["help", "service", "teach", "doctor", "police", "social"]):
+                 scores["ambition"] += 10 # Still ambition, just different direction
 
         # Option Analysis
         if "options" in q:
@@ -134,37 +159,52 @@ async def process_assessment_submission(answers: List[Answer], user_id: str = "d
                         profile["traits"].update(opt["traits"])
                     
                     # --- SCORING RULES ---
-                    # Tech Affinity
-                    if opt["id"] in ["tech", "building", "science"]: scores["tech_affinity"] += 25
-                    if opt["id"] in ["playing", "arts"]: scores["tech_affinity"] += 5
+                    # Tech Interest
+                    if opt["id"] in ["tech", "building", "science", "logic"]: 
+                        scores["tech_affinity"] += 20
+                        
+                    # Arts/Creative
+                    if opt["id"] in ["playing", "arts", "design"]: 
+                        scores["tech_affinity"] += 5 # Slight overlap
+                        scores["clarity"] += 5
 
                     # Ambition & Finance
                     if opt["id"] == "high": 
-                        scores["financial_awareness"] += 30
+                        scores["financial_awareness"] += 25
                         scores["ambition"] += 20
                     if opt["id"] == "mid":
-                        scores["financial_awareness"] += 15
+                        scores["financial_awareness"] += 10
                         scores["ambition"] += 10
                     
                     # Confidence (Academic/Mobility)
-                    if opt["id"] in ["excellent", "top_tier"]: scores["confidence"] += 25
+                    if opt["id"] in ["excellent", "top_tier", "yes"]: scores["confidence"] += 20
                     if opt["id"] in ["average", "mid_tier"]: scores["confidence"] += 10
-                    if opt["id"] == "yes": scores["confidence"] += 15  # Relocation = Confidence
 
-    # Cross-Trait Inference (Boost scores based on synergistic traits)
-    if scores["tech_affinity"] > 20: scores["ambition"] += 5
-    if scores["financial_awareness"] > 20: scores["ambition"] += 5
-    if scores["confidence"] > 20: scores["clarity"] += 5
-
-    # Normalize scores to 0-100 cap
-    profile["scores"] = {k: min(v, 100) for k, v in scores.items()}
+    # 3. Normalize Scores based on Number of Questions to ensure result consistency
+    # Factor logic: Max possible points per question is approx 20-30.
+    # We define a "Scaling Factor" to map it to 0-100.
+    num_qs = max(len(answers), 1)
+    scaling_factor = 2.0 # Adjust based on tuning
     
-    # Calculate overall readiness
-    non_zero_scores = [v for v in profile["scores"].values() if v > 5]
-    if non_zero_scores:
-        profile["overall_score"] = sum(non_zero_scores) // len(non_zero_scores)
-    else:
-        profile["overall_score"] = 40
+    # Apply normalization and caps
+    final_scores = {}
+    for key, val in scores.items():
+        # Formula: (Raw / (NumQs * 5)) * 100 ... heuristic
+        # We'll stick to a simpler additive cap for robustness with few questions
+        # If few questions (3), raw score might be 40. 40 should be ~70%.
+        # If many questions (10), raw score might be 150. 150 should be 100%.
+        
+        normalized = (val / (num_qs * 10)) * 100
+        # Boost curve for satisfaction
+        boosted = normalized * 1.2 + 20 
+        final_scores[key] = int(min(boosted, 98)) # Cap at 98 for realism
+
+    profile["scores"] = final_scores
+    
+    # Calculate overall readiness (Average of top 3 scores)
+    sorted_scores = sorted(final_scores.values(), reverse=True)
+    top_3 = sorted_scores[:3]
+    profile["overall_score"] = int(sum(top_3) / len(top_3)) if top_3 else 50
 
     # 3. Construct Narrative Bio for AI Context
     # This was missing, causing generic recommendations.

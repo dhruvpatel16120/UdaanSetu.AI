@@ -9,16 +9,27 @@ load_dotenv()
 class MentorChatService:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
-        self.model_name = "gemini-2.5-flash"
-        
-    def _get_llm(self):
-        if self.api_key:
-            return ChatGoogleGenerativeAI(
-                model=self.model_name, 
-                google_api_key=self.api_key,
-                temperature=0.2
-            )
-        return None
+        # Using the latest available flash model for speed + intelligence
+        self.model_name = "gemini-2.5-flash" 
+        self._llm = None
+
+    @property
+    def llm(self):
+        """Lazy initialization of LLM to handle potential API key updates or failures gracefully."""
+        if self._llm is None and self.api_key:
+            try:
+                self._llm = ChatGoogleGenerativeAI(
+                    model=self.model_name, 
+                    google_api_key=self.api_key,
+                    temperature=0.4, # Balanced for creativity and accuracy
+                    top_p=0.9,
+                    top_k=40,
+                    max_output_tokens=1024,
+                )
+            except Exception as e:
+                print(f"Error initializing LLM: {e}")
+                return None
+        return self._llm
 
     async def chat_with_mentor(self, history: list, student_profile: dict, query: str, language: str = "en"):
         """
@@ -118,12 +129,12 @@ Prioritize high-demand sectors like IT, Green Energy, Organic Agriculture, and H
 
         # 5. STREAMING GENERATION
         try:
-            async for chunk in llm.astream(messages):
+            async for chunk in self.llm.astream(messages):
                 yield chunk.content
         except Exception as e:
             logger.error(f"GEN_ERROR: {e}")
             yield "The Mentor is currently thinking deeply. Please wait a moment."
 
 
-# Singleton
+# Singleton Instance
 mentor_service = MentorChatService()
