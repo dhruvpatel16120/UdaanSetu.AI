@@ -9,114 +9,113 @@ load_dotenv()
 class MentorChatService:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
-        self.model_name = "gemini-2.5-flash"
-        
-    def _get_llm(self):
-        if self.api_key:
-            return ChatGoogleGenerativeAI(
-                model=self.model_name, 
-                google_api_key=self.api_key,
-                temperature=0.2
-            )
-        return None
+        # Using the latest available flash model for speed + intelligence
+        self.model_name = "gemini-2.5-flash" 
+        self._llm = None
+
+    @property
+    def llm(self):
+        """Lazy initialization of LLM to handle potential API key updates or failures gracefully."""
+        if self._llm is None and self.api_key:
+            try:
+                self._llm = ChatGoogleGenerativeAI(
+                    model=self.model_name, 
+                    google_api_key=self.api_key,
+                    temperature=0.4, # Balanced for creativity and accuracy
+                    top_p=0.9,
+                    top_k=40,
+                    max_output_tokens=1024,
+                )
+            except Exception as e:
+                print(f"Error initializing LLM: {e}")
+                return None
+        return self._llm
 
     async def chat_with_mentor(self, history: list, student_profile: dict, query: str, language: str = "en"):
         """
-        Streaming Chat Mentor with Context.
+        Advanced Streaming Chat Mentor with Deep Context & empathetic Persona.
         """
-        llm = self._get_llm()
-        if not llm:
-            yield "AI Service Unavailable."
+        if not self.llm:
+            yield "⚠️ AI Service is currently unavailable (API Key missing or invalid)."
             return
 
-        # Extract basic info
+        # --- 1. Deep Profile Extraction ---
         bio = student_profile.get("generated_bio", {})
         name = bio.get("name", "Student")
-        education = bio.get("education", "Unknown")
-        location = bio.get("location", "Gujarat")
+        education = bio.get("education", "Standard 10/12")
+        location = bio.get("location", "Gujarat, India")
+        interests = bio.get("interest_domains", ["General Career"])
         
-        # Enhanced Language Instructions
-        lang_instruction = ""
-        if language == "gu":
-            lang_instruction = "Respond in GUJARATI (ગુજરાતી). Use simple words. Explain English terms."
-        else:
-            lang_instruction = "Respond in SIMPLE English. Avoid jargon."
-        
-        # --- UdaanSetu.AI Platform Context (COMPRESSED) ---
-        platform_context = """
-        UdaanSetu.AI: AI Career Mentor for Rural Gujarat.
-        Mission: Bridge Rural Dreams to Digital Futures.
-        Features: Smart Assessment, AI Career Reports, Bilingual (Gu/En), Job Market Data, Free Resources.
-        Target: Rural usage, Class 10-12, Dropouts.
-        Team: FutureMinds (Dhruv Patel).
-        """
-        
-        # Smart Query Detection
-        query_lower = query.lower()
-        
-        # Platform-related queries
-        is_platform_query = any(keyword in query_lower for keyword in [
-            'udaansetu', 'ઉડાનસેતુ', 'platform', 'app', 'about', 'what is', 'features', 'team'
-        ])
-        
-        # Skills/Learning queries
-        is_skills_query = any(keyword in query_lower for keyword in [
-            'skill', 'learn', 'course', 'tutorial', 'certification', 'study'
-        ])
-        
-        # Job market queries
-        is_market_query = any(keyword in query_lower for keyword in [
-            'salary', 'job', 'demand', 'market', 'future', 'scope'
-        ])
-        
-        # --- Context Strategy ---
-        if len(history) > 0:
-            # FOLLOW-UP: Minimal Context
-            if is_platform_query:
-                context_str = f"System: UdaanSetu.AI Bot. {lang_instruction}. Context: {platform_context}."
-            elif is_skills_query:
-                interests = bio.get("interest_domains", [])
-                context_str = f"System: Skill Mentor for {name}. {lang_instruction}. Interests: {interests}. Recommend free resources."
-            elif is_market_query:
-                 context_str = f"System: Career Advisor for {name} ({location}). {lang_instruction}. discuss job trends/salary briefly."
-            else:
-                 context_str = f"System: Mentor for {name}. {lang_instruction}. Be encouraging."
-        else:
-            # FIRST INTERACTION: Targeted Context
-            if is_platform_query:
-                context_str = f"System: UdaanSetu Bot. {lang_instruction}. {platform_context}. Welcome {name}."
-            else:
-                # Career Guidance - Focused
-                top_rec = "General"
-                report = bio.get("ai_report", {})
-                if report and "recommendations" in report:
-                     top_rec = report["recommendations"][0].get("title", "General")
+        # Get top career recommendation if available for focused guidance
+        top_career = "Checking..."
+        report = bio.get("ai_report", {})
+        if report and isinstance(report, dict) and "recommendations" in report:
+            recs = report["recommendations"]
+            if recs and len(recs) > 0:
+                top_career = recs[0].get("title", "General Path")
 
-                context_str = f"""
-                Role: AI Mentor for {name} ({location}).
-                Context: {lang_instruction}
-                Profile: {education}, Top Path: {top_rec}.
-                Task: Guide on career/skills. Prioritize FREE resources & Rural context.
-                """
+        # --- 2. Advanced System Persona ---
+        # Determining Language Style
+        if language == "gu":
+            lang_instruction = "IMPORTANT: Respond in GUJARATI (ગુજરાતી) script. Use English for technical terms (e.g., 'Programming', 'AI') but explain them."
+        else:
+            lang_instruction = "Respond in Simple, Clear English. Identify as a helpful mentor."
+
+        # Dynamic System Prompt
+        system_prompt = f"""
+        IDENTITY:
+        You are 'Udaan', an Advanced AI Career Mentor designed specificallly for students in Rural India (Gujarat).
+        Your mission is to bridge the gap between rural talent and digital opportunities.
+
+        USER PROFILE:
+        - Name: {name}
+        - Education: {education}
+        - Location: {location}
+        - Interests: {interests}
+        - Recognized Top Path: {top_career}
+
+        CORE BEHAVIORS:
+        1. **Empathetic & Encouraging**: Always start with a positive, validating tone. Use the student's name.
+        2. **Holistic Guidance**: Don't just list jobs. Suggest *Free Learning Resources* (YouTube channels, Government portals like Swayam/NPTEL), *Skills* to learn, and *Roadmaps*.
+        3. **Localized Context**: Understand the constraints of rural students (internet access, budget). Prioritize mobile-friendly and free solutions.
+        4. **Platform Expert**: You are part of 'UdaanSetu.AI'. We offer AI Assessments, Career Reports, and Mentorship.
         
-        # Build Message Chain
-        messages = [SystemMessage(content=context_str)]
+        RESPONSE FORMAT:
+        - Use **Markdown** for clarity (Bold key terms, use Bullet points).
+        - Keep paragraphs short (mobile-friendly).
+        - {lang_instruction}
+
+        GOAL:
+        The user asks: "{query}"
+        Provide a detailed, step-by-step, and motivating answer. If the question is vague, ask clarifying questions.
+        """
+
+        # --- 3. Context Management (History) ---
+        messages = [SystemMessage(content=system_prompt)]
         
-        # Add History (Last 6 turns is usually enough for context)
+        # Add last 6 turns of history for continuity
         for msg in history[-6:]:
-            if msg.get("role") == "user":
-                messages.append(HumanMessage(content=msg.get("content", "")))
-            else:
-                messages.append(AIMessage(content=msg.get("content", "")))
-                
-        # Add Current Query
-        messages.append(HumanMessage(content=query))
+            role = msg.get("role")
+            content = msg.get("content", "")
+            if role == "user":
+                messages.append(HumanMessage(content=content))
+            elif role == "model" or role == "assistant":
+                messages.append(AIMessage(content=content))
         
+        # Add current query
+        messages.append(HumanMessage(content=query))
+
+        # --- 4. Streaming Execution with Error Handling ---
         try:
-            async for chunk in llm.astream(messages):
+            async for chunk in self.llm.astream(messages):
                 yield chunk.content
         except Exception as e:
-            yield f"Error: {str(e)}"
+            # Fallback for "Overloaded" or "Safety" errors
+            error_msg = str(e)
+            if "429" in error_msg:
+                yield "I am receiving too many requests right now. Please wait a moment and try again."
+            else:
+                yield f"I encountered a thought hiccup. Please try asking again shortly. (Error: {error_msg})"
 
-# Singleton
+# Singleton Instance
 mentor_service = MentorChatService()
