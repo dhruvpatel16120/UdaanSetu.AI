@@ -1,17 +1,17 @@
 # Core Framework
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-pydantic==2.5.3
-python-dotenv==1.0.0
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
 
 # Firebase & Auth
-firebase-admin==6.4.0
+firebase-admin
 
 # LangChain & AI
-langchain==0.1.6
-langchain-google-genai==0.0.9
-langchain-community==0.0.19
-google-generativeai==0.3.2
+langchain
+langchain-google-genai
+langchain-community
+google-generativeai
 
 # Vector Store & Embeddings
 faiss-cpu
@@ -24,18 +24,18 @@ pgvector
 asyncpg
 
 # Data Processing
-pandas==2.2.0
-numpy==1.26.3
+pandas
+numpy
 
 # Web Scraping & Search
-duckduckgo-search==4.1.1
-beautifulsoup4==4.12.3
-requests==2.31.0
+duckduckgo-search
+beautifulsoup4
+requests
 
 # Document Loaders
 pypdf
 python-docx
 
 # Utilities
-python-multipart==0.0.6
-aiofiles==23.2.1
+python-multipart
+aiofiles

@@ -52,3 +52,11 @@ Thumbs.db
 # Logs
 # =========================
 *.log
+/backend/app/api/__pycache__
+/backend/app/api/__pycache__
+/backend/app/api/routers/__pycache__
+*.pyc
+backend/app/api/__pycache__/__init__.cpython-314.pyc
+/backend/app/api/routers/__pycache__
+/backend/app/data/__pycache__
+/backend/app/services/__pycache__
