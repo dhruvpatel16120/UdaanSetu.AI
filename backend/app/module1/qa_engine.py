@@ -26,15 +26,38 @@ def extract_json(text: str) -> dict:
         print(f"JSON extraction failed: {e} | Raw: {text}")
         return {}
 
+
 def get_session_history_summary(answers: List[Answer]) -> str:
     summary = []
     questions = {q["id"]: q for q in get_questions()}
+    
     for ans in answers:
         q = questions.get(ans.question_id)
-        # If question text not found, still provide the answer ID to the AI
-        question_text = q['text']['en'] if q else f"Question {ans.question_id}"
-        val = ans.text_answer or ans.selected_option_id or "N/A"
-        summary.append(f"Q: {question_text} | A: {val}")
+        if not q:
+            summary.append(f"Q: Question {ans.question_id} | A: {ans.text_answer or ans.selected_option_id}")
+            continue
+            
+        question_text = q['text']['en']
+        
+        # Resolve Answer
+        answer_text = "N/A"
+        answer_traits = ""
+        
+        if ans.text_answer:
+            answer_text = ans.text_answer
+        elif ans.selected_option_id and "options" in q:
+            # Find the option object
+            opt = next((o for o in q["options"] if o["id"] == ans.selected_option_id), None)
+            if opt:
+                answer_text = opt["text"]["en"]
+                if "traits" in opt:
+                    # Provide trait hints to the LLM (e.g. "Risk: High")
+                    answer_traits = f" (Implies: {json.dumps(opt['traits'])})"
+            else:
+                answer_text = ans.selected_option_id # Fallback if ID matches nothing (rare)
+        
+        summary.append(f"Question: {question_text}\nUser Answer: {answer_text}{answer_traits}\n")
+        
     return "\n".join(summary)
 
 async def get_next_dynamic_question(current_answers: List[Answer]) -> Optional[dict]:
@@ -78,79 +101,97 @@ async def get_next_dynamic_question(current_answers: List[Answer]) -> Optional[d
 async def process_assessment_submission(answers: List[Answer], user_id: str):
     """
     Submodule 1: AI Analysis (The Engine)
-    Uses the "Magic Formula" prompt to generate precise SWOT & Career Mindset results.
+    Uses a highly token-efficient prompt to act as a Psychologist & Career Expert.
+    Generates full profile, bio, and career roadmap in one shot.
     """
     all_qs = get_questions()
     qs_map = {q["id"]: q for q in all_qs}
     
-    # 1. Synthesis of Raw Data & Traits
+    # 1. Synthesis of Raw Data
     history_str = get_session_history_summary(answers)
-    extracted_traits = []
     
-    basic_info = {"name": "User", "education": "N/A", "location": "Gujarat"}
+    # Extract basic info explicitly if available in answers
+    basic_info = {
+        "name": "User", 
+        "location": "Gujarat", 
+        "education": "N/A",
+        "age": "N/A",
+        "gender": "N/A"
+    }
     
     for ans in answers:
-        q = qs_map.get(ans.question_id)
-        if not q: continue
+        q_id = ans.question_id.lower()
+        val = ans.text_answer or ans.selected_option_id
         
-        # Meta-data extraction
-        if q["id"] == "q1_edu_level" or q["id"] == "static_education": basic_info["education"] = ans.selected_option_id
-        if q["id"] == "q13_shifting" or q["id"] == "static_district": basic_info["location"] = ans.selected_option_id
-        if ("name" in q["id"].lower() or q["id"] == "static_name") and ans.text_answer: basic_info["name"] = ans.text_answer
+        if "name" in q_id: basic_info["name"] = val
+        if "education" in q_id or "edu_level" in q_id: basic_info["education"] = val # Will be overridden by option text ID if not careful, but usually education question is multiple choice so val is ID. LLM sees full text in history.
+        if "location" in q_id or "district" in q_id or "city" in q_id: basic_info["location"] = val
+        if "age" in q_id: basic_info["age"] = val
+        if "gender" in q_id: basic_info["gender"] = val
         
-        # Trait extraction from options
-        if "options" in q:
-            opt = next((o for o in q["options"] if o["id"] == ans.selected_option_id), None)
-            if opt and "traits" in opt:
-                extracted_traits.append(opt["traits"])
+        # If specific questions map to basic info, also update from the 'rich' lookup
+        # (Optional: we rely on LLM to clean this up in the output 'basic_info' block)
 
-    # 2. The "Magic Formula" Gemini Stage
+    # 2. Token-Efficient "Psychologist" Prompt
     try:
         model = genai.GenerativeModel("gemini-2.0-flash")
         
+        # Minimized context to save tokens while retaining persona power
+        params = {
+            "role": "Professional Psychologist, SWOT Specialist, Career Guiding Expert",
+            "task": "Analyze assessment answers. Generate JSON profile.",
+            "output_reqs": [
+                "Basic Info (refine from input)",
+                "3 Suggested Career Paths (Title + Desc)",
+                "Readiness Score (0-100)",
+                "Trait Scores (Tech Competence, Ambition, Tech Affinity, Financial Awareness, Confidence, Clarity)",
+                "Top Recommended Skills",
+                "User Current Skills (inferred)",
+                "Key Insights (SWOT style)",
+                "Professional Bio (3rd person)"
+            ]
+        }
+
         magic_prompt = f"""
-        IDENTITY: Advanced AI Career Architect & Behavioral Psychologist.
+        ACT AS: {params['role']}
+        TASK: {params['task']}
         
-        QUESTION_BANK_CONTEXT: {json.dumps([{ 'id': q['id'], 'section': q['section'], 'text': q['text']['en'], 'options': [{ 'id': o['id'], 'text': o['text']['en'] } for o in q.get('options', [])] } for q in all_qs])}
+        INPUT CONTEXT:
+        User Answers (Psychological Data):
+        {history_str}
         
-        USER_ANSWERS: {history_str}
-        RAW_TRAITS_DETECTED: {json.dumps(extracted_traits)}
+        Form Data (Basic Info):
+        {json.dumps(basic_info)}
         
-        TASK: Perform a high-precision SWOT analysis, bio generation, and mindset extraction for this student. Use the QUESTION_BANK_CONTEXT to understand why they chose specific answers.
+        INSTRUCTIONS:
+        1. **Analyze Mindset**: Look at the "Implies" traits and user choices. is the user risk-averse? Ambitious? Creative? Tech-savvy?
+        2. **Refine Basic Info**: If the user answered "High School" in the education question, update the Basic Info accordingly.
+        3. **Career Mapping**: Suggest careers that match their *proven* interests and aptitude, not just what they say they like.
+        4. **Bio Generation**: Write a bio that sounds like a professional counselor wrote it. "Rahul is a creative thinker who..."
         
-        OUTPUT DATA POINTS:
-        1. Readiness Score (%): Overall readiness for the modern job market.
-        2. Trait Scores (0-100): Tech Competence, Ambition, Tech Affinity, Financial Awareness, Confidence, Clarity.
-        3. Snapshot: 
-           - Top Recommendation: A single, high-confidence career path title (e.g. "Cloud Architect").
-           - Key Insights: 3-4 deep behavioral insights based on answers.
-        4. Generated Bio: A detailed text summary of the user (e.g., "Rahul is a 12th-grade student from Rajkot with high financial awareness..."). Start with the user's name if known. Use the provided context to make it personal.
-        
-        TARGET JSON STRUCTURE:
+        OUTPUT FORMAT (JSON ONLY):
         {{
-            "analysis_metadata": {{
-                "psyche_profile": "Extracted personality type"
-            }},
-            "readiness_score": 0-100,
-            "trait_scores": {{
-                "Tech Competence": 0-100,
-                "Ambition": 0-100,
-                "Tech Affinity": 0-100,
-                "Financial Awareness": 0-100,
-                "Confidence": 0-100,
-                "Clarity": 0-100
-            }},
-            "snapshot": {{
-                "top_recommendation": "Career Title",
-                "key_insights": ["Insight 1", "Insight 2", "Insight 3"]
-            }},
-            "generated_bio": "Detailed narrative bio..."
+          "basic_info": {{ "name": "...", "location": "...", "education": "...", "age": "...", "gender": "..." }},
+          "career_paths": [
+            {{ "title": "...", "description": "..." }},
+            {{ "title": "...", "description": "..." }},
+            {{ "title": "...", "description": "..." }}
+          ],
+          "readiness_score": <int 0-100>,
+          "trait_scores": {{
+            "Tech Competence": <int 0-100>,
+            "Ambition": <int>,
+            "Tech Affinity": <int>,
+            "Financial Awareness": <int>,
+            "Confidence": <int>,
+            "Clarity": <int>
+          }},
+          "top_skills_recommended": ["...", "..."],
+          "user_current_skills": ["...", "..."],
+          "key_insights": ["...", "..."],
+          "bio": "Professional narrative bio..."
         }}
-        Only return raw JSON. No conversational text.
         """
-        
-        # Optional: Print length of prompt to monitor token usage
-        # print(f"Prompt length: {len(magic_prompt)} chars")
         
         print(f"Deep analyzing assessment for {user_id}...")
         response = await model.generate_content_async(magic_prompt)
@@ -158,27 +199,37 @@ async def process_assessment_submission(answers: List[Answer], user_id: str):
         
         if not analysis: raise ValueError("AI failed to generate valid analysis.")
 
+        # Merge AI refined info with defaults if AI missed something (optional, but AI usually does well)
+        # We rely on AI's 'basic_info' as appropriate
+        
         assessment_result = {
             "status": "complete",
-            "generated_bio": {
-                "basic_info": basic_info,
-                "readiness_score": analysis.get("readiness_score", 60),
+            "analysis": analysis, # Store the full structured analysis
+            "generated_bio": { # Keep backward compatibility structure if needed, or just map new fields
+                "bio_text": analysis.get("bio", ""),
+                "snapshot": {
+                    "top_recommendation": analysis.get("career_paths", [{}])[0].get("title", "Explorer"),
+                    "key_insights": analysis.get("key_insights", [])
+                },
                 "trait_scores": analysis.get("trait_scores", {}),
-                "snapshot": analysis.get("snapshot", {}),
-                "psyche": analysis.get("analysis_metadata", {}).get("psyche_profile", "Determined"),
-                "bio_text": analysis.get("generated_bio", "")
+                "readiness_score": analysis.get("readiness_score", 0)
             },
             "raw_answers": [a.dict() for a in answers]
         }
         
         save_assessment_result(user_id, assessment_result)
         
-        # Also sync basic info to the public profile for easy access
+        # Sync to public profile
         from app.services.db_firebase import save_user_profile
         public_profile_update = {
-            "name": basic_info.get("name"),
-            "location": basic_info.get("location"),
-            "education": basic_info.get("education")
+            "aiBio": analysis.get("bio", ""),
+            "traits": analysis.get("trait_scores", {}),
+            "basic_info": analysis.get("basic_info", basic_info),
+            "top_careers": analysis.get("career_paths", []),
+            "skills": {
+                "current": analysis.get("user_current_skills", []),
+                "recommended": analysis.get("top_skills_recommended", [])
+            }
         }
         save_user_profile(user_id, public_profile_update)
         
@@ -187,22 +238,8 @@ async def process_assessment_submission(answers: List[Answer], user_id: str):
     except Exception as e:
         print(f"Final analysis error: {e}")
         # Robust Fallback
-        fallback = {
-            "status": "complete",
-            "generated_bio": {
-                "basic_info": basic_info,
-                "readiness_score": 50,
-                "trait_scores": {
-                    "Tech Competence": 50, "Ambition": 50, "Tech Affinity": 50,
-                    "Financial Awareness": 50, "Confidence": 50, "Clarity": 50
-                },
-                "snapshot": {
-                    "top_recommendation": "Career Explorer",
-                    "key_insights": ["Strong potential detected", "Continue learning"]
-                },
-                "bio_text": f"{basic_info.get('name', 'User')} is an ambitious explorer starting their career journey."
-            },
+        return {
+            "status": "error",
+            "error": str(e),
             "raw_answers": [a.dict() for a in answers]
         }
-        save_assessment_result(user_id, fallback)
-        return fallback
