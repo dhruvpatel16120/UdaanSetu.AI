@@ -50,7 +50,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const t = useCallback(
     (key: TranslationKey, params?: Record<string, string | number>) => {
       const bundle = TRANSLATIONS[language];
-      let text = bundle[key] ?? TRANSLATIONS[DEFAULT_LANGUAGE][key] ?? key;
+      let text: string = bundle[key] ?? TRANSLATIONS[DEFAULT_LANGUAGE][key] ?? key;
 
       if (params) {
         Object.entries(params).forEach(([paramKey, paramValue]) => {

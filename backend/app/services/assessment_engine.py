@@ -220,23 +220,32 @@ async def process_assessment_submission(answers: List[Answer], user_id: str = "d
             
     profile["full_user_bio_profile"] = "\n".join(bio_parts)
 
-    # Generate AI Career Report
+    # Generate AI Bio & Insights (Module 1 Speed Optimized)
     from app.services.gemini_service import generate_career_report
-    ai_report = await generate_career_report({"generated_bio": profile})
+    ai_output = await generate_career_report({"generated_bio": profile})
     
-    # Ensure ai_report has a readiness score
-    if "careerReadiness" not in ai_report:
-         ai_report["careerReadiness"] = profile["overall_score"]
-    
-    # Ensure ai_report has a readiness score if it returned fallback
-    if "careerReadiness" not in ai_report:
-         ai_report["careerReadiness"] = profile["overall_score"]
+    # Apply AI Trait Adjustments if any
+    if "traitAdjustments" in ai_output:
+        for trait, adjustment in ai_output["traitAdjustments"].items():
+            if trait in profile["scores"]:
+                # Apply adjustment with clamp 0-100
+                new_score = profile["scores"][trait] + adjustment
+                profile["scores"][trait] = max(0, min(100, new_score))
 
+    # Overwrite readiness with AI perception if available and valid
+    if "careerReadiness" in ai_output and isinstance(ai_output["careerReadiness"], int):
+         profile["overall_score"] = ai_output["careerReadiness"]
+    
+    # Construct final lightweight result
     result = {
         "status": "complete",
         "generated_bio": {
-            **profile,
-            "ai_report": ai_report
+            "scores": profile["scores"],
+            "overall_score": profile["overall_score"],
+            "generatedBio": ai_output.get("generatedBio", "Analysis complete."),
+            "topRecommendation": ai_output.get("topRecommendation", "Career Path"),
+            "keyInsights": ai_output.get("keyInsights", []),
+            "raw_answers": profile["raw_answers"] # Keep raw data for Module 2
         }
     }
     

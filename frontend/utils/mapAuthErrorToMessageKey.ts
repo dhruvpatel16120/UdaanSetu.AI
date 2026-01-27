@@ -13,7 +13,7 @@ export function mapAuthErrorToMessageKey(error: unknown): TranslationKey {
     code === "auth/wrong-password" ||
     code === "auth/user-not-found"
   ) {
-    return "auth.error.invalidCredentials";
+    return "auth.error.invalidCredential";
   }
 
   if (code === "auth/popup-closed-by-user") {
