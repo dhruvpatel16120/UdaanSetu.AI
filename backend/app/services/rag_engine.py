@@ -29,34 +29,55 @@ class RAGEngine:
         self,
         data_dir: Optional[str] = None,
         index_dir: Optional[str] = None,
-        # Multilingual Embedding (Step 3)
-        embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-        # Semantic Reranker (Step 7)
-        reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+        # Multilingual Embedding
+        embedding_model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+        # Semantic Reranker
+        reranker_model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     ):
         base_dir = Path(__file__).parent.parent
         self.data_dir = Path(data_dir) if data_dir else base_dir / "data"
         self.index_dir = Path(index_dir) if index_dir else self.data_dir / "indexes"
         self.index_dir.mkdir(parents=True, exist_ok=True)
         
-        logger.info(f"Retriever: Initializing {embedding_model}")
-        self.embedding_model = SentenceTransformer(embedding_model)
-        self.embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
+        self.embedding_model_name = embedding_model_name
+        self.reranker_model_name = reranker_model_name
         
-        logger.info(f"Reranker: Initializing {reranker_model}")
-        self.reranker = CrossEncoder(reranker_model)
-        
+        # Lazy Loading Placeholders
+        self._embedding_model = None
+        self._reranker = None
+        self._embedding_dim = None
+
         self.index: Optional[faiss.Index] = None
         self.documents: List[RAGDocument] = []
         
-        # Step 2: Advanced Chunking Strategy
+        # Step 2: Advanced Chunking Strategy (Optimized for Tokens)
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=800,
-            chunk_overlap=150,
+            chunk_size=500,  # Reduced from 800 to save tokens
+            chunk_overlap=50, # Reduced overlap
             separators=["\n\n", "\n", ". ", " ", ""]
         )
 
-    def search(self, query: str, k: int = 20) -> List[Dict]:
+    @property
+    def embedding_model(self):
+        if self._embedding_model is None:
+            logger.info(f"Retriever: Lazy Initializing {self.embedding_model_name}")
+            self._embedding_model = SentenceTransformer(self.embedding_model_name)
+        return self._embedding_model
+
+    @property
+    def embedding_dim(self):
+        if self._embedding_dim is None:
+            self._embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
+        return self._embedding_dim
+
+    @property
+    def reranker(self):
+        if self._reranker is None:
+            logger.info(f"Reranker: Lazy Initializing {self.reranker_model_name}")
+            self._reranker = CrossEncoder(self.reranker_model_name)
+        return self._reranker
+
+    def search(self, query: str, k: int = 15) -> List[Dict]:
         """
         Step 6: Similarity Search (Vector DB Retrieval)
         """
@@ -80,14 +101,14 @@ class RAGEngine:
                 })
         return results
 
-    def rerank(self, query: str, documents: List[Dict], top_n: int = 4) -> List[Dict]:
+    def rerank(self, query: str, documents: List[Dict], top_n: int = 3) -> List[Dict]:
         """
         Step 7: Reranking (Cross-Encoder optimization)
         """
         if not documents: return []
             
         # Cross-Comparison
-        pairs = [[query, doc["content"]] for doc in documents]
+        pairs = [[query, doc["content"][:1000]] for doc in documents] # Limit input to reranker
         scores = self.reranker.predict(pairs)
         
         for i, score in enumerate(scores):
@@ -95,9 +116,9 @@ class RAGEngine:
             
         return sorted(documents, key=lambda x: x["rerank_score"], reverse=True)[:top_n]
 
-    def get_context_for_query(self, query: str, user_profile: Optional[Dict] = None, k: int = 4) -> str:
+    def get_context_for_query(self, query: str, user_profile: Optional[Dict] = None, k: int = 3) -> str:
         """
-        Step 8: Context Builder (Final Assembly)
+        Step 8: Context Builder (Final Assembly - Resource Optimized)
         """
         # Step 5 Expansion: Personlize query based on user background
         expanded_query = query
@@ -105,18 +126,21 @@ class RAGEngine:
             pref = user_profile.get("interest_domains", [])
             expanded_query = f"{query} [Context: {user_profile.get('education')} student in Gujarat interested in {pref}]"
 
-        initial_results = self.search(expanded_query, k=20)
+        # Search optimized: k=10 initial, top_n=k returned
+        initial_results = self.search(expanded_query, k=10)
         best_results = self.rerank(query, initial_results, top_n=k)
         
         if not best_results: 
             return "<knowledge_status>NO_DOMAIN_SPECIFIC_DATA_FOUND</knowledge_status>"
         
         # XML Formatting for LLM (Step 8)
+        # Optimized: Truncate content to max 1200 chars per chunk
         context_parts = ["<verified_knowledge_base>"]
         for i, res in enumerate(best_results, 1):
             source = res['metadata'].get('source', 'UdaanLink_Database')
+            clean_content = res['content'][:1200].replace("\n", " ") # Compress newlines
             chunk = f"""  <entry id="{i}" source="{source}">
-    <content>{res['content']}</content>
+    <content>{clean_content}...</content>
   </entry>"""
             context_parts.append(chunk)
             

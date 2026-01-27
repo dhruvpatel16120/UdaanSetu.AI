@@ -154,9 +154,9 @@ export default function ProfilePage() {
     const traits = profile?.traits || assessment?.generated_bio?.trait_scores || {};
     const aiReport = profile?.ai_report || {};
     const profileBio = profile?.bio || aiReport.bio || assessment?.generated_bio?.bio_text;
-    const displayName = profile?.basic_info?.name || profile?.name || assessment?.generated_bio?.basic_info?.name || user.displayName || "Result Seeker";
-    const location = profile?.basic_info?.location || profile?.location || assessment?.generated_bio?.basic_info?.location;
-    const education = profile?.basic_info?.education || profile?.educationLevel || profile?.education || assessment?.generated_bio?.basic_info?.education;
+    const displayName = assessment?.analysis?.basic_info?.name || profile?.basic_info?.name || profile?.name || assessment?.generated_bio?.basic_info?.name || user.displayName || "Result Seeker";
+    const location = assessment?.analysis?.basic_info?.location || profile?.basic_info?.location || profile?.location || assessment?.generated_bio?.basic_info?.location;
+    const education = assessment?.analysis?.basic_info?.education || profile?.basic_info?.education || profile?.educationLevel || profile?.education || assessment?.generated_bio?.basic_info?.education;
 
     const scores = traits;
 
