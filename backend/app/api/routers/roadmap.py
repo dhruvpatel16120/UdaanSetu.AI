@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, validator
 from typing import List, Optional
-from app.services.career_roadmap import roadmap_service
+from app.module2.roadmap_engine import roadmap_engine
 from app.services.db_firebase import init_firebase
 from firebase_admin import firestore
 import firebase_admin
@@ -103,7 +103,7 @@ async def generate_roadmap(request: RoadmapRequest):
             student_bio = student_data.get("assessment_result", {}).get("generated_bio", {})
         
         # Generate roadmap
-        roadmap = await roadmap_service.generate_roadmap(
+        roadmap = await roadmap_engine.generate_roadmap(
             career_path=request.career_path,
             student_bio=student_bio,
             language=request.language
@@ -121,7 +121,7 @@ async def analyze_skill_gap(request: SkillGapRequest):
     Analyze the skill gap between current skills and target career
     """
     try:
-        analysis = await roadmap_service.get_skill_gap_analysis(
+        analysis = await roadmap_engine.get_skill_gap_analysis(
             current_skills=request.current_skills,
             target_career=request.target_career,
             language=request.language

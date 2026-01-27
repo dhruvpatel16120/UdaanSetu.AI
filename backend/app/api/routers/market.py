@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
-from app.services.market_intelligence import market_service
+from app.module2.market_analyzer import market_analyzer
 from app.services.db_firebase import get_assessment_result
 
 router = APIRouter()
@@ -28,7 +28,7 @@ async def analyze_market(request: MarketQuery, x_firebase_id: Optional[str] = He
     except:
         user_profile = {"name": "Student", "location": "Gujarat"}
 
-    result = await market_service.generate_market_analysis(
+    result = await market_analyzer.generate_market_analysis(
         user_query=request.query,
         user_profile=user_profile
     )

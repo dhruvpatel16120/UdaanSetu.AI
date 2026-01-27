@@ -23,6 +23,7 @@ class MarketIntelligenceService:
             google_api_key=self.api_key,
             temperature=0.3
         )
+        # Adjusted path since it's now in app/module2/
         self.csv_path = os.path.join(os.path.dirname(__file__), "../data/dataset.csv")
         self._csv_cache = None
         self._load_csv()
@@ -212,4 +213,4 @@ class MarketIntelligenceService:
             return {"error": str(e)}
 
 # Singleton instance
-market_service = MarketIntelligenceService()
+market_analyzer = MarketIntelligenceService()

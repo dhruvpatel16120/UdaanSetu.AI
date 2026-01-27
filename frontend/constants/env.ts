@@ -8,4 +8,5 @@ export const ENV = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? "",
   },
   apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+  siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://udaansetu.ai",
 } as const;

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict
-from app.services.chat_mentor import mentor_service
+from app.module3.mentor_engine import mentor_engine
 from app.services.db_firebase import init_firebase
 from firebase_admin import firestore
 import firebase_admin
@@ -47,7 +47,7 @@ async def chat_endpoint(request: ChatRequest):
 
     # 2. Return Streaming Response
     async def generate():
-        async for chunk in mentor_service.chat_with_mentor(
+        async for chunk in mentor_engine.chat(
             history=request.history,
             student_profile=student_data,
             query=request.message,

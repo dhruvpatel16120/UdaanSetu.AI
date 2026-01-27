@@ -63,7 +63,7 @@ export function Navbar() {
           ? "bg-white/40 border-black/5 shadow-sm"
           : "bg-slate-950/20 border-white/5 shadow-sm"
     )}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative no-print">
         {/* Animated Background Highlight for Links */}
         <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
 
