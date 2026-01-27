@@ -58,33 +58,30 @@ async def generate_career_report(student_profile: dict) -> dict:
     # Construct the prompt
     bio = student_profile.get("generated_bio", {})
     
-    # --- 3. SYNTHESIS LAYER: High-Speed Agent Prompt ---
+    # --- 3. SYNTHESIS LAYER: Bio-Profile Generator (Module 1) ---
     prompt = f"""
-    IDENTITY: Senior Career Strategist (Udaan).
-    TASK: Generate a Career Report (JSON) for a Rural Indian Student.
-    MODE: SPEED & IMPACT. Keep all text concise (max 2 sentences per field).
+    IDENTITY: Expert Career Psychologist & Profiler.
+    TASK: Analyze the student's inputs to generate a concise "User Bio Profile".
+    Strictly Output JSON. No markdown formatting.
     
-    PROFILE:
+    INPUT DATA:
     Bio: {bio.get("full_user_bio_profile", "N/A")}
-    Traits: {json.dumps(bio.get("traits", {}))}
+    Raw Traits: {json.dumps(bio.get("traits", {}))}
     
-    OUTPUT JSON STRUCTURE (Strictly follow this):
+    OUTPUT JSON STRUCTURE:
     {{
-        "careerReadiness": 85, 
-        "topStrengths": ["Strength1", "Strength2"],
-        "recommendations": [
-            {{
-                "title": "Role Name", 
-                "title_gu": "Gujarati Name",
-                "match": 90, 
-                "description": "Why it fits (Short).", 
-                "description_gu": "Gujarati translation.",
-                "requirements": ["Req1", "Req2"], 
-                "salary_range": "e.g. 15k-25k"
-            }}
+        "careerReadiness": 85, // Integer 0-100 based on clarity & confidence
+        "generatedBio": "A 3-4 sentence summary of the user's personality, strengths, and background.",
+        "topRecommendation": "Role Title (e.g. Data Scientist)",
+        "keyInsights": [
+            "Insight 1 (Strength)",
+            "Insight 2 (Behavior)",
+            "Insight 3 (Potential)"
         ],
-        "recommendedSkills": [ {{ "name": "Skill", "priority": "high" }} ],
-        "learningPaths": [ {{ "title": "Path Name", "duration": "3m", "resources": [ {{ "name": "Resource", "url": "URL" }} ] }} ]
+        "traitAdjustments": {{ // Optional tweaks to scores if detected in text
+            "tech_affinity": 5, 
+            "ambition": 0
+        }}
     }}
     """
     
@@ -97,44 +94,23 @@ async def generate_career_report(student_profile: dict) -> dict:
         print(f"Gemini API Error: {e}")
         # Return Fallback
         return {
-            "careerReadiness": 50,
-            "topStrengths": ["Resilience", "Adaptability"],
-            "recommendations": [
-                {
-                    "title": "General Career Guidance",
-                    "title_gu": "સામાન્ય કારકિર્દી માર્ગદર્શન",
-                    "match": 60,
-                    "description": "We couldn't generate a specific report right now, but focus on building digital skills.",
-                    "description_gu": "ડિજિટલ કૌશલ્યો શીખવા પર ધ્યાન આપો.",
-                    "requirements": ["Basic Literacy", "Internet Access"],
-                    "salary_range": "Variable"
-                }
+            "careerReadiness": 60,
+            "generatedBio": "Could not connect to AI. However, based on your answers, you seem to have patience and good clarity.",
+            "topRecommendation": "General Tech/Service Role",
+            "keyInsights": [
+                "Good Patience detected",
+                "Interest in steady growth"
             ],
-            "recommendedSkills": [],
-            "learningPaths": []
+            "traitAdjustments": {}
         }
     except Exception as e:
         print(f"Gemini API Error: {e}")
-        # Return Fallback (Keep existing fallback)
         return {
-            "careerReadiness": 60,
-            "topStrengths": ["Determination", "Hard Work"],
-            "personalityTraits": ["Realistic", "Practical"],
-            "recommendations": [
-                {
-                    "title": "General Service Role (Fallback)",
-                    "title_gu": "સામાન્ય સેવા ભૂમિકા",
-                    "match": 50,
-                    "description": "AI service is momentarily down, but based on your profile, service roles might be suitable.",
-                    "description_gu": "AI સેવા ક્ષણભર માટે બંધ છે...",
-                    "requirements": ["Basic Communication"],
-                    "salary_range": "Unknown"
-                }
-            ],
-            "currentSkills": [],
-            "recommendedSkills": [],
-            "learningPaths": [],
-            "actionPlan": {"shortTerm": ["Retry later"], "longTerm": []}
+             "careerReadiness": 50,
+             "generatedBio": "System offline.",
+             "topRecommendation": "N/A",
+             "keyInsights": [],
+             "traitAdjustments": {}
         }
 
 

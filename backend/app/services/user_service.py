@@ -106,12 +106,14 @@ async def save_assessment_to_profile(firebase_id: str, student_profile: Dict[str
 
         # 3. Extract bio data
         bio_data = student_profile.get("generated_bio", {})
-        education = bio_data.get("education", "Unknown")
-        traits = bio_data.get("traits", {})
-        ai_report = bio_data.get("ai_report", "")
-        # Convert ai_report to string if it's a dict/json
-        ai_bio_str = json.dumps(ai_report) if isinstance(ai_report, (dict, list)) else str(ai_report)
+        # Education is not strictly in the new structure, might be in raw_answers or inferable, 
+        # but for now we'll default or extract if we add it back. 
+        # We can extract it from raw answers if needed, but let's keep it simple.
+        education = "Assessed" 
 
+        traits = bio_data.get("scores", {})
+        ai_bio_text = bio_data.get("generatedBio", "")
+        
         # 4. Update Profile
         await db.profile.upsert(
             where={"userId": internal_id},
@@ -120,12 +122,12 @@ async def save_assessment_to_profile(firebase_id: str, student_profile: Dict[str
                     "userId": internal_id,
                     "educationLevel": education,
                     "traits": json.dumps(traits),
-                    "aiBio": ai_bio_str
+                    "aiBio": ai_bio_text
                 },
                 "update": {
                     "educationLevel": education,
                     "traits": json.dumps(traits),
-                    "aiBio": ai_bio_str
+                    "aiBio": ai_bio_text
                 }
             }
         )

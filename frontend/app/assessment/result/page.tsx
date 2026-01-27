@@ -82,8 +82,12 @@ export default function AssessmentResultPage() {
     );
   }
 
-  const aiReport = result?.generated_bio?.ai_report || {};
-  const readiness = aiReport.careerReadiness || 75;
+  // Extract data from new simplified structure
+  const bioData = result?.generated_bio || {};
+  const readiness = bioData.overall_score || 0;
+  const traits = bioData.scores || {};
+  const insights = bioData.keyInsights || [];
+  const recommendation = bioData.topRecommendation || "Pending Analysis";
 
   return (
     <div className={cn(
@@ -157,11 +161,11 @@ export default function AssessmentResultPage() {
             </div>
 
             {/* Sub Scores */}
-            <div className="w-full grid grid-cols-3 gap-2 mt-4 text-center">
-              {Object.entries(result?.generated_bio?.scores || {}).map(([key, val]: any) => (
-                <div key={key} className="flex flex-col">
-                  <span className="text-lg font-black text-accent">{val}%</span>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+            <div className="w-full grid grid-cols-2 gap-4 mt-4 text-center">
+               {Object.entries(traits).slice(0, 6).map(([key, val]: any) => (
+                <div key={key} className="flex flex-col items-center justify-center p-2 bg-muted/20 rounded-lg">
+                  <span className="text-lg font-black text-foreground">{val}%</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate w-full">
                     {key.replace(/_/g, " ")}
                   </span>
                 </div>
@@ -174,7 +178,7 @@ export default function AssessmentResultPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="glass-card p-10 bg-card border-border relative overflow-hidden"
+            className="glass-card p-10 bg-card border-border relative overflow-hidden flex flex-col"
           >
             <div className="absolute top-0 right-0 p-4 opacity-5">
               <Brain className="w-32 h-32 text-purple-500" />
@@ -182,25 +186,24 @@ export default function AssessmentResultPage() {
             <h3 className="text-2xl font-bold mb-8 flex items-center gap-3">
               <Target className="w-6 h-6 text-accent" /> Key Insights
             </h3>
-            <div className="space-y-6">
-              {aiReport.topStrengths?.slice(0, 3).map((strength: string, i: number) => (
+            <div className="space-y-6 flex-grow">
+              {insights.map((insight: string, i: number) => (
                 <div key={i} className="flex items-start gap-4">
                   <div className="mt-1 w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                     <CheckCircle2 className="w-3 h-3 text-green-500" />
                   </div>
-                  <span className="text-lg font-medium text-foreground/80 leading-tight">{strength}</span>
+                  <span className="text-lg font-medium text-foreground/80 leading-tight">{insight}</span>
                 </div>
-              )) || (
-                  <p className="text-muted-foreground italic">AI is finalizing your strengths analysis...</p>
-                )}
+              ))}
+              {insights.length === 0 && (
+                  <p className="text-muted-foreground italic">AI analysis in progress...</p>
+              )}
             </div>
 
-            <div className="mt-12 pt-8 border-t border-border">
+            <div className="mt-auto pt-8 border-t border-border">
               <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Top Recommendation</p>
-              <div className="text-xl font-black text-accent">
-                {language === 'gu' && aiReport.recommendations?.[0]?.title_gu
-                  ? aiReport.recommendations[0].title_gu
-                  : (aiReport.recommendations?.[0]?.title || "Personalized Path")}
+              <div className="text-2xl font-black text-accent leading-tight">
+                {recommendation}
               </div>
             </div>
           </motion.div>
