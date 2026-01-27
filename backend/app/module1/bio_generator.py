@@ -48,16 +48,38 @@ async def generate_user_bio_profile(user_id: str):
             "insights": analysis.get("key_insights")
         }
         
-        # 4. Ensure it's synced to 'users' collection (double check)
-        from app.services.db_firebase import save_user_profile
-        user_doc_update = {
-            "aiBio": profile_data["bio"],
-            "profile_data": profile_data,
-            "last_updated": firestore.SERVER_TIMESTAMP
-        }
-        save_user_profile(user_id, user_doc_update)
+        # 4. Conditional Sync to 'users' collection
+        from app.services.db_firebase import save_user_profile, get_user_profile
         
-        return user_doc_update
+        # Prepare the data payload we WANT to save
+        new_payload = {
+            "aiBio": profile_data["bio"],
+            "profile_data": profile_data
+        }
+        
+        # Check existing data to avoid redundant writes
+        current_profile = get_user_profile(user_id)
+        should_update = True
+        
+        if current_profile:
+            # Compare relevant fields (ignoring timestamps or other unrelated user fields)
+            current_bio = current_profile.get("aiBio")
+            current_data = current_profile.get("profile_data")
+            
+            # If both key fields are identical, we skip the write
+            if current_bio == new_payload["aiBio"] and current_data == new_payload["profile_data"]:
+                should_update = False
+                print(f"Profile for {user_id} is up-to-date. Skipping Firestore write.")
+
+        if should_update:
+            # Add timestamp only when acting on the update
+            final_update = {**new_payload, "last_updated": firestore.SERVER_TIMESTAMP}
+            save_user_profile(user_id, final_update)
+            print(f"Synced updated profile for {user_id} to Firestore.")
+            return final_update
+        
+        # Return the data structure even if we didn't write, so frontend gets it
+        return new_payload
         
     except Exception as e:
         print(f"Bio retrieval failed: {e}")
