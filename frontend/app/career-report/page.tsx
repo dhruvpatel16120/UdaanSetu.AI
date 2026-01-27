@@ -571,7 +571,7 @@ export default function CareerReportPage() {
                                         <div className="p-6 bg-green-500/5 border border-green-500/20 rounded-3xl mb-8">
                                             <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2"><span className="text-lg">🎖️</span> Relevant Scholarships & Government Schemes</h4>
                                             <div className="grid md:grid-cols-2 gap-4">
-                                                {activeRoadmap.scholarships_and_schemes.map((scheme, i) => (
+                                                {activeRoadmap.scholarships_and_schemes.map((scheme) => (
                                                     <div key={scheme.name} className="p-4 bg-white dark:bg-zinc-900 border border-green-500/10 rounded-2xl">
                                                         <p className="font-bold text-sm mb-1">{scheme.name}</p>
                                                         <p className="text-xs text-muted-foreground">{scheme.benefit}</p>

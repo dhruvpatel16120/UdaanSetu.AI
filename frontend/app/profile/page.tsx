@@ -286,7 +286,7 @@ export default function ProfilePage() {
 
                             {Object.entries(scores).length > 0 ? (
                                 <div className="space-y-6">
-                                    {Object.entries(scores).map(([key, val]: any) => (
+                                    {Object.entries(scores as Record<string, number>).map(([key, val]) => (
                                         <div key={key}>
                                             <div className="flex justify-between mb-2">
                                                 <span className="text-sm font-medium capitalize text-muted-foreground">
