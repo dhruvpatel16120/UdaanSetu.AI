@@ -112,12 +112,14 @@ export function ModernAssessment() {
         name: "",
         gender: "",
         dateOfBirth: "",
-        location: ""
+        location: "",
+        education: ""
     });
+    const [allQuestionBank, setAllQuestionBank] = useState<BackendQuestion[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [aiStatus, setAiStatus] = useState(t("assessment.analyzingPath"));
-    const [maxQuestions, setMaxQuestions] = useState(3);
+    const [maxQuestions, setMaxQuestions] = useState(10);
 
     // --- Effects ---
     useEffect(() => {
@@ -157,7 +159,10 @@ export function ModernAssessment() {
             const res = await fetch(`${ENV.apiUrl}/api/assessment/config`);
             if (res.ok) {
                 const data = await res.json();
-                setMaxQuestions(data.max_questions || 3);
+                setMaxQuestions(data.max_questions || 10);
+                if (data.questions) {
+                    setAllQuestionBank(data.questions);
+                }
             }
         } catch (e) {
             console.error("Failed to fetch config", e);
@@ -167,11 +172,20 @@ export function ModernAssessment() {
     const fetchFirstQuestion = async () => {
         setIsLoading(true);
         try {
-            // Updated to use 'start' for random first question
-            const res = await fetch(`${ENV.apiUrl}/api/assessment/question/start`);
-            if (!res.ok) throw new Error(t("assessment.errorStart"));
-            const firstQ = await res.json();
-            setQuestions([firstQ]);
+            // Pick from local bank if available, otherwise fetch
+            if (allQuestionBank.length > 0) {
+                const startPool = ["q1_edu_level", "q3_family_type", "q5_interest", "q7_mindset_games"];
+                const available = allQuestionBank.filter(q => startPool.includes(q.id));
+                const firstQ = available.length > 0
+                    ? available[Math.floor(Math.random() * available.length)]
+                    : allQuestionBank[0];
+                setQuestions([firstQ]);
+            } else {
+                const res = await fetch(`${ENV.apiUrl}/api/assessment/question/start`);
+                if (!res.ok) throw new Error(t("assessment.errorStart"));
+                const firstQ = await res.json();
+                setQuestions([firstQ]);
+            }
         } catch (err) {
             setStep("error");
             setErrorMessage(t("assessment.errorConnect"));
@@ -182,7 +196,7 @@ export function ModernAssessment() {
 
     const handleInfoSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!basicInfo.name || !basicInfo.location || !basicInfo.gender || !basicInfo.dateOfBirth) {
+        if (!basicInfo.name || !basicInfo.location || !basicInfo.gender || !basicInfo.dateOfBirth || !basicInfo.education) {
             return;
         }
         setStep("assessment");
@@ -198,16 +212,34 @@ export function ModernAssessment() {
 
         if (!currentAnswer) return;
 
-        // If we've already fetched more questions and are just navigating history
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
             return;
         }
 
+        if (questions.length >= maxQuestions) {
+            await submitFinalAssessment();
+            return;
+        }
+
+        // Fast logic for next question
+        if (allQuestionBank.length > 0) {
+            const askedIds = questions.map(q => q.id);
+            const available = allQuestionBank.filter(q => !askedIds.includes(q.id));
+
+            if (available.length > 0) {
+                // Pick one randomly for speed/variety
+                const nextQ = available[Math.floor(Math.random() * available.length)];
+                setQuestions(prev => [...prev, nextQ]);
+                setCurrentIndex(prev => prev + 1);
+                return;
+            }
+        }
+
+        // Fallback to API if bank empty or something went wrong
         setIsLoading(true);
         setAiStatus(getRandomStatus());
         try {
-            // Send full history for AI-powered next question
             const history = questions.map(q => ({
                 question_id: q.id,
                 selected_option_id: answers[q.id],
@@ -253,7 +285,8 @@ export function ModernAssessment() {
                 { question_id: 'static_name', text_answer: basicInfo.name },
                 { question_id: 'static_gender', selected_option_id: basicInfo.gender.toLowerCase() },
                 { question_id: 'static_dob', text_answer: basicInfo.dateOfBirth },
-                { question_id: 'static_district', selected_option_id: basicInfo.location.toLowerCase() }
+                { question_id: 'static_district', selected_option_id: basicInfo.location.toLowerCase() },
+                { question_id: 'static_education', selected_option_id: basicInfo.education }
             ];
 
             const res = await fetch(`${ENV.apiUrl}/api/assessment/submit`, {
@@ -463,6 +496,35 @@ export function ModernAssessment() {
                                     </div>
                                 </div>
 
+                                <div className="grid md:grid-cols-1 gap-8">
+                                    <div className="space-y-2 relative">
+                                        <label className="text-sm font-semibold text-foreground opacity-80 flex items-center gap-2">
+                                            <BookOpen className="w-4 h-4 text-accent" /> {(t as any)("assessment.educationLabel") || "Education Qualification"}
+                                        </label>
+                                        <div className="relative">
+                                            <select
+                                                required
+                                                value={basicInfo.education}
+                                                onChange={e => setBasicInfo({ ...basicInfo, education: e.target.value })}
+                                                className="w-full bg-muted/50 border border-border rounded-2xl p-4 outline-none focus:border-accent focus:bg-background transition-all text-lg text-foreground appearance-none shadow-sm cursor-pointer"
+                                            >
+                                                <option value="" disabled hidden className="bg-background text-foreground">Select Education Level</option>
+                                                <option value="no_schooling">No Formal Schooling</option>
+                                                <option value="elementary">Primary Schooling (Class 1-7)</option>
+                                                <option value="school">High School (Class 8-10)</option>
+                                                <option value="high_school">Higher Secondary (Class 11-12)</option>
+                                                <option value="diploma">Diploma / Vocational Training</option>
+                                                <option value="degree">Graduate / Bachelor's Degree</option>
+                                                <option value="post_graduate">Postgraduate / Master's Degree</option>
+                                                <option value="phd">Doctorate / PhD</option>
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                                                <ArrowRight className="w-5 h-5 rotate-90" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="pt-6 flex justify-between items-center">
                                     <button type="button" onClick={() => setStep("landing")} className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 font-medium">
                                         <ArrowLeft className="w-4 h-4" /> {t("assessment.back")}
@@ -611,52 +673,59 @@ export function ModernAssessment() {
                             </div>
                         </div>
                     </ScreenWrapper>
-                )}
+                )
+                }
 
                 {/* Step: Loading / Processing (Game) */}
-                {step === "loading" && (
-                    <WaitingGame 
-                        status={aiStatus}
-                        onComplete={() => {}} // No-op, managed by submitFinalAssessment
-                    />
-                )}
+                {
+                    step === "loading" && (
+                        <WaitingGame
+                            status={aiStatus}
+                            onComplete={() => { }} // No-op, managed by submitFinalAssessment
+                        />
+                    )
+                }
 
                 {/* Step: Complete */}
-                {step === "complete" && (
-                    <ScreenWrapper key="complete" className="text-center">
-                        <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-green-500/10">
-                            <CheckCircle2 className="w-16 h-16 text-green-500" />
-                        </div>
-                        <h2 className="text-5xl font-black mb-4 text-foreground">{t("assessment.journeyComplete")}</h2>
-                        <p className="text-2xl text-muted-foreground mb-10">{t("assessment.blueprintReady")}</p>
-                        <div className="flex items-center justify-center gap-3 text-accent font-bold text-xl">
-                            <Loader2 className="w-6 h-6 animate-spin" />
-                            {t("assessment.redirectingDashboard")}
-                        </div>
-                    </ScreenWrapper>
-                )}
+                {
+                    step === "complete" && (
+                        <ScreenWrapper key="complete" className="text-center">
+                            <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-green-500/10">
+                                <CheckCircle2 className="w-16 h-16 text-green-500" />
+                            </div>
+                            <h2 className="text-5xl font-black mb-4 text-foreground">{t("assessment.journeyComplete")}</h2>
+                            <p className="text-2xl text-muted-foreground mb-10">{t("assessment.blueprintReady")}</p>
+                            <div className="flex items-center justify-center gap-3 text-accent font-bold text-xl">
+                                <Loader2 className="w-6 h-6 animate-spin" />
+                                {t("assessment.redirectingDashboard")}
+                            </div>
+                        </ScreenWrapper>
+                    )
+                }
 
                 {/* Step: Error */}
-                {step === "error" && (
-                    <ScreenWrapper key="error" className="text-center">
-                        <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red-500/10">
-                            <AlertCircle className="w-12 h-12 text-red-500" />
-                        </div>
-                        <h2 className="text-3xl font-bold mb-4 text-foreground">{t("assessment.missionHalted")}</h2>
-                        <p className="text-lg text-muted-foreground mb-8">{errorMessage || "The engine hit a roadblock."}</p>
-                        <Button onClick={() => window.location.reload()} className="rounded-full bg-accent text-white px-10 py-6">
-                            {t("assessment.retryQuest")}
-                        </Button>
-                    </ScreenWrapper>
-                )}
+                {
+                    step === "error" && (
+                        <ScreenWrapper key="error" className="text-center">
+                            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red-500/10">
+                                <AlertCircle className="w-12 h-12 text-red-500" />
+                            </div>
+                            <h2 className="text-3xl font-bold mb-4 text-foreground">{t("assessment.missionHalted")}</h2>
+                            <p className="text-lg text-muted-foreground mb-8">{errorMessage || "The engine hit a roadblock."}</p>
+                            <Button onClick={() => window.location.reload()} className="rounded-full bg-accent text-white px-10 py-6">
+                                {t("assessment.retryQuest")}
+                            </Button>
+                        </ScreenWrapper>
+                    )
+                }
 
-            </AnimatePresence>
+            </AnimatePresence >
 
             {/* Background Decorative Blur */}
-            <div className="fixed top-0 left-0 w-full h-full -z-50 overflow-hidden pointer-events-none opacity-30 dark:opacity-20">
+            < div className="fixed top-0 left-0 w-full h-full -z-50 overflow-hidden pointer-events-none opacity-30 dark:opacity-20" >
                 <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/10 blur-[150px] rounded-full" />
                 <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[150px] rounded-full" />
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

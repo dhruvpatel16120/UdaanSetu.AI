@@ -2,7 +2,7 @@ from fastapi import APIRouter, Header, HTTPException, Body
 from typing import List, Optional
 from app.models.schemas import Answer
 from app.data.question_bank import get_questions
-from app.services.assessment_engine import get_next_dynamic_question, process_assessment_submission, QUESTION_LIMIT
+from app.module1.qa_engine import get_next_dynamic_question, process_assessment_submission, QUESTION_LIMIT
 from app.services.db_firebase import get_assessment_result
 
 router = APIRouter()
@@ -11,7 +11,8 @@ router = APIRouter()
 async def get_assessment_config():
     return {
         "max_questions": QUESTION_LIMIT,
-        "features": ["ai_branching", "random_start"]
+        "features": ["ai_branching", "random_start", "local_navigation"],
+        "questions": get_questions()
     }
 
 @router.get("/question/{question_id}")

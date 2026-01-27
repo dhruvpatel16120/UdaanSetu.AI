@@ -111,12 +111,14 @@ export function AuthSlider() {
       if (!isValidEmail(signIn.email.trim())) {
         throw new Error("auth/invalid-email");
       }
-      
+
       const credential = await authService.signInWithEmailPassword(signIn.email.trim(), signIn.password);
+
       if (!credential.user.emailVerified) {
-        router.push(ROUTES.auth.verifyEmail);
-        return;
+        await authService.signOut();
+        throw { code: "auth/unverified-email" };
       }
+
       router.push(ROUTES.home);
     });
   }, [router, signIn.email, signIn.password, signInAction]);
@@ -126,7 +128,7 @@ export function AuthSlider() {
       setSignUpLocalError(t("auth.error.invalidEmail"));
       return;
     }
-    
+
     if (signUp.password !== signUp.confirmPassword) {
       setSignUpLocalError(t("auth.error.passwordMismatch"));
       return;
@@ -301,10 +303,10 @@ export function AuthSlider() {
                           )}
                         </Button>
 
-                         <div className="flex justify-center text-sm text-muted-foreground mt-2">
+                        <div className="flex justify-center text-sm text-muted-foreground mt-2">
                           <Link href={ROUTES.home} className="hover:text-foreground dark:hover:text-zinc-300 transition-colors flex items-center gap-1 group">
                             <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
                             {t("auth.link.backToHome")}
                           </Link>
@@ -312,7 +314,7 @@ export function AuthSlider() {
                       </div>
                     </div>
 
-                    <div className={cn("mt-10 w-full md:mt-0 md:w-1/2 md:pl-8", mode === "sign-in" ? "hidden md:block" : "block")}> 
+                    <div className={cn("mt-10 w-full md:mt-0 md:w-1/2 md:pl-8", mode === "sign-in" ? "hidden md:block" : "block")}>
                       <div className="flex flex-col gap-4">
                         <TextField
                           id="signUpEmail"
@@ -386,8 +388,8 @@ export function AuthSlider() {
 
                         <div className="flex justify-center text-sm text-muted-foreground mt-2">
                           <Link href={ROUTES.home} className="hover:text-foreground dark:hover:text-zinc-300 transition-colors flex items-center gap-1 group">
-                             <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
                             {t("auth.link.backToHome")}
                           </Link>

@@ -21,11 +21,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const unsubscribe = authService.onAuthStateChanged((firebaseUser) => {
+      const unsubscribe = authService.onAuthStateChanged(async (firebaseUser) => {
         if (!firebaseUser) {
           setUser(null);
           setStatus("unauthenticated");
           return;
+        }
+
+        // Enforce Email Verification
+        if (!firebaseUser.emailVerified) {
+          const isVerifyPage = window.location.pathname.includes("/auth/verify-email");
+          if (!isVerifyPage) {
+            console.log("User not verified, signing out...");
+            await authService.signOut();
+            setUser(null);
+            setStatus("unauthenticated");
+            return;
+          }
         }
 
         const mappedUser = mapFirebaseUser(firebaseUser);

@@ -13,7 +13,7 @@ if not api_key:
     print("WARNING: GEMINI_API_KEY not found in environment variables.")
 
 # Initialize Model via LangChain
-def get_llm(model_name="gemini-2.5-flash"):
+def get_llm(model_name="gemini-2.0-flash"):
     """
     Get LLM instance. Defaults to Flash for speed and intelligence.
     """

@@ -1,141 +1,76 @@
 from typing import Optional, Dict, Any
 import json
-from app.db import get_db
-from app.core.exceptions import DatabaseException
+from app.services.db_firebase import get_user_profile, save_user_profile
 
 async def get_user_by_firebase_id(firebase_id: str):
-    print(f"Connecting to DB for user: {firebase_id}")
-    db = await get_db()
+    """
+    Fetches user data from Firestore. 
+    Returns a dict that mimics the Prisma User + Profile structure.
+    """
+    print(f"Fetching from Firestore for user: {firebase_id}")
     try:
-        user = await db.user.find_unique(
-            where={"firebaseId": firebase_id},
-            include={"profile": True}
-        )
-        print(f"User found: {user is not None}")
-        return user
+        data = get_user_profile(firebase_id)
+        if not data:
+            return None
+        
+        # Flattened/Mocked structure to satisfy existing router logic
+        # We wrap 'profile' related fields into a 'profile' key if they exist
+        user_obj = {
+            "id": firebase_id,
+            "firebaseId": firebase_id,
+            "email": data.get("email"),
+            "name": data.get("name"),
+            "ai_report": data.get("ai_report"),
+            "profile": {
+                "id": f"prof_{firebase_id}",
+                "userId": firebase_id,
+                "educationLevel": data.get("educationLevel") or data.get("education"),
+                "personalInterests": data.get("personalInterests") or data.get("interests"),
+                "careerGoals": data.get("careerGoals") or data.get("goals"),
+                "aiBio": data.get("aiBio") or data.get("bio"),
+                "traits": data.get("traits"),
+                "location": data.get("location") or data.get("district")
+            }
+        }
+        return user_obj
     except Exception as e:
-        print(f"Error in get_user_by_firebase_id: {e}")
-        raise DatabaseException(message="Failed to retrieve user", details={"error": str(e)})
+        print(f"Error in get_user_by_firebase_id (Firestore): {e}")
+        return None
 
 async def create_or_update_user(firebase_id: str, email: str, name: Optional[str] = None):
-    db = await get_db()
+    """
+    Upserts basic user info to Firestore.
+    """
     try:
-        user = await db.user.upsert(
-            where={"firebaseId": firebase_id},
-            data={
-                "create": {
-                    "firebaseId": firebase_id,
-                    "email": email,
-                    "name": name
-                },
-                "update": {
-                    "name": name,
-                    "email": email
-                }
-            }
-        )
-        return user
+        user_data = {
+            "firebaseId": firebase_id,
+            "email": email,
+            "name": name,
+            "updated_at": "auto" # Firestore can handle timestamps
+        }
+        save_user_profile(firebase_id, user_data)
+        return await get_user_by_firebase_id(firebase_id)
     except Exception as e:
         print(f"Error in create_or_update_user: {e}")
-        raise DatabaseException(message="Failed to create or update user", details={"error": str(e)})
+        return None
 
-async def update_user_profile(user_id: str, profile_data: Dict[str, Any]):
-    db = await get_db()
+async def update_user_profile(firebase_id: str, profile_data: Dict[str, Any]):
+    """
+    Updates user profile data in Firestore.
+    """
     try:
-        # Separate 'name' which belongs to User model
-        name = profile_data.pop("name", None)
-        if name:
-            await db.user.update(
-                where={"id": user_id},
-                data={"name": name}
-            )
-
-        # Check if profile exists
-        profile = await db.profile.find_unique(where={"userId": user_id})
-        
-        if profile:
-            updated_profile = await db.profile.update(
-                where={"userId": user_id},
-                data=profile_data
-            )
-        else:
-            updated_profile = await db.profile.create(
-                data={
-                    "userId": user_id,
-                    **profile_data
-                }
-            )
-        return updated_profile
+        # Save to Firestore (merge=True is handled in save_user_profile)
+        save_user_profile(firebase_id, profile_data)
+        return await get_user_by_firebase_id(firebase_id)
     except Exception as e:
         print(f"Error in update_user_profile: {e}")
-        raise DatabaseException(message="Failed to update user profile", details={"error": str(e)})
+        return None
 
 async def save_assessment_to_profile(firebase_id: str, student_profile: Dict[str, Any]):
     """
-    Saves assessment results and generated bio to the database.
-    Args:
-        firebase_id: The Firebase UID of the user.
-        student_profile: The assessment data.
+    DEPRECATED: Assessment Engine now handles Firestore saving directly.
+    We keep this for backward safety but it's now a no-op as assessment_engine.py 
+    calls save_assessment_result directly.
     """
-    db = await get_db()
-    try:
-        # 1. Resolve Firebase ID to Internal PostgreSQL UUID
-        user = await db.user.find_unique(where={"firebaseId": firebase_id})
-        
-        if not user:
-            print(f"Postgres Save Skipped: User with Firebase ID {firebase_id} not found in Relational DB.")
-            return
-
-        internal_id = user.id
-
-        # Sanitize JSON data to ensure compatibility with Prisma Json field
-        try:
-            safe_result_data = json.loads(json.dumps(student_profile, default=str))
-        except Exception as json_error:
-            print(f"Warning: JSON serialization failed for assessment result: {json_error}")
-            safe_result_data = {"error": "Serialization failed", "raw_summary": str(student_profile)[:500]}
-
-        # 2. Save Raw Assessment Result
-        # Use 'connect' for the relation to be explicit and avoid 'value required' errors
-        await db.assessmentresult.create(
-            data={
-                "user": {"connect": {"id": internal_id}},
-                "resultData": safe_result_data
-            }
-        )
-
-        # 3. Extract bio data
-        bio_data = student_profile.get("generated_bio", {})
-        # Education is not strictly in the new structure, might be in raw_answers or inferable, 
-        # but for now we'll default or extract if we add it back. 
-        # We can extract it from raw answers if needed, but let's keep it simple.
-        education = "Assessed" 
-
-        traits = bio_data.get("scores", {})
-        ai_bio_text = bio_data.get("generatedBio", "")
-        
-        # 4. Update Profile
-        await db.profile.upsert(
-            where={"userId": internal_id},
-            data={
-                "create": {
-                    "userId": internal_id,
-                    "educationLevel": education,
-                    "traits": json.dumps(traits),
-                    "aiBio": ai_bio_text
-                },
-                "update": {
-                    "educationLevel": education,
-                    "traits": json.dumps(traits),
-                    "aiBio": ai_bio_text
-                }
-            }
-        )
-        print(f"Successfully saved assessment to Postgres for user {firebase_id} (Internal: {internal_id})")
-        
-    except Exception as e:
-        print(f"Error in save_assessment_to_profile: {e}")
-        # explicit logging
-        import traceback
-        traceback.print_exc()
-        raise DatabaseException(message="Failed to save assessment", details={"error": str(e)})
+    print(f"Postgres/Prisma save requested for {firebase_id} - Ignored (Firestore only)")
+    return

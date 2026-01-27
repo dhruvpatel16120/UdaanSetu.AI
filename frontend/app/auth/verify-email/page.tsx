@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/hooks/useI18n";
 import { authService } from "@/services/auth/authService";
 import { cn } from "@/utils/cn";
+import { toast } from "sonner";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -59,7 +60,8 @@ export default function VerifyEmailPage() {
     }
 
     if (user?.emailVerified) {
-      router.replace(ROUTES.home);
+      toast.success("Email verified! Please sign in to continue.");
+      router.replace(ROUTES.auth.signIn);
     }
   }, [justChecked, router, user?.emailVerified]);
 
@@ -138,10 +140,10 @@ export default function VerifyEmailPage() {
                     <InlineLink href={ROUTES.auth.signIn}>{t("auth.action.signIn")}</InlineLink>
                   </div>
 
-                   <div className="flex justify-center text-sm text-muted-foreground pt-2 border-t border-zinc-200 dark:border-white/10">
-                     <Link href={ROUTES.home} className="hover:text-foreground dark:hover:text-zinc-300 transition-colors flex items-center gap-1 group">
+                  <div className="flex justify-center text-sm text-muted-foreground pt-2 border-t border-zinc-200 dark:border-white/10">
+                    <Link href={ROUTES.home} className="hover:text-foreground dark:hover:text-zinc-300 transition-colors flex items-center gap-1 group">
                       <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                       </svg>
                       {t("auth.link.backToHome")}
                     </Link>
@@ -149,8 +151,8 @@ export default function VerifyEmailPage() {
                 </div>
               </div>
 
-               {/* Right Side Image Panel - Desktop Only */}
-               <div className={cn("relative hidden md:block overflow-hidden", AUTH_THEME.accentBgClass)}>
+              {/* Right Side Image Panel - Desktop Only */}
+              <div className={cn("relative hidden md:block overflow-hidden", AUTH_THEME.accentBgClass)}>
                 <div className="absolute inset-0" aria-hidden="true">
                   <Image
                     src={ASSETS.authHero}

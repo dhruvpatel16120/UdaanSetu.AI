@@ -15,7 +15,7 @@ class MentorChatService:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
         # Using the latest available flash model for speed + intelligence
-        self.model_name = "gemini-2.5-flash" 
+        self.model_name = "gemini-2.0-flash" 
         self._llm = None
 
     @property

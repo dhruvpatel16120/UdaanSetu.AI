@@ -4,11 +4,13 @@ Generates personalized, step-by-step learning roadmaps for rural students
 Based on their assessment results and career goals
 """
 
+import os
+import json
 from typing import Dict, List
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
-import os
-import json
+from app.services.rag_engine import get_rag_engine
+from app.services.market_intelligence import market_service
 
 load_dotenv()
 
@@ -19,7 +21,7 @@ class CareerRoadmapService:
             print("WARNING: GEMINI_API_KEY not found")
         
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             google_api_key=self.api_key,
             temperature=0.3
         )
@@ -52,94 +54,58 @@ class CareerRoadmapService:
         else:
             lang_note = "Provide all descriptions in SIMPLE ENGLISH suitable for rural students."
         
-        prompt = f"""
-        You are an Expert Career Counselor creating a practical roadmap for a rural Indian student.
+        # 1. Fetch RAG Context (Scholarships, Govt Schemes, Verified Path)
+        rag_engine = get_rag_engine()
+        rag_context = rag_engine.get_context_for_query(career_path, student_bio, k=5)
         
-        --- STUDENT CONTEXT ---
+        # 2. Fetch Market Context (Real-time trends)
+        market_context = await market_service.generate_market_analysis(career_path, student_bio)
+        
+        # 3. Construct Prompt with RAG + Market Context
+        prompt = f"""
+        IDENTITY: Advanced AI Career Architect for Bharat.
+        
+        --- INPUT: STUDENT PROFILE ---
         Target Career: {career_path}
         Current Education: {education}
         Location: {location}
-        Financial Status: {financial_status}
+        Traits: {json.dumps(student_bio.get("traits", {}))}
         
-        --- CONSTRAINTS ---
-        1. Student has LIMITED money - prioritize FREE resources
-        2. Internet may be slow - prefer text tutorials over heavy videos
-        3. No prior experience - start from absolute basics
-        4. Must be achievable in 6 MONTHS with 2-3 hours daily study
+        --- INPUT: VERIFIED KNOWLEDGE (RAG) ---
+        {rag_context}
         
+        --- INPUT: MARKET INTELLIGENCE ---
+        {json.dumps(market_context)}
+        
+        --- MISSION ---
+        Create a 6-month specialized roadmap. Prioritize FREE and GOVERNMENT resources.
         {lang_note}
         
-        --- YOUR TASK ---
-        Create a REALISTIC 6-month roadmap with these phases:
-        
-        Phase 1: Foundation (Month 1-2)
-        Phase 2: Intermediate (Month 3-4)
-        Phase 3: Advanced (Month 5-6)
-        
-        For each phase, provide:
-        - Skills to learn (ranked by priority)
-        - FREE learning resources (YouTube channels, free courses, government programs)
-        - Practical mini-projects
-        - Milestones to track progress
-        
-        REQUIRED JSON FORMAT:
+        --- JSON STRUCTURE REQUIREMENTS ---
         {{
             "career_title": "{career_path}",
-            "total_duration": "6 months",
+            "readiness_score": 0-100,
+            "market_snapshot": {{
+                "demand": "High/Medium",
+                "salary": "Range in INR",
+                "trend": "Explanation"
+            }},
             "phases": [
                 {{
-                    "phase_number": 1,
-                    "title": "Foundation Phase",
+                    "phase": 1,
+                    "title": "Foundation",
                     "duration": "2 months",
-                    "goals": ["Goal 1", "Goal 2"],
-                    "skills": [
-                        {{
-                            "name": "Skill Name",
-                            "priority": "high/medium/low",
-                            "time_needed": "e.g., 2 weeks"
-                        }}
-                    ],
-                    "resources": [
-                        {{
-                            "title": "Resource Name",
-                            "type": "YouTube/Course/Documentation/Book",
-                            "cost": "Free",
-                            "url": "actual URL if famous, else generic",
-                            "language": "Hindi/English/Gujarati"
-                        }}
-                    ],
-                    "projects": [
-                        {{
-                            "title": "Project Name",
-                            "description": "What to build",
-                            "difficulty": "Beginner"
-                        }}
-                    ],
-                    "milestones": ["Checkpoint 1", "Checkpoint 2"]
+                    "milestones": ["M1", "M2"],
+                    "skills": [{{ "name": "Skill", "priority": "high", "time": "2 weeks" }}],
+                    "resources": [{{ "name": "Source", "type": "Video/Course", "url": "URL", "lang": "HI/GU/EN" }}]
                 }}
             ],
-            "certification_options": [
-                {{
-                    "name": "Certification Name",
-                    "provider": "Coursera/Google/etc.",
-                    "cost": "Free/Paid",
-                    "value": "How it helps"
-                }}
+            "scholarships_and_schemes": [
+                {{ "name": "Scheme Name", "benefit": "Details", "link": "URL" }}
             ],
-            "job_search_strategy": {{
-                "platforms": ["Naukri", "Internshala", "LinkedIn"],
-                "gujarat_specific": ["Local opportunities in Gujarat"],
-                "remote_opportunities": ["Remote job boards"],
-                "expected_salary_range": "15k-25k INR (entry-level)"
-            }},
-            "success_tips": [
-                "Tip 1: Stay consistent",
-                "Tip 2: Build portfolio",
-                "etc."
-            ]
+            "success_tips": ["Tip 1", "Tip 2"]
         }}
-        
-        Return ONLY valid JSON. No markdown blocks.
+        Return ONLY valid JSON.
         """
         
         try:

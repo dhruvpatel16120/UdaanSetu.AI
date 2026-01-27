@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/store/theme/ThemeProvider";
+import { useRouter } from "next/navigation";
 import { ENV } from "@/constants/env";
 import { ROUTES } from "@/constants/routes";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     User, Mail, Calendar, MapPin,
     BookOpen, Briefcase, Target,
-    Edit, Save, Loader2, Award, Zap
+    Edit, Save, Loader2, Award, Zap, AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -18,23 +19,27 @@ import { cn } from "@/utils/cn";
 export default function ProfilePage() {
     const { user, status } = useAuth();
     const { theme } = useTheme();
+    const router = useRouter();
 
     // State
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<any>(null);
     const [assessment, setAssessment] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
+    const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+
+    const countdownTimer = useRef<NodeJS.Timeout | null>(null);
 
     // Fetch Data
     useEffect(() => {
         if (status === "loading") return;
-        if (!user) return; // Wait for redirect or handled by layout
+        if (!user) return;
 
         async function fetchData() {
             try {
                 // Parallel Fetch: User Profile + Assessment Result
                 const [profRes, assessRes] = await Promise.all([
-                    fetch(`${ENV.apiUrl}/api/user/${user?.uid}`), // Assuming this endpoint exists or similar
+                    fetch(`${ENV.apiUrl}/api/user/${user?.uid}`),
                     fetch(`${ENV.apiUrl}/api/assessment/result/${user?.uid}`)
                 ]);
 
@@ -46,6 +51,14 @@ export default function ProfilePage() {
                 if (assessRes.ok) {
                     const assessData = await assessRes.json();
                     setAssessment(assessData);
+
+                    // If no assessment data found, trigger redirect logic
+                    if (!assessData || Object.keys(assessData).length === 0) {
+                        setRedirectCountdown(7);
+                    }
+                } else if (assessRes.status === 404) {
+                    // Assessment explicitly not found
+                    setRedirectCountdown(7);
                 }
 
             } catch (err: any) {
@@ -58,6 +71,23 @@ export default function ProfilePage() {
 
         fetchData();
     }, [user, status]);
+
+    // Handle Countdown
+    useEffect(() => {
+        if (redirectCountdown === null) return;
+
+        if (redirectCountdown > 0) {
+            countdownTimer.current = setTimeout(() => {
+                setRedirectCountdown(prev => (prev !== null ? prev - 1 : null));
+            }, 1000);
+        } else {
+            router.push(ROUTES.assessment || "/assessment");
+        }
+
+        return () => {
+            if (countdownTimer.current) clearTimeout(countdownTimer.current);
+        };
+    }, [redirectCountdown, router]);
 
     if (status === "loading" || loading) {
         return (
@@ -80,11 +110,55 @@ export default function ProfilePage() {
         );
     }
 
-    // Derived Data
-    const bioData = assessment?.generated_bio || {};
-    const aiReport = bioData.ai_report || {};
-    const traits = bioData.traits || {};
-    const scores = bioData.scores || {};
+    // Redirect UI
+    if (redirectCountdown !== null) {
+        return (
+            <div className={cn(
+                "min-h-screen flex items-center justify-center p-6 transition-colors duration-500",
+                theme === "dark" ? "bg-[#020617]" : "bg-zinc-50"
+            )}>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="glass-card max-w-md w-full p-8 text-center space-y-6 bg-white dark:bg-zinc-900 border-border shadow-2xl"
+                >
+                    <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto">
+                        <AlertTriangle className="w-10 h-10 text-orange-500" />
+                    </div>
+
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-foreground">Assessment Required</h2>
+                        <p className="text-muted-foreground">
+                            To view your profile and personalized guidance, you must first complete the UdaanSetu assessment test.
+                        </p>
+                    </div>
+
+                    <div className="py-4">
+                        <div className="text-4xl font-extrabold text-accent">
+                            {redirectCountdown}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-widest">Redirecting in seconds</p>
+                    </div>
+
+                    <Link href={ROUTES.assessment || "/assessment"}>
+                        <Button className="w-full bg-accent text-white py-6 text-lg font-bold shadow-lg shadow-accent/20">
+                            Start Assessment Now
+                        </Button>
+                    </Link>
+                </motion.div>
+            </div>
+        );
+    }
+
+    // Derived Data - Favor Profile (synced) over Assessment (raw)
+    const traits = profile?.traits || assessment?.generated_bio?.trait_scores || {};
+    const aiReport = profile?.ai_report || {};
+    const profileBio = profile?.bio || aiReport.bio || assessment?.generated_bio?.bio_text;
+    const displayName = profile?.name || assessment?.generated_bio?.basic_info?.name || user.displayName || "Young Achiever";
+    const location = profile?.location || assessment?.generated_bio?.basic_info?.location;
+    const education = profile?.educationLevel || profile?.education || assessment?.generated_bio?.basic_info?.education;
+
+    const scores = traits;
 
     return (
         <div className={cn(
@@ -115,7 +189,7 @@ export default function ProfilePage() {
                         <div className="flex-1 space-y-4">
                             <div>
                                 <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                                    {bioData.static_name || user.displayName || "Young Achiever"}
+                                    {displayName}
                                 </h1>
                                 <p className="text-muted-foreground flex items-center gap-2 mt-2">
                                     <Mail className="w-4 h-4" /> {user.email}
@@ -123,14 +197,14 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="flex flex-wrap gap-4">
-                                {profile?.educationLevel && (
+                                {education && (
                                     <div className="px-4 py-2 rounded-full bg-blue-500/10 text-blue-500 text-sm font-medium flex items-center gap-2 border border-blue-500/20">
-                                        <BookOpen className="w-4 h-4" /> {profile.educationLevel}
+                                        <BookOpen className="w-4 h-4" /> {education}
                                     </div>
                                 )}
-                                {bioData.static_district && (
+                                {location && (
                                     <div className="px-4 py-2 rounded-full bg-green-500/10 text-green-500 text-sm font-medium flex items-center gap-2 border border-green-500/20 capitalize">
-                                        <MapPin className="w-4 h-4" /> {bioData.static_district}
+                                        <MapPin className="w-4 h-4" /> {location}
                                     </div>
                                 )}
                             </div>
@@ -160,11 +234,10 @@ export default function ProfilePage() {
                             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                                 <Award className="w-5 h-5 text-accent" /> Professional Bio
                             </h2>
-                            {aiReport ? (
+                            {profileBio ? (
                                 <div className="prose dark:prose-invert max-w-none">
                                     <p className="text-lg leading-relaxed text-foreground/80">
-                                        {/* Fallback bio generation if AI report is minimal */}
-                                        {aiReport.bio || `Based on your assessment, you show strong potential in ${aiReport.recommendations?.[0]?.title || "diverse fields"}. Your profile indicates a natural aptitude for ${Object.keys(scores).map(s => s.replace('_', ' ')).slice(0, 2).join(" & ")}. Keep pushing forward!`}
+                                        {profileBio}
                                     </p>
                                 </div>
                             ) : (

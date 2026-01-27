@@ -43,23 +43,18 @@ def save_assessment_result(user_id: str, data: dict):
             init_firebase()
             
         db = firestore.client()
+        # Reference to the assessments document
+        doc_ref = db.collection("assessments").document(user_id)
         
-        # Reference to the user document
-        user_ref = db.collection("users").document(user_id)
-        
-        # We store the assessment in an 'assessment_result' field to keep it organized
-        # Using set with merge=True to keep other user data (like email/name) if it exists,
-        # but WE WILL OVERWRITE 'assessment_result' completely.
-        
-        # However, user requested "previous data is overrights". 
-        # So we replace the specifically assessment-related keys.
+        # We store the assessment data. Using set with merge=True for safety, 
+        # but assessments are generally self-contained now.
         
         update_data = {
             "assessment_result": data,
             "last_updated": firestore.SERVER_TIMESTAMP
         }
         
-        user_ref.set(update_data, merge=True)
+        doc_ref.set(update_data, merge=True)
         print(f"Successfully saved assessment for user {user_id}")
         return True
     except Exception as e:
@@ -75,8 +70,8 @@ def get_assessment_result(user_id: str):
             init_firebase()
             
         db = firestore.client()
-        user_ref = db.collection("users").document(user_id)
-        doc = user_ref.get()
+        doc_ref = db.collection("assessments").document(user_id)
+        doc = doc_ref.get()
         
         if doc.exists:
             data = doc.to_dict()
@@ -84,4 +79,66 @@ def get_assessment_result(user_id: str):
         return None
     except Exception as e:
         print(f"Error getting from Firestore: {e}")
+        return None
+
+def get_questions_from_firestore():
+    """
+    Fetches all questions from the 'questions' collection.
+    """
+    try:
+        if not firebase_admin._apps:
+            init_firebase()
+            
+        db = firestore.client()
+        questions_ref = db.collection("questions")
+        docs = questions_ref.stream()
+        
+        questions = []
+        for doc in docs:
+            q_data = doc.to_dict()
+            if "id" not in q_data:
+                q_data["id"] = doc.id
+            questions.append(q_data)
+        
+        return questions
+    except Exception as e:
+        print(f"Error fetching questions from Firestore: {e}")
+        return None
+
+def save_user_profile(firebase_id: str, profile_data: dict):
+    """
+    Saves or updates user profile data in Firestore.
+    """
+    try:
+        if not firebase_admin._apps:
+            init_firebase()
+            
+        db = firestore.client()
+        user_ref = db.collection("users").document(firebase_id)
+        
+        # Use merge=True to not overwrite assessment results or other data
+        user_ref.set(profile_data, merge=True)
+        print(f"Successfully saved user profile for {firebase_id}")
+        return True
+    except Exception as e:
+        print(f"Error saving user profile to Firestore: {e}")
+        return False
+
+def get_user_profile(firebase_id: str):
+    """
+    Retrieves full user document from Firestore.
+    """
+    try:
+        if not firebase_admin._apps:
+            init_firebase()
+            
+        db = firestore.client()
+        user_ref = db.collection("users").document(firebase_id)
+        doc = user_ref.get()
+        
+        if doc.exists:
+            return doc.to_dict()
+        return None
+    except Exception as e:
+        print(f"Error getting user profile from Firestore: {e}")
         return None

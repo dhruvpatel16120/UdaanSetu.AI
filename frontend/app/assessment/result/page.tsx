@@ -82,12 +82,13 @@ export default function AssessmentResultPage() {
     );
   }
 
-  // Extract data from new simplified structure
+  // Extract data from new standardized structure
   const bioData = result?.generated_bio || {};
-  const readiness = bioData.overall_score || 0;
-  const traits = bioData.scores || {};
-  const insights = bioData.keyInsights || [];
-  const recommendation = bioData.topRecommendation || "Pending Analysis";
+  const readiness = bioData.readiness_score || 0;
+  const traits = bioData.trait_scores || {};
+  const snapshot = bioData.snapshot || {};
+  const insights = snapshot.key_insights || [];
+  const recommendation = snapshot.top_recommendation || "Pending Analysis";
 
   return (
     <div className={cn(
@@ -162,7 +163,7 @@ export default function AssessmentResultPage() {
 
             {/* Sub Scores */}
             <div className="w-full grid grid-cols-2 gap-4 mt-4 text-center">
-               {Object.entries(traits).slice(0, 6).map(([key, val]: any) => (
+              {Object.entries(traits).slice(0, 6).map(([key, val]: any) => (
                 <div key={key} className="flex flex-col items-center justify-center p-2 bg-muted/20 rounded-lg">
                   <span className="text-lg font-black text-foreground">{val}%</span>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate w-full">
@@ -196,7 +197,7 @@ export default function AssessmentResultPage() {
                 </div>
               ))}
               {insights.length === 0 && (
-                  <p className="text-muted-foreground italic">AI analysis in progress...</p>
+                <p className="text-muted-foreground italic">AI analysis in progress...</p>
               )}
             </div>
 

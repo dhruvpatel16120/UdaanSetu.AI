@@ -48,5 +48,9 @@ export function mapAuthErrorToMessageKey(error: unknown): TranslationKey {
     return "auth.error.operationNotAllowed";
   }
 
+  if (code === "auth/unverified-email") {
+    return "auth.error.unverified";
+  }
+
   return "auth.error.generic";
 }

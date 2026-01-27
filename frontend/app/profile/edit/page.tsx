@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { ENV } from "@/constants/env";
 import { ROUTES } from "@/constants/routes";
 import { useTheme } from "@/store/theme/ThemeProvider";
 import { motion } from "framer-motion";
-import { User, Save, ArrowLeft, Loader2 } from "lucide-react";
+import { User, Save, ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/utils/cn";
-import { toast } from "sonner"; // Assuming you have sonner or similar for toasts
+import { toast } from "sonner";
 
 export default function EditProfilePage() {
     const { user, status } = useAuth();
@@ -20,6 +20,7 @@ export default function EditProfilePage() {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -29,6 +30,9 @@ export default function EditProfilePage() {
         careerGoals: ""
     });
 
+    // Reference state to track changes
+    const [serverData, setServerData] = useState<typeof formData | null>(null);
+
     useEffect(() => {
         if (status === "loading") return;
         if (!user) {
@@ -37,20 +41,25 @@ export default function EditProfilePage() {
         }
 
         async function fetchProfile() {
-            if (!user) return;
             try {
-                const res = await fetch(`${ENV.apiUrl}/api/user/${user.uid}`);
+                setError(null);
+                const res = await fetch(`${ENV.apiUrl}/api/user/${user?.uid}`);
                 if (res.ok) {
                     const data = await res.json();
-                    setFormData({
-                        name: data.name || user.displayName || "",
+                    const initialData = {
+                        name: data.name || user?.displayName || "",
                         educationLevel: data.educationLevel || "",
                         personalInterests: data.personalInterests || "",
                         careerGoals: data.careerGoals || ""
-                    });
+                    };
+                    setFormData(initialData);
+                    setServerData(initialData);
+                } else {
+                    throw new Error("Failed to fetch profile settings");
                 }
             } catch (err) {
                 console.error("Failed to load profile", err);
+                setError("Unable to load profile data. Please check your connection.");
             } finally {
                 setLoading(false);
             }
@@ -58,10 +67,27 @@ export default function EditProfilePage() {
         fetchProfile();
     }, [user, status, router]);
 
+    // Check if form has changed
+    const hasChanges = useMemo(() => {
+        if (!serverData) return false;
+        return (
+            formData.name !== serverData.name ||
+            formData.educationLevel !== serverData.educationLevel ||
+            formData.personalInterests !== serverData.personalInterests ||
+            formData.careerGoals !== serverData.careerGoals
+        );
+    }, [formData, serverData]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSaving(true);
+        
+        // Final sanity check for changes
+        if (!hasChanges) {
+            toast.info("No changes to save");
+            return;
+        }
 
+        setSaving(true);
         try {
             const res = await fetch(`${ENV.apiUrl}/api/user/${user?.uid}/profile`, {
                 method: "PUT",
@@ -69,15 +95,21 @@ export default function EditProfilePage() {
                 body: JSON.stringify(formData)
             });
 
-            if (!res.ok) throw new Error("Failed to update");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || "Update failed");
+            }
 
             toast.success("Profile updated successfully");
-
-            // Redirect back to profile
-            router.push(ROUTES.profile);
-        } catch (err) {
+            
+            // Update local serverData reference so button disables again
+            setServerData({...formData});
+            
+            // Optionally redirect or stay on page
+            setTimeout(() => router.push(ROUTES.profile), 1000);
+        } catch (err: any) {
             console.error("Update failed", err);
-            toast.error("Failed to update profile. Please try again.");
+            toast.error(err.message || "Failed to update profile. Please try again.");
         } finally {
             setSaving(false);
         }
@@ -98,14 +130,14 @@ export default function EditProfilePage() {
         )}>
             <div className="max-w-2xl mx-auto">
 
-                <Link href={ROUTES.profile} className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6">
+                <Link href={ROUTES.profile} className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors">
                     <ArrowLeft className="w-4 h-4 mr-2" /> Back to Profile
                 </Link>
 
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="glass-card p-8 md:p-10 bg-white dark:bg-zinc-900 border-border"
+                    className="glass-card p-8 md:p-10 bg-white dark:bg-zinc-900 border-border overflow-hidden"
                 >
                     <div className="flex items-center gap-4 mb-8 pb-6 border-b border-border">
                         <div className="p-3 bg-accent/10 rounded-full">
@@ -117,6 +149,13 @@ export default function EditProfilePage() {
                         </div>
                     </div>
 
+                    {error && (
+                        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-500 text-sm">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                            {error}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-6">
 
                         <div className="space-y-2">
@@ -125,25 +164,28 @@ export default function EditProfilePage() {
                                 type="text"
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full p-3 rounded-xl bg-muted/50 border border-border focus:border-accent outline-none transition-all"
+                                className="w-full p-3 rounded-xl bg-muted/30 border border-border focus:border-accent focus:ring-2 focus:ring-accent/10 outline-none transition-all"
                                 placeholder="Enter your full name"
+                                autoComplete="name"
                             />
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Current Education Level</label>
-                            <select
-                                value={formData.educationLevel}
-                                onChange={e => setFormData({ ...formData, educationLevel: e.target.value })}
-                                className="w-full p-3 rounded-xl bg-muted/50 border border-border focus:border-accent outline-none transition-all"
-                            >
-                                <option value="">Select Level</option>
-                                <option value="Class 8-10">Class 8-10</option>
-                                <option value="Class 11-12">Class 11-12</option>
-                                <option value="Undergraduate">Undergraduate</option>
-                                <option value="Postgraduate">Postgraduate</option>
-                                <option value="Other">Other</option>
-                            </select>
+                            <div className="relative">
+                                <select
+                                    value={formData.educationLevel}
+                                    onChange={e => setFormData({ ...formData, educationLevel: e.target.value })}
+                                    className="w-full p-3 rounded-xl bg-muted/30 border border-border focus:border-accent focus:ring-2 focus:ring-accent/10 outline-none transition-all appearance-none"
+                                >
+                                    <option value="">Select Level</option>
+                                    <option value="Class 8-10">Class 8-10</option>
+                                    <option value="Class 11-12">Class 11-12</option>
+                                    <option value="Undergraduate">Undergraduate</option>
+                                    <option value="Postgraduate">Postgraduate</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
@@ -152,7 +194,7 @@ export default function EditProfilePage() {
                                 rows={3}
                                 value={formData.personalInterests}
                                 onChange={e => setFormData({ ...formData, personalInterests: e.target.value })}
-                                className="w-full p-3 rounded-xl bg-muted/50 border border-border focus:border-accent outline-none transition-all resize-none"
+                                className="w-full p-3 rounded-xl bg-muted/30 border border-border focus:border-accent focus:ring-2 focus:ring-accent/10 outline-none transition-all resize-none"
                                 placeholder="e.g. Drawing, Coding, Cricket..."
                             />
                         </div>
@@ -163,16 +205,23 @@ export default function EditProfilePage() {
                                 type="text"
                                 value={formData.careerGoals}
                                 onChange={e => setFormData({ ...formData, careerGoals: e.target.value })}
-                                className="w-full p-3 rounded-xl bg-muted/50 border border-border focus:border-accent outline-none transition-all"
+                                className="w-full p-3 rounded-xl bg-muted/30 border border-border focus:border-accent focus:ring-2 focus:ring-accent/10 outline-none transition-all"
                                 placeholder="e.g. Software Engineer, Doctor..."
                             />
                         </div>
 
-                        <div className="pt-4 flex justify-end gap-3">
-                            <Link href={ROUTES.profile}>
-                                <Button type="button" variant="ghost">Cancel</Button>
+                        <div className="pt-4 flex flex-col sm:flex-row justify-end gap-3">
+                            <Link href={ROUTES.profile} className="w-full sm:w-auto">
+                                <Button type="button" variant="ghost" className="w-full">Cancel</Button>
                             </Link>
-                            <Button type="submit" disabled={saving} className="bg-accent text-white w-40">
+                            <Button 
+                                type="submit" 
+                                disabled={saving || !hasChanges} 
+                                className={cn(
+                                    "w-full sm:w-40 transition-all duration-300",
+                                    !hasChanges ? "opacity-50 cursor-not-allowed" : "bg-accent text-white hover:shadow-lg hover:shadow-accent/20"
+                                )}
+                            >
                                 {saving ? (
                                     <>
                                         <Loader2 className="w-4 h-4 animate-spin mr-2" /> Saving...

@@ -92,9 +92,11 @@ async def generate_roadmap(request: RoadmapRequest):
             init_firebase()
         
         db = firestore.client()
-        doc = db.collection("users").document(request.user_id).get()
+        # Fetch bio/traits from the assessments collection
+        doc = db.collection("assessments").document(request.user_id).get()
         
         if not doc.exists:
+            # Fallback to general info if no assessment found
             student_bio = {"education": "12th", "location": "Gujarat", "traits": {}}
         else:
             student_data = doc.to_dict()

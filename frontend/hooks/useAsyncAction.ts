@@ -22,7 +22,6 @@ export function useAsyncAction() {
       return result;
     } catch (err) {
       setState({ isLoading: false, error: err });
-      throw err;
     }
   }, []);
 
