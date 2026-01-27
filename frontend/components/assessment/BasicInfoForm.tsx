@@ -1,6 +1,8 @@
 "use client";
 
+
 import { useState } from "react";
+import { GUJARAT_DISTRICTS } from "@/constants/locations";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/utils/cn";
@@ -16,42 +18,10 @@ interface BasicInfoFormProps {
   onSubmit: (info: BasicInfo) => void;
 }
 
-const gujaratLocations = [
-  "Ahmedabad",
-  "Surat",
-  "Vadodara",
-  "Rajkot",
-  "Gandhinagar",
-  "Bhavnagar",
-  "Jamnagar",
-  "Junagadh",
-  "Porbandar",
-  "Surendranagar",
-  "Bharuch",
-  "Anand",
-  "Kheda",
-  "Patan",
-  "Amreli",
-  "Botad",
-  "Chhota Udepur",
-  "Dahod",
-  "Devbhoomi Dwarka",
-  "Gir Somnath",
-  "Himatnagar",
-  "Kutch",
-  "Mahisagar",
-  "Morbi",
-  "Narmada",
-  "Navsari",
-  "Panchmahal",
-  "Sabarkantha",
-  "Tapi",
-  "Valsad",
-  "Aravalli"
-];
+
 
 export function BasicInfoForm({ onSubmit }: BasicInfoFormProps) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [formData, setFormData] = useState<BasicInfo>({
     name: "",
     gender: "",
@@ -245,9 +215,9 @@ export function BasicInfoForm({ onSubmit }: BasicInfoFormProps) {
                 )}
               >
                 <option value="">{t("assessment.selectLocation")}</option>
-                {gujaratLocations.map((location) => (
-                  <option key={location} value={location}>
-                    {location}
+                {GUJARAT_DISTRICTS.map((district) => (
+                  <option key={district.en} value={district.en}>
+                    {language === "gu" ? district.gu : district.en}
                   </option>
                 ))}
               </select>

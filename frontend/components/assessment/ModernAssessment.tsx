@@ -35,6 +35,8 @@ import { useTheme } from "@/store/theme/ThemeProvider";
 import { ENV } from "@/constants/env";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/utils/cn";
+import { GUJARAT_DISTRICTS } from "@/constants/locations";
+import { WaitingGame } from "./WaitingGame";
 
 // --- Types ---
 interface BackendOption {
@@ -126,6 +128,27 @@ export function ModernAssessment() {
         if (step === "assessment" && questions.length === 0) {
             fetchFirstQuestion();
         }
+
+        // Cycle status messages during loading to keep user engaged
+        let statusInterval: NodeJS.Timeout;
+        if (step === "loading") {
+            const statuses = [
+                t("assessment.statusAnalyzing"),
+                t("assessment.statusMapping"),
+                t("assessment.statusSearching"),
+                t("assessment.statusContextualizing"),
+                t("assessment.statusGenerating")
+            ];
+            let i = 0;
+            statusInterval = setInterval(() => {
+                setAiStatus(statuses[i % statuses.length]);
+                i++;
+            }, 2000); // Change every 2 seconds
+        }
+
+        return () => {
+            if (statusInterval) clearInterval(statusInterval);
+        };
     }, [step]);
 
     // --- Handlers ---
@@ -426,12 +449,12 @@ export function ModernAssessment() {
                                                 onChange={e => setBasicInfo({ ...basicInfo, location: e.target.value })}
                                                 className="w-full bg-muted/50 border border-border rounded-2xl p-4 outline-none focus:border-accent focus:bg-background transition-all text-lg text-foreground appearance-none shadow-sm cursor-pointer"
                                             >
-                                                <option value="" className="bg-background text-foreground">{t("assessment.selectDistrict")}</option>
-                                                <option value="Ahmedabad" className="bg-background text-foreground">{t("assessment.district.ahmedabad")}</option>
-                                                <option value="Surat" className="bg-background text-foreground">{t("assessment.district.surat")}</option>
-                                                <option value="Vadodara" className="bg-background text-foreground">{t("assessment.district.vadodara")}</option>
-                                                <option value="Rajkot" className="bg-background text-foreground">{t("assessment.district.rajkot")}</option>
-                                                <option value="Other" className="bg-background text-foreground">{t("assessment.district.other")}</option>
+                                                <option value="" disabled hidden className="bg-background text-foreground">{t("assessment.selectDistrict")}</option>
+                                                {GUJARAT_DISTRICTS.map((district) => (
+                                                    <option key={district.en} value={district.en} className="bg-background text-foreground">
+                                                        {language === "gu" ? district.gu : district.en}
+                                                    </option>
+                                                ))}
                                             </select>
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
                                                 <ArrowRight className="w-5 h-5 rotate-90" />
@@ -590,22 +613,12 @@ export function ModernAssessment() {
                     </ScreenWrapper>
                 )}
 
-                {/* Step: Loading / Processing */}
+                {/* Step: Loading / Processing (Game) */}
                 {step === "loading" && (
-                    <ScreenWrapper key="loading" className="text-center py-20">
-                        <div className="relative inline-block mb-12">
-                            <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                                className="w-32 h-32 border-4 border-accent/20 border-t-accent rounded-full"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <Brain className="w-12 h-12 text-accent animate-pulse" />
-                            </div>
-                        </div>
-                        <h2 className="text-4xl font-bold mb-4 text-foreground">{t("assessment.thinking")}</h2>
-                        <p className="text-xl text-muted-foreground max-w-md mx-auto animate-pulse">{aiStatus}</p>
-                    </ScreenWrapper>
+                    <WaitingGame 
+                        status={aiStatus}
+                        onComplete={() => {}} // No-op, managed by submitFinalAssessment
+                    />
                 )}
 
                 {/* Step: Complete */}

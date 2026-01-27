@@ -110,7 +110,7 @@ export default function MentorPage() {
             const userId = user?.uid || "demo_user_123";
             const history = messages.map(m => ({ role: m.role, content: m.content }));
             
-            const response = await fetch("http://localhost:8000/api/chat/", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/chat/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

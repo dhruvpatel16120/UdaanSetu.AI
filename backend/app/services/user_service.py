@@ -70,43 +70,70 @@ async def update_user_profile(user_id: str, profile_data: Dict[str, Any]):
         print(f"Error in update_user_profile: {e}")
         raise DatabaseException(message="Failed to update user profile", details={"error": str(e)})
 
-async def save_assessment_to_profile(user_id: str, student_profile: Dict[str, Any]):
+async def save_assessment_to_profile(firebase_id: str, student_profile: Dict[str, Any]):
     """
     Saves assessment results and generated bio to the database.
+    Args:
+        firebase_id: The Firebase UID of the user.
+        student_profile: The assessment data.
     """
     db = await get_db()
     try:
-        # 1. Save Raw Assessment Result
+        # 1. Resolve Firebase ID to Internal PostgreSQL UUID
+        user = await db.user.find_unique(where={"firebaseId": firebase_id})
+        
+        if not user:
+            print(f"Postgres Save Skipped: User with Firebase ID {firebase_id} not found in Relational DB.")
+            return
+
+        internal_id = user.id
+
+        # Sanitize JSON data to ensure compatibility with Prisma Json field
+        try:
+            safe_result_data = json.loads(json.dumps(student_profile, default=str))
+        except Exception as json_error:
+            print(f"Warning: JSON serialization failed for assessment result: {json_error}")
+            safe_result_data = {"error": "Serialization failed", "raw_summary": str(student_profile)[:500]}
+
+        # 2. Save Raw Assessment Result
+        # Use 'connect' for the relation to be explicit and avoid 'value required' errors
         await db.assessmentresult.create(
             data={
-                "userId": user_id,
-                "resultData": student_profile
+                "user": {"connect": {"id": internal_id}},
+                "resultData": safe_result_data
             }
         )
 
-        # 2. Extract bio data
-        education = student_profile.get("generated_bio", {}).get("education", "Unknown")
-        traits = student_profile.get("generated_bio", {}).get("traits", {})
-        ai_report = student_profile.get("generated_bio", {}).get("ai_report", "")
+        # 3. Extract bio data
+        bio_data = student_profile.get("generated_bio", {})
+        education = bio_data.get("education", "Unknown")
+        traits = bio_data.get("traits", {})
+        ai_report = bio_data.get("ai_report", "")
+        # Convert ai_report to string if it's a dict/json
+        ai_bio_str = json.dumps(ai_report) if isinstance(ai_report, (dict, list)) else str(ai_report)
 
-        # 3. Update Profile
-        # We use upsert for profile
+        # 4. Update Profile
         await db.profile.upsert(
-            where={"userId": user_id},
+            where={"userId": internal_id},
             data={
                 "create": {
-                    "userId": user_id,
+                    "userId": internal_id,
                     "educationLevel": education,
                     "traits": json.dumps(traits),
-                    "aiBio": str(ai_report)
+                    "aiBio": ai_bio_str
                 },
                 "update": {
                     "educationLevel": education,
                     "traits": json.dumps(traits),
-                    "aiBio": str(ai_report)
+                    "aiBio": ai_bio_str
                 }
             }
         )
+        print(f"Successfully saved assessment to Postgres for user {firebase_id} (Internal: {internal_id})")
+        
     except Exception as e:
         print(f"Error in save_assessment_to_profile: {e}")
+        # explicit logging
+        import traceback
+        traceback.print_exc()
         raise DatabaseException(message="Failed to save assessment", details={"error": str(e)})

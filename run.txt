@@ -11,8 +11,7 @@ cd backend
 
 # setup_backend
 powershell -ExecutionPolicy Bypass -File setup_backend.ps1
-prisma generate
-
+ 
 # Activate Virtual Environment (Windows)
 .\venv\Scripts\activate
 prisma generate

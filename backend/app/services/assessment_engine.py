@@ -47,7 +47,7 @@ async def get_next_dynamic_question(current_answers: List[Answer]) -> Optional[d
     # 3. AI Selection for next question
     try:
         # Upgrade to latest Flash model for better logic
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         history = get_session_history_summary(current_answers)
         available_qs = [q for q in all_questions if q["id"] not in asked_ids]
         
