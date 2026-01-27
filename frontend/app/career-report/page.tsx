@@ -21,7 +21,9 @@ import {
     Brain,
     Target,
     BookOpen,
-    Zap
+    Zap,
+    ArrowRight,
+    Loader2
 } from "lucide-react";
 
 interface RoadmapData {
@@ -91,6 +93,8 @@ export default function CareerReportPage() {
     const [reportData, setReportData] = useState<ReportData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [generatingReport, setGeneratingReport] = useState(false);
+    const [isReportMissing, setIsReportMissing] = useState(false);
     const [generatingRoadmap, setGeneratingRoadmap] = useState(false);
     const [activeRoadmap, setActiveRoadmap] = useState<RoadmapData | null>(null);
 
@@ -105,84 +109,31 @@ export default function CareerReportPage() {
             if (!user?.uid) return;
             const userId = user.uid;
             try {
-                // Fetch full result including traits
-                const res = await fetch(`${ENV.apiUrl}/api/assessment/result/${userId}`);
+                // Fetch Direct Career Report (New Architecture)
+                const res = await fetch(`${ENV.apiUrl}/api/assessment/report/${userId}`);
+                
                 if (!res.ok) {
-                    if (res.status === 404) throw new Error("Report not found. Please complete the assessment first.");
+                    if (res.status === 404) {
+                        setIsReportMissing(true);
+                        setLoading(false);
+                        return;
+                    }
                     throw new Error("Failed to load report");
                 }
-                const data = await res.json();
+                
+                const aiReport = await res.json();
 
-                // Transform Backend Data to UI Structure
-                const bio = data.generated_bio || {};
-                const traits = bio.traits || {};
-                const aiReport = bio.ai_report || {};
-
-                // Heuristic Mapping (Logic to make it look real based on traits)
-                const mappedStrengths = [];
-                if (traits.strength === "stamina") mappedStrengths.push("Hardworking & Resilient");
-                if (traits.strength === "logic") mappedStrengths.push("Logical Problem Solving");
-                if (traits.strength === "communication") mappedStrengths.push("Effective Communication");
-                if (traits.strength === "creativity") mappedStrengths.push("Creative Thinking");
-                if (traits.leadership === "high") mappedStrengths.push("Leadership");
-                if (mappedStrengths.length === 0) mappedStrengths.push("Dedication", "Adaptability");
-
-                // Merge with AI Strengths if available
-                if (aiReport.topStrengths) {
-                    // If AI gives strengths, use them or mix
-                }
-
-                // Calculate a "Career Readiness" score based on traits
-                let readiness = 60; // Base
-                if (traits.education === "degree") readiness += 20;
-                if (traits.education === "high_school") readiness += 10;
-                if (traits.digital_literacy === "high") readiness += 10;
-                if (traits.confidence === "high") readiness += 5;
-
+                // Direct Mapping from Dedicated Report Collection
                 const transformedData: ReportData = {
-                    generatedAt: new Date(data.last_updated?.seconds * 1000 || Date.now()),
-                    careerReadiness: aiReport.careerReadiness || Math.min(readiness, 98),
-                    topStrengths: aiReport.topStrengths || mappedStrengths,
-                    personalityTraits: aiReport.personalityTraits || [
-                        traits.mindset === "growth" ? "Growth Mindset" : (traits.mindset === "billionaire" ? "Ambitious" : "Stable & Reliable"),
-                        traits.social === "high" ? "Extroverted" : (traits.leadership === "independent" ? "Independent" : "Team Player"),
-                        traits.risk_appetite === "high" ? "Risk Taker" : "Cautious"
-                    ],
-                    recommendations: aiReport.recommendations || (
-                        bio.suggested_paths?.length > 1 && bio.suggested_paths[0] !== "Pending Analysis..."
-                            ? bio.suggested_paths.map((p: string) => ({ title: p, match: 85, description: "Recommended based on your profile", requirements: ["Dedication"] }))
-                            : [
-                                {
-                                    title: traits.domain === "tech" ? "Software Developer" : (traits.domain === "commerce" ? "Accountant/Finance" : "General Management"),
-                                    match: 92,
-                                    description: traits.domain === "tech" ? "Build software and apps" : "Manage finances and business",
-                                    requirements: traits.domain === "tech" ? ["Logic", "Coding"] : ["Math", "Management"]
-                                }
-                            ]
-                    ),
-                    currentSkills: aiReport.currentSkills || [
-                        { name: "Communication", level: traits.strength === "communication" ? 90 : 70 },
-                        { name: "Problem Solving", level: traits.problem_solving === "research_oriented" ? 85 : 65 },
-                        { name: "Digital Literacy", level: traits.digital_literacy === "high" ? 90 : (traits.digital_literacy === "basic" ? 60 : 30) },
-                    ],
-                    recommendedSkills: aiReport.recommendedSkills || [
-                        { name: "Time Management", priority: "medium" },
-                        { name: traits.domain === "tech" ? "Python Basics" : "Financial Literacy", priority: "high" }
-                    ],
-                    learningPaths: aiReport.learningPaths || [
-                        {
-                            title: traits.domain === "tech" ? "Web Development Bootstart" : "Business Fundamentals",
-                            duration: "3 months",
-                            resources: [
-                                { name: "UdaanSetu Modules", url: "/resources" },
-                                { name: "YouTube Playlist", url: "#" }
-                            ]
-                        }
-                    ],
-                    actionPlan: aiReport.actionPlan || {
-                        shortTerm: ["Complete your profile", "Watch 2 introductory videos"],
-                        longTerm: ["Build a small project", "Apply for an internship"]
-                    }
+                    generatedAt: new Date(Date.now()), // Or fetch timestamp if we returned it
+                    careerReadiness: aiReport.careerReadiness || 50,
+                    topStrengths: aiReport.topStrengths || [],
+                    personalityTraits: aiReport.personalityTraits || [],
+                    recommendations: aiReport.recommendations || [],
+                    currentSkills: aiReport.currentSkills || [],
+                    recommendedSkills: aiReport.recommendedSkills || [],
+                    learningPaths: aiReport.learningPaths || [],
+                    actionPlan: aiReport.actionPlan || { shortTerm: [], longTerm: [] }
                 };
 
                 setReportData(transformedData);
@@ -203,6 +154,20 @@ export default function CareerReportPage() {
         }
 
     }, [user, status]);
+
+    const handleGenerateReport = async () => {
+        if (!user?.uid) return;
+        setGeneratingReport(true);
+        try {
+            const res = await fetch(`${ENV.apiUrl}/api/assessment/generate-report/${user.uid}`, { method: "POST" });
+            if (!res.ok) throw new Error("Generation failed");
+            window.location.reload(); // Reload to fetch fresh data
+        } catch (err) {
+            console.error(err);
+            alert("Failed to generate report. Please try again.");
+            setGeneratingReport(false);
+        }
+    };
 
     const handleGenerateRoadmap = async (careerTitle: string) => {
         if (!user?.uid) return;
@@ -271,6 +236,33 @@ export default function CareerReportPage() {
                     <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-foreground/60 font-medium animate-pulse">
                         Analyzing Profile...
                     </p>
+                </div>
+            </div>
+        );
+    }
+    
+    if (isReportMissing) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary-indigo/5">
+                <div className="glass-card p-12 text-center max-w-md mx-4 animate-in-scale">
+                    <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                         <Zap className="w-8 h-8 text-accent animate-pulse" />
+                    </div>
+                    <h1 className="text-2xl font-bold mb-4">Unlock Your Career Report</h1>
+                    <p className="text-foreground/70 mb-8">
+                        You have completed the assessment, but your detailed AI Career Report hasn&apos;t been generated yet. Unlock it now to see your personalized path.
+                    </p>
+                    <Button 
+                        onClick={handleGenerateReport} 
+                        disabled={generatingReport}
+                        className="w-full bg-gradient-to-r from-accent to-orange-600 shadow-lg text-lg py-6"
+                    >
+                        {generatingReport ? (
+                            <><Loader2 className="mr-2 h-5 w-5 animate-spin"/> Generating...</>
+                        ) : (
+                            <>Generate My Report Now <ArrowRight className="ml-2 h-5 w-5"/></>
+                        )}
+                    </Button>
                 </div>
             </div>
         );

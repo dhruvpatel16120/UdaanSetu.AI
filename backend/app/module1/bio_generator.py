@@ -17,7 +17,7 @@ async def generate_user_bio_profile(user_id: str):
     """
     try:
         # 1. Retrieve Assessment Result
-        assessment = get_assessment_result(user_id)
+        assessment = await get_assessment_result(user_id)
         if not assessment or not assessment.get('analysis'):
             # If no analysis exists, we can't do much without the AI step which is now in Module 1.
             # However, we can check if 'generated_bio' exists from legacy/fallback
@@ -58,7 +58,7 @@ async def generate_user_bio_profile(user_id: str):
         }
         
         # Check existing data to avoid redundant writes
-        current_profile = get_user_profile(user_id)
+        current_profile = await get_user_profile(user_id)
         should_update = True
         
         if current_profile:
@@ -74,7 +74,7 @@ async def generate_user_bio_profile(user_id: str):
         if should_update:
             # Add timestamp only when acting on the update
             final_update = {**new_payload, "last_updated": firestore.SERVER_TIMESTAMP}
-            save_user_profile(user_id, final_update)
+            await save_user_profile(user_id, final_update)
             print(f"Synced updated profile for {user_id} to Firestore.")
             return final_update
         

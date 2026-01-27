@@ -27,14 +27,25 @@ def extract_json(text: str) -> dict:
         return {}
 
 
+
 def get_session_history_summary(answers: List[Answer]) -> str:
     summary = []
     questions = {q["id"]: q for q in get_questions()}
     
     for ans in answers:
-        q = questions.get(ans.question_id)
+        q_id = ans.question_id
+        
+        # Handle Static/Basic Info fields gracefully for the Psychologist Context
+        if q_id.startswith("static_"):
+            formatted_key = q_id.replace("static_", "").replace("_", " ").title()
+            val = ans.text_answer or ans.selected_option_id
+            summary.append(f"Basic Info - {formatted_key}: {val}")
+            continue
+
+        q = questions.get(q_id)
         if not q:
-            summary.append(f"Q: Question {ans.question_id} | A: {ans.text_answer or ans.selected_option_id}")
+            # Fallback for unknown questions
+            summary.append(f"Q: {q_id} | A: {ans.text_answer or ans.selected_option_id}")
             continue
             
         question_text = q['text']['en']
@@ -123,18 +134,21 @@ async def process_assessment_submission(answers: List[Answer], user_id: str):
         q_id = ans.question_id.lower()
         val = ans.text_answer or ans.selected_option_id
         
-        if "name" in q_id: basic_info["name"] = val
-        if "education" in q_id or "edu_level" in q_id: basic_info["education"] = val # Will be overridden by option text ID if not careful, but usually education question is multiple choice so val is ID. LLM sees full text in history.
-        if "location" in q_id or "district" in q_id or "city" in q_id: basic_info["location"] = val
-        if "age" in q_id: basic_info["age"] = val
+        # Explicit mapping for static fields (from frontend submit)
+        if "name" in q_id: 
+             basic_info["name"] = val
+        if "education" in q_id: basic_info["education"] = val
+        if "location" in q_id or "district" in q_id: basic_info["location"] = val
+        if "dob" in q_id or "date" in q_id: basic_info["age"] = val # storing DOB as age/dob field
         if "gender" in q_id: basic_info["gender"] = val
         
-        # If specific questions map to basic info, also update from the 'rich' lookup
-        # (Optional: we rely on LLM to clean this up in the output 'basic_info' block)
+        # Also clean up standard question mapping if needed
+        if "edu_level" in q_id and basic_info["education"] == "N/A": basic_info["education"] = val
 
     # 2. Token-Efficient "Psychologist" Prompt
     try:
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        # UPDATED MODEL NAME (Previous 2.5 was invalid)
+        model = genai.GenerativeModel("gemini-2.5-flash")
         
         # Minimized context to save tokens while retaining persona power
         params = {
@@ -164,10 +178,11 @@ async def process_assessment_submission(answers: List[Answer], user_id: str):
         {json.dumps(basic_info)}
         
         INSTRUCTIONS:
-        1. **Analyze Mindset**: Look at the "Implies" traits and user choices. is the user risk-averse? Ambitious? Creative? Tech-savvy?
+        1. **Analyze Mindset**: Look at the "Implies" traits and user choices. Is the user risk-averse? Ambitious? Creative? Tech-savvy?
         2. **Refine Basic Info**: If the user answered "High School" in the education question, update the Basic Info accordingly.
         3. **Career Mapping**: Suggest careers that match their *proven* interests and aptitude, not just what they say they like.
-        4. **Bio Generation**: Write a bio that sounds like a professional counselor wrote it. "Rahul is a creative thinker who..."
+        4. **SWOT Analysis**: In 'key_insights', explicitly mention Strengths, Weaknesses, Opportunities, and Threats based on the data.
+        5. **Bio Generation**: Write a bio that sounds like a professional counselor wrote it. "Rahul is a creative thinker who..."
         
         OUTPUT FORMAT (JSON ONLY):
         {{
@@ -188,7 +203,12 @@ async def process_assessment_submission(answers: List[Answer], user_id: str):
           }},
           "top_skills_recommended": ["...", "..."],
           "user_current_skills": ["...", "..."],
-          "key_insights": ["...", "..."],
+          "key_insights": [
+             "Strength: ...",
+             "Weakness: ...",
+             "Opportunity: ...",
+             "Threat: ..."
+          ],
           "bio": "Professional narrative bio..."
         }}
         """
@@ -202,36 +222,54 @@ async def process_assessment_submission(answers: List[Answer], user_id: str):
         # Merge AI refined info with defaults if AI missed something (optional, but AI usually does well)
         # We rely on AI's 'basic_info' as appropriate
         
+        
+        # --- Module 2 Integration: Career Report Generation ---
+        from app.module2.career_generator import generate_career_report
+        from app.services.db_firebase import save_career_report
+        
+        print(f"Generating comprehensive career report for {user_id}...")
+        career_report = await generate_career_report(analysis, basic_info)
+        
+        # Save to dedicated collection
+        await save_career_report(user_id, career_report)
+        
         assessment_result = {
             "status": "complete",
             "analysis": analysis, # Store the full structured analysis
-            "generated_bio": { # Keep backward compatibility structure if needed, or just map new fields
+            "generated_bio": { # Keep backward compatibility structure if needed
                 "bio_text": analysis.get("bio", ""),
                 "snapshot": {
                     "top_recommendation": analysis.get("career_paths", [{}])[0].get("title", "Explorer"),
                     "key_insights": analysis.get("key_insights", [])
                 },
                 "trait_scores": analysis.get("trait_scores", {}),
-                "readiness_score": analysis.get("readiness_score", 0)
+                "readiness_score": analysis.get("readiness_score", 0),
+                "ai_report": career_report # <--- The Module 2 Output
             },
             "raw_answers": [a.dict() for a in answers]
         }
         
-        save_assessment_result(user_id, assessment_result)
+        await save_assessment_result(user_id, assessment_result)
         
         # Sync to public profile
         from app.services.db_firebase import save_user_profile
+        
+        # Ensure we have a valid name to save
+        final_name = analysis.get("basic_info", {}).get("name") or basic_info.get("name")
+        
         public_profile_update = {
+            "displayName": final_name, # Top level for easy access
             "aiBio": analysis.get("bio", ""),
             "traits": analysis.get("trait_scores", {}),
-            "basic_info": analysis.get("basic_info", basic_info),
+            "basic_info": analysis.get("basic_info", basic_info), # Fallback to input if AI didn't refine
             "top_careers": analysis.get("career_paths", []),
             "skills": {
                 "current": analysis.get("user_current_skills", []),
                 "recommended": analysis.get("top_skills_recommended", [])
-            }
+            },
+            "report_data": career_report
         }
-        save_user_profile(user_id, public_profile_update)
+        await save_user_profile(user_id, public_profile_update)
         
         return assessment_result
         
@@ -243,3 +281,4 @@ async def process_assessment_submission(answers: List[Answer], user_id: str):
             "error": str(e),
             "raw_answers": [a.dict() for a in answers]
         }
+

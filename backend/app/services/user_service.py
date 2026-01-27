@@ -9,7 +9,7 @@ async def get_user_by_firebase_id(firebase_id: str):
     """
     print(f"Fetching from Firestore for user: {firebase_id}")
     try:
-        data = get_user_profile(firebase_id)
+        data = await get_user_profile(firebase_id)
         if not data:
             return None
         
@@ -20,7 +20,7 @@ async def get_user_by_firebase_id(firebase_id: str):
             "firebaseId": firebase_id,
             "email": data.get("email"),
             "name": data.get("name"),
-            "ai_report": data.get("ai_report"),
+            "ai_report": data.get("report_data") or data.get("ai_report"),
             "profile": {
                 "id": f"prof_{firebase_id}",
                 "userId": firebase_id,
@@ -48,7 +48,7 @@ async def create_or_update_user(firebase_id: str, email: str, name: Optional[str
             "name": name,
             "updated_at": "auto" # Firestore can handle timestamps
         }
-        save_user_profile(firebase_id, user_data)
+        await save_user_profile(firebase_id, user_data)
         return await get_user_by_firebase_id(firebase_id)
     except Exception as e:
         print(f"Error in create_or_update_user: {e}")
@@ -60,7 +60,7 @@ async def update_user_profile(firebase_id: str, profile_data: Dict[str, Any]):
     """
     try:
         # Save to Firestore (merge=True is handled in save_user_profile)
-        save_user_profile(firebase_id, profile_data)
+        await save_user_profile(firebase_id, profile_data)
         return await get_user_by_firebase_id(firebase_id)
     except Exception as e:
         print(f"Error in update_user_profile: {e}")
