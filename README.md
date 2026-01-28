@@ -88,9 +88,9 @@ Rural youth in India face a **"Guidance Gap"**:
       <td align="center"><b>Dashboard</b></td>
     </tr>
     <tr>
-      <td><img src="logos/banner.jpeg" width="300" /></td>
-      <td><img src="logos/banner.jpeg" width="300" /></td>
-      <td><img src="logos/banner.jpeg" width="300" /></td>
+      <td><img src="logos/home.jpeg" width="300" /></td>
+      <td><img src="logos/test.jpeg" width="300" /></td>
+      <td><img src="logos/dashboard.jpeg" width="300" /></td>
     </tr>
   </table>
 </div>
