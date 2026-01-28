@@ -131,12 +131,12 @@ export function Navbar() {
           ) : (
             <>
               {[
-                { name: t("nav.dashboard"), href: ROUTES.dashboard },
-                { name: t("nav.careerReport"), href: ROUTES.careerReport },
-                { name: t("nav.mentor"), href: ROUTES.mentor },
                 mounted && typeof window !== 'undefined' && localStorage.getItem('assessment_completed')
                   ? { name: t("nav.assessmentResults"), href: ROUTES.assessmentResult }
-                  : { name: t("nav.assessment"), href: ROUTES.assessment }
+                  : { name: t("nav.assessment"), href: ROUTES.assessment },
+                { name: t("nav.mentor"), href: ROUTES.mentor },
+                { name: t("nav.careerReport"), href: ROUTES.careerReport },
+                { name: t("nav.dashboard"), href: ROUTES.dashboard },
               ].map((item: any) => (
                 <Link
                   key={item.name}

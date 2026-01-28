@@ -51,8 +51,8 @@
   --color-border: var(--border-color);
   --color-card: var(--card);
   --color-destructive: var(--destructive);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-poppins);
+  --font-mono: var(--font-poppins);
 }
 
 /* Glass card effect for both themes */
@@ -84,10 +84,25 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+}
+
+.font-en,
+.font-en button,
+.font-en input,
+.font-en select,
+.font-en textarea {
+  font-family: var(--font-poppins), sans-serif !important;
+}
+
+.font-gu,
+.font-gu button,
+.font-gu input,
+.font-gu select,
+.font-gu textarea {
+  font-family: "AnkGujarati", var(--font-gujarati), sans-serif !important;
 }
 
 /* Animated gradient text */

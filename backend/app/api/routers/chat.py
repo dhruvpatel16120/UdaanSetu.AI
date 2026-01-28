@@ -33,13 +33,13 @@ async def chat_endpoint(request: ChatRequest):
                 init_firebase()
             
             db = firestore.client()
-            doc = db.collection("users").document(request.user_id).get()
+            doc = db.collection("assessments").document(request.user_id).get()
             if doc.exists:
-                student_data = doc.to_dict().get("assessment_result", {})
-                # Also try to get 'profile' or 'bio' if 'assessment_result' is missing logic
+                data = doc.to_dict()
+                student_data = data.get("assessment_result", {})
                 if not student_data:
-                     data = doc.to_dict()
-                     student_data = data.get("student_profile", data.get("profile", {}))
+                     # Fallback to general bio in the document
+                     student_data = data.get("generated_bio", {})
 
         except Exception as e:
             print(f"DB Error: {e}")
