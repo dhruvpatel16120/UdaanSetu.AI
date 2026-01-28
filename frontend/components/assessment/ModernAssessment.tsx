@@ -27,6 +27,7 @@ import {
     Truck,
     Languages
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "next/navigation";
@@ -37,6 +38,7 @@ import { ROUTES } from "@/constants/routes";
 import { cn } from "@/utils/cn";
 import { GUJARAT_DISTRICTS } from "@/constants/locations";
 import { WaitingGame } from "./WaitingGame";
+import { STATIC_QUESTIONS } from "@/constants/data/questions";
 
 // --- Types ---
 interface BackendOption {
@@ -115,7 +117,7 @@ export function ModernAssessment() {
         location: "",
         education: ""
     });
-    const [allQuestionBank, setAllQuestionBank] = useState<BackendQuestion[]>([]);
+    const [allQuestionBank, setAllQuestionBank] = useState<BackendQuestion[]>(STATIC_QUESTIONS);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [aiStatus, setAiStatus] = useState(t("assessment.analyzingPath"));
@@ -124,6 +126,16 @@ export function ModernAssessment() {
     // --- Effects ---
     useEffect(() => {
         fetchConfig();
+        
+        // Instant start: Pick a random question immediately if not already set
+        if (questions.length === 0 && STATIC_QUESTIONS.length > 0) {
+             const startPool = ["q1_edu_level", "q3_family_type", "q5_interest", "q7_mindset_games"];
+             const available = STATIC_QUESTIONS.filter(q => startPool.includes(q.id));
+             const firstQ = available.length > 0
+                 ? available[Math.floor(Math.random() * available.length)]
+                 : STATIC_QUESTIONS[0];
+             setQuestions([firstQ]);
+        }
     }, []);
 
     useEffect(() => {
@@ -722,10 +734,10 @@ export function ModernAssessment() {
             </AnimatePresence >
 
             {/* Background Decorative Blur */}
-            < div className="fixed top-0 left-0 w-full h-full -z-50 overflow-hidden pointer-events-none opacity-30 dark:opacity-20" >
+            <div className="fixed top-0 left-0 w-full h-full -z-50 overflow-hidden pointer-events-none opacity-30 dark:opacity-20">
                 <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/10 blur-[150px] rounded-full" />
                 <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[150px] rounded-full" />
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }

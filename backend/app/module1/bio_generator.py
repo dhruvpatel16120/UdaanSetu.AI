@@ -11,67 +11,76 @@ if api_key:
 
 async def generate_user_bio_profile(user_id: str):
     """
-    Submodule 2: Bio-Profile Generator (The Storyteller)
-    Uses the "Magic Formula" to convert technical assessment metrics into 
-    a rich, narrative user profile for the Dashboard.
+    Submodule 2: Bio-Profile Generator (The Fetcher)
+    Since Module 1 (AQ Engine) now handles the full AI generation, this module 
+    simply organizes and returns that data for the profile page.
     """
     try:
         # 1. Retrieve Assessment Result
-        assessment = get_assessment_result(user_id)
-        if not assessment:
-            return {"error": "No assessment found. Please complete the test first."}
+        assessment = await get_assessment_result(user_id)
+        if not assessment or not assessment.get('analysis'):
+            # If no analysis exists, we can't do much without the AI step which is now in Module 1.
+            # However, we can check if 'generated_bio' exists from legacy/fallback
+            if assessment and assessment.get('generated_bio'):
+                 return {
+                    "source": "legacy",
+                    "bio": assessment.get('generated_bio', {}).get('bio_text'),
+                    "snapshot": assessment.get('generated_bio', {}).get('snapshot')
+                 }
+            return {"error": "No assessment or AI profile found. Please complete the assessment."}
             
-        # 2. Check if Bio already generated during assessment
-        bio_already_exists = assessment.get('generated_bio', {}).get('bio_text')
+        # 2. Extract Data from Module 1 Output
+        analysis = assessment.get('analysis', {})
         
-        if bio_already_exists:
-            print(f"Using pre-generated bio for {user_id}")
-            profile_ai = {
-                "bio": bio_already_exists,
-                "topStrengths": assessment.get('generated_bio', {}).get('snapshot', {}).get('key_insights', []),
-                "recommendation": assessment.get('generated_bio', {}).get('snapshot', {}).get('top_recommendation')
-            }
-        else:
-            # Call Gemini for Narrative Bio & Social Proof (Fallback)
-            model = genai.GenerativeModel("gemini-2.0-flash")
-            # ... existing magic formula logic ...
-            # For simplicity, I'll keep the existing LLM logic as fallback but wrap it
-            magic_formula = f"""
-            ROLE: Expert Career Storyteller & Motivational Profiler.
-            INPUT_DATA: 
-            - Traits: {json.dumps(assessment.get('trait_scores', {}))}
-            - Recommendation: {assessment.get('snapshot', {}).get('top_recommendation')}
-            - Insights: {json.dumps(assessment.get('snapshot', {}).get('key_insights', []))}
-            
-            TASK: Generate a high-impact narrative bio and structured strengths for the user's dashboard.
-            
-            OUTPUT JSON:
-            {{
-                "bio": "3-5 impactful sentences starting with user's name...",
-                "topStrengths": ["Strength 1", "Strength 2", "Strength 3"],
-                "recommendation": "Main Recommendation"
-            }}
-            Return ONLY valid JSON.
-            """
-            response = await model.generate_content_async(magic_formula)
-            from app.module1.qa_engine import extract_json
-            profile_ai = extract_json(response.text)
-            
-            if not profile_ai:
-                raise ValueError("AI failed to generate profile narrative.")
-            
-        # 3. Store in 'users' collection (The Public Profile)
-        # We save as 'aiBio' to match user_service.py expected key
-        user_doc_update = {
-            "aiBio": profile_ai.get("bio", ""),
-            "traits": assessment.get('trait_scores', {}),
-            "ai_report": profile_ai,
-            "last_updated": firestore.SERVER_TIMESTAMP
+        # 3. Construct Profile Object
+        profile_data = {
+            "basic_info": analysis.get("basic_info"),
+            "bio": analysis.get("bio"),
+            "stats": {
+                "readiness": analysis.get("readiness_score"),
+                "traits": analysis.get("trait_scores")
+            },
+            "careers": analysis.get("career_paths"),
+            "skills": {
+                "top_recommended": analysis.get("top_skills_recommended"),
+                "current": analysis.get("user_current_skills")
+            },
+            "insights": analysis.get("key_insights")
         }
         
-        save_user_profile(user_id, user_doc_update)
-        return user_doc_update
+        # 4. Conditional Sync to 'users' collection
+        from app.services.db_firebase import save_user_profile, get_user_profile
+        
+        # Prepare the data payload we WANT to save
+        new_payload = {
+            "aiBio": profile_data["bio"],
+            "profile_data": profile_data
+        }
+        
+        # Check existing data to avoid redundant writes
+        current_profile = await get_user_profile(user_id)
+        should_update = True
+        
+        if current_profile:
+            # Compare relevant fields (ignoring timestamps or other unrelated user fields)
+            current_bio = current_profile.get("aiBio")
+            current_data = current_profile.get("profile_data")
+            
+            # If both key fields are identical, we skip the write
+            if current_bio == new_payload["aiBio"] and current_data == new_payload["profile_data"]:
+                should_update = False
+                print(f"Profile for {user_id} is up-to-date. Skipping Firestore write.")
+
+        if should_update:
+            # Add timestamp only when acting on the update
+            final_update = {**new_payload, "last_updated": firestore.SERVER_TIMESTAMP}
+            await save_user_profile(user_id, final_update)
+            print(f"Synced updated profile for {user_id} to Firestore.")
+            return final_update
+        
+        # Return the data structure even if we didn't write, so frontend gets it
+        return new_payload
         
     except Exception as e:
-        print(f"Bio generation failed: {e}")
-        return {"error": f"Failed to generate bio: {str(e)}"}
+        print(f"Bio retrieval failed: {e}")
+        return {"error": f"Failed to retrieve bio: {str(e)}"}

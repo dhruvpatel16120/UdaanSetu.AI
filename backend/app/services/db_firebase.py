@@ -1,20 +1,42 @@
 import os
 import firebase_admin
 from firebase_admin import credentials, firestore
+import asyncio
+from functools import partial
+import time
+
+# Simple In-Memory Cache
+# Format: { "key": { "data": struct, "expires": timestamp } }
+_cache = {}
+CACHE_TTL = 300  # 5 minutes
+
+def _get_cache(key):
+    entry = _cache.get(key)
+    if entry and entry["expires"] > time.time():
+        return entry["data"]
+    if entry:
+        del _cache[key]
+    return None
+
+def _set_cache(key, data):
+    _cache[key] = {
+        "data": data,
+        "expires": time.time() + CACHE_TTL
+    }
+
+def _invalidate_cache(key):
+    if key in _cache:
+        del _cache[key]
 
 # Initialize Firebase (Singleton)
-# Ensure you have GOOGLE_APPLICATION_CREDENTIALS set or pass not-found error gracefully for dev
 def init_firebase():
     if not firebase_admin._apps:
         try:
-             # Look for service account file, typical name
-             # Expecting it in the root backend directory or relative to this file
-             # We try multiple paths to be safe
             possible_paths = [
                 "serviceAccountKey.json",
                 os.path.join(os.getcwd(), "serviceAccountKey.json"),
                 os.path.join(os.path.dirname(__file__), "../../serviceAccountKey.json"),
-                 os.path.join(os.path.dirname(__file__), "../../../serviceAccountKey.json")
+                os.path.join(os.path.dirname(__file__), "../../../serviceAccountKey.json")
             ]
             
             cred_path = possible_paths[0]
@@ -32,113 +54,133 @@ def init_firebase():
         except Exception as e:
             print(f"Failed to initialize Firebase: {e}")
 
-def save_assessment_result(user_id: str, data: dict):
-    """
-    Saves assessment result to Firestore.
-    Structure: users/{user_id}
-    Behavior: Overwrites existing assessment data (No history).
-    """
+# --- Internal Blocking Helpers (Run in ThreadPool) ---
+def _save_assessment_sync(user_id: str, data: dict):
+    if not firebase_admin._apps: init_firebase()
+    db = firestore.client()
+    doc_ref = db.collection("assessments").document(user_id)
+    update_data = {
+        "assessment_result": data,
+        "last_updated": firestore.SERVER_TIMESTAMP
+    }
+    doc_ref.set(update_data, merge=True)
+    return True
+
+def _get_assessment_sync(user_id: str):
+    if not firebase_admin._apps: init_firebase()
+    db = firestore.client()
+    doc = db.collection("assessments").document(user_id).get()
+    if doc.exists:
+        return doc.to_dict().get("assessment_result", None)
+    return None
+
+def _save_profile_sync(user_id: str, data: dict):
+    if not firebase_admin._apps: init_firebase()
+    db = firestore.client()
+    db.collection("users").document(user_id).set(data, merge=True)
+    return True
+
+def _get_profile_sync(user_id: str):
+    if not firebase_admin._apps: init_firebase()
+    doc = db = firestore.client().collection("users").document(user_id).get()
+    if doc.exists:
+        return doc.to_dict()
+    return None
+
+# --- Async Public Interface ---
+
+async def save_assessment_result(user_id: str, data: dict):
     try:
-        if not firebase_admin._apps:
-            init_firebase()
-            
-        db = firestore.client()
-        # Reference to the assessments document
-        doc_ref = db.collection("assessments").document(user_id)
-        
-        # We store the assessment data. Using set with merge=True for safety, 
-        # but assessments are generally self-contained now.
-        
-        update_data = {
-            "assessment_result": data,
-            "last_updated": firestore.SERVER_TIMESTAMP
-        }
-        
-        doc_ref.set(update_data, merge=True)
-        print(f"Successfully saved assessment for user {user_id}")
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, partial(_save_assessment_sync, user_id, data))
+        # Invalidate cache
+        _invalidate_cache(f"assessment:{user_id}")
+        print(f"Async saved assessment for {user_id}")
         return True
     except Exception as e:
-        print(f"Error saving to Firestore: {e}")
+        print(f"Error saving assessment: {e}")
         return False
 
-def get_assessment_result(user_id: str):
-    """
-    Retrieves assessment result from Firestore.
-    """
+async def get_assessment_result(user_id: str):
+    # CKECK CACHE 1st
+    cached = _get_cache(f"assessment:{user_id}")
+    if cached: 
+        return cached
+
     try:
-        if not firebase_admin._apps:
-            init_firebase()
-            
-        db = firestore.client()
-        doc_ref = db.collection("assessments").document(user_id)
-        doc = doc_ref.get()
-        
-        if doc.exists:
-            data = doc.to_dict()
-            return data.get("assessment_result", None)
-        return None
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, partial(_get_assessment_sync, user_id))
+        if result:
+            _set_cache(f"assessment:{user_id}", result)
+        return result
     except Exception as e:
-        print(f"Error getting from Firestore: {e}")
+        print(f"Error getting assessment: {e}")
         return None
 
-def get_questions_from_firestore():
-    """
-    Fetches all questions from the 'questions' collection.
-    """
+async def save_user_profile(user_id: str, profile_data: dict):
     try:
-        if not firebase_admin._apps:
-            init_firebase()
-            
-        db = firestore.client()
-        questions_ref = db.collection("questions")
-        docs = questions_ref.stream()
-        
-        questions = []
-        for doc in docs:
-            q_data = doc.to_dict()
-            if "id" not in q_data:
-                q_data["id"] = doc.id
-            questions.append(q_data)
-        
-        return questions
-    except Exception as e:
-        print(f"Error fetching questions from Firestore: {e}")
-        return None
-
-def save_user_profile(firebase_id: str, profile_data: dict):
-    """
-    Saves or updates user profile data in Firestore.
-    """
-    try:
-        if not firebase_admin._apps:
-            init_firebase()
-            
-        db = firestore.client()
-        user_ref = db.collection("users").document(firebase_id)
-        
-        # Use merge=True to not overwrite assessment results or other data
-        user_ref.set(profile_data, merge=True)
-        print(f"Successfully saved user profile for {firebase_id}")
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, partial(_save_profile_sync, user_id, profile_data))
+        _invalidate_cache(f"profile:{user_id}")
+        print(f"Async saved profile for {user_id}")
         return True
     except Exception as e:
-        print(f"Error saving user profile to Firestore: {e}")
+        print(f"Error saving profile: {e}")
         return False
 
-def get_user_profile(firebase_id: str):
-    """
-    Retrieves full user document from Firestore.
-    """
+async def get_user_profile(user_id: str):
+    cached = _get_cache(f"profile:{user_id}")
+    if cached: return cached
+
     try:
-        if not firebase_admin._apps:
-            init_firebase()
-            
-        db = firestore.client()
-        user_ref = db.collection("users").document(firebase_id)
-        doc = user_ref.get()
-        
-        if doc.exists:
-            return doc.to_dict()
-        return None
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, partial(_get_profile_sync, user_id))
+        if result:
+            _set_cache(f"profile:{user_id}", result)
+        return result
     except Exception as e:
-        print(f"Error getting user profile from Firestore: {e}")
+        print(f"Error getting profile: {e}")
+        return None
+
+# --- Career Report Specific (New Separate Collection) ---
+
+def _save_career_report_sync(user_id: str, data: dict):
+    if not firebase_admin._apps: init_firebase()
+    db = firestore.client()
+    db.collection("career_reports").document(user_id).set({
+        "report": data,
+        "updated_at": firestore.SERVER_TIMESTAMP
+    }, merge=True)
+    return True
+
+def _get_career_report_sync(user_id: str):
+    if not firebase_admin._apps: init_firebase()
+    db = firestore.client()
+    doc = db.collection("career_reports").document(user_id).get()
+    if doc.exists:
+        return doc.to_dict().get("report")
+    return None
+
+async def save_career_report(user_id: str, data: dict):
+    try:
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, partial(_save_career_report_sync, user_id, data))
+        _invalidate_cache(f"report:{user_id}")
+        return True
+    except Exception as e:
+        print(f"Error saving career report: {e}")
+        return False
+
+async def get_career_report(user_id: str):
+    cached = _get_cache(f"report:{user_id}")
+    if cached: return cached
+
+    try:
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, partial(_get_career_report_sync, user_id))
+        if result:
+            _set_cache(f"report:{user_id}", result)
+        return result
+    except Exception as e:
+        print(f"Error getting career report: {e}")
         return None

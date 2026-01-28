@@ -3,9 +3,10 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 from app.module3.mentor_engine import mentor_engine
-from app.services.db_firebase import init_firebase
+from app.services.db_firebase import init_firebase, get_career_report, get_assessment_result, get_user_profile
 from firebase_admin import firestore
 import firebase_admin
+import asyncio
 
 router = APIRouter()
 
@@ -21,35 +22,45 @@ async def chat_endpoint(request: ChatRequest):
     """
     Streaming Chat with the AI Mentor.
     """
-    # 1. Determine User Profile
-    student_data = {}
-    if request.user_bio_profile:
-        # Use provided profile if available
-        student_data = request.user_bio_profile
-    else:
-        # Fallback to Firestore
-        try:
-            if not firebase_admin._apps:
-                init_firebase()
-            
-            db = firestore.client()
-            doc = db.collection("assessments").document(request.user_id).get()
-            if doc.exists:
-                data = doc.to_dict()
-                student_data = data.get("assessment_result", {})
-                if not student_data:
-                     # Fallback to general bio in the document
-                     student_data = data.get("generated_bio", {})
+    # 1. Fetch Rich Context in Parallel
+    student_profile = {}
+    career_report = {}
+    assessment_result = {}
 
-        except Exception as e:
-            print(f"DB Error: {e}")
-            student_data = {}
+    try:
+        # If frontend sends bio, use it, else fetch
+        fetch_tasks = []
+        if not request.user_bio_profile:
+            fetch_tasks.append(get_user_profile(request.user_id))
+        else:
+            student_profile = request.user_bio_profile
+            # Mock task to keep index alignment if needed, or just skip
+        
+        # Always try to fetch these for "Magic Context"
+        fetch_tasks.append(get_career_report(request.user_id))
+        fetch_tasks.append(get_assessment_result(request.user_id))
+
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+
+        # Unpack results safely
+        idx = 0
+        if not request.user_bio_profile:
+            if isinstance(results[idx], dict): student_profile = results[idx]
+            idx += 1
+        
+        if idx < len(results) and isinstance(results[idx], dict): career_report = results[idx]
+        if idx + 1 < len(results) and isinstance(results[idx+1], dict): assessment_result = results[idx+1]
+
+    except Exception as e:
+        print(f"Context Fetch Error: {e}")
 
     # 2. Return Streaming Response
     async def generate():
         async for chunk in mentor_engine.chat(
             history=request.history,
-            student_profile=student_data,
+            student_profile=student_profile or {},
+            career_report=career_report,
+            assessment_result=assessment_result,
             query=request.message,
             language=request.language
         ):
