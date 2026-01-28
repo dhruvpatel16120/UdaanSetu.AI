@@ -56,13 +56,21 @@ export default function DashboardPage() {
       // 2. Fetch Assessment Result (if any)
       const assessmentRes = await fetch(`${ENV.apiUrl}/api/assessment/result/${user?.uid}`);
       if (assessmentRes.ok) {
-        setAssessmentData(await assessmentRes.json());
+        const data = await assessmentRes.json();
+        setAssessmentData(data);
+        
+        // Extract career report from assessment if embedded
+        if (data?.generated_bio?.ai_report) {
+          setReportData(data.generated_bio.ai_report);
+        }
       }
 
-      // 3. Fetch Career Report (if any)
-      const reportRes = await fetch(`${ENV.apiUrl}/api/assessment/report/${user?.uid}`);
-      if (reportRes.ok) {
-        setReportData(await reportRes.json());
+      // 3. Fetch Career Report separately (if not embedded)
+      if (!reportData) {
+        const reportRes = await fetch(`${ENV.apiUrl}/api/assessment/report/${user?.uid}`);
+        if (reportRes.ok) {
+          setReportData(await reportRes.json());
+        }
       }
 
     } catch (error) {
@@ -102,18 +110,63 @@ export default function DashboardPage() {
     );
   }
 
-  const userName = profileData?.name || user.displayName || user.email?.split('@')[0] || 'Explorer';
+  // === OPTIMIZED DATA EXTRACTION ===
+  // Get user name from multiple sources
+  const userName = 
+    profileData?.displayName || 
+    profileData?.name || 
+    assessmentData?.analysis?.basic_info?.name ||
+    user.displayName || 
+    user.email?.split('@')[0] || 
+    'Explorer';
   const userInitial = userName[0].toUpperCase();
+  
+  // Get location from multiple sources
+  const userLocation = 
+    profileData?.basic_info?.location ||
+    profileData?.profile?.location ||
+    assessmentData?.analysis?.basic_info?.location ||
+    "Gujarat, India";
 
   // Derived Stats
-  const hasAssessment = !!assessmentData;
-  const hasReport = !!reportData;
+  const hasAssessment = !!assessmentData && assessmentData.status === "complete";
+  const hasReport = !!reportData && Object.keys(reportData).length > 0;
+  
+  // Profile completion calculation
   const profileCompletion = [
-    profileData?.name,
-    profileData?.profile?.education,
-    profileData?.profile?.location,
+    profileData?.name || profileData?.displayName,
+    profileData?.profile?.education || assessmentData?.analysis?.basic_info?.education,
+    profileData?.profile?.location || assessmentData?.analysis?.basic_info?.location,
     hasAssessment
   ].filter(Boolean).length * 25;
+
+  // === EXTRACT CAREER DATA ===
+  // Top career match - check multiple data paths
+  const topCareer = 
+    reportData?.recommendations?.[0]?.title ||
+    assessmentData?.analysis?.career_paths?.[0]?.title ||
+    assessmentData?.generated_bio?.snapshot?.top_recommendation ||
+    null;
+
+  // Skills extraction
+  const topSkills = 
+    reportData?.topStrengths ||
+    assessmentData?.analysis?.top_skills_recommended ||
+    assessmentData?.analysis?.user_current_skills ||
+    [];
+
+  // Career paths
+  const recommendedPaths = 
+    reportData?.recommendations?.map((r: any) => r.title) ||
+    assessmentData?.analysis?.career_paths?.map((p: any) => p.title) ||
+    [];
+
+  // Readiness score
+  const readinessScore = 
+    reportData?.careerReadiness ||
+    assessmentData?.generated_bio?.readiness_score ||
+    assessmentData?.analysis?.readiness_score ||
+    0;
 
   const quickActions = [
     {
@@ -151,11 +204,6 @@ export default function DashboardPage() {
     }
   ];
 
-  // Safely extract career insights
-  const generatedCareer = reportData?.careers?.[0]; // Access first career suggestion if available
-  const topSkills = reportData?.analysis?.skills || [];
-  const recommendedPaths = reportData?.careers?.map((c: any) => c.title) || [];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary-indigo/5 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -165,9 +213,19 @@ export default function DashboardPage() {
           
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-white text-3xl font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] border-4 border-background">
-                {userInitial}
-              </div>
+              {user.photoURL ? (
+                <Image
+                  src={user.photoURL}
+                  alt={userName}
+                  width={80}
+                  height={80}
+                  className="w-20 h-20 rounded-full shadow-[0_0_20px_rgba(249,115,22,0.3)] border-4 border-background object-cover"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-white text-3xl font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] border-4 border-background">
+                  {userInitial}
+                </div>
+              )}
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-2 tracking-tight">
                   Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-orange-500">{userName}</span>!
@@ -229,21 +287,21 @@ export default function DashboardPage() {
               </div>
             </div>
             <p className="text-xl font-bold text-foreground line-clamp-1">
-              {generatedCareer?.title || "N/A"}
+              {topCareer || "N/A"}
             </p>
             <p className="text-xs text-foreground/50 mt-1">Primary Career Path</p>
           </div>
 
-          <div className="glass-card p-6 animate-in-scale animation-delay-400 hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+          <Link href={ROUTES.mentor} className="glass-card p-6 animate-in-scale animation-delay-400 hover:shadow-lg hover:scale-[1.02] transition-all border-l-4 border-l-blue-500 cursor-pointer group">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-foreground/60">Learning</h3>
-              <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
-                <Clock className="w-5 h-5" />
+              <h3 className="text-sm font-medium text-foreground/60">AI Mentor</h3>
+              <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                <BrainCircuit className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-foreground">0h</p>
-            <p className="text-xs text-foreground/50 mt-1">Time Invested</p>
-          </div>
+            <p className="text-xl font-bold text-foreground">Chat Now</p>
+            <p className="text-xs text-foreground/50 mt-1">Get personalized guidance</p>
+          </Link>
         </div>
 
         {/* Quick Actions */}
