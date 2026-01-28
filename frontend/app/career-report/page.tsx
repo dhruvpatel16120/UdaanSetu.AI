@@ -148,12 +148,17 @@ export default function CareerReportPage() {
         }
 
         if (status === "authenticated") {
+            // Check for assessment and report status
             fetchReport();
         } else if (status === "unauthenticated") {
             setLoading(false);
         }
 
     }, [user, status]);
+
+    // Check if assessment is not done (implicitly handled by 404 on report, but explicit check is better if API supports it)
+    // For now, relies on isReportMissing state which is set on 404 from report endpoint
+
 
     const handleGenerateReport = async () => {
         if (!user?.uid) return;
@@ -249,20 +254,41 @@ export default function CareerReportPage() {
                          <Zap className="w-8 h-8 text-accent animate-pulse" />
                     </div>
                     <h1 className="text-2xl font-bold mb-4">Unlock Your Career Report</h1>
-                    <p className="text-foreground/70 mb-8">
-                        You have completed the assessment, but your detailed AI Career Report hasn&apos;t been generated yet. Unlock it now to see your personalized path.
+                    <p className="text-foreground/70 mb-4">
+                        We can't generate your report yet! Please make sure you have:
                     </p>
-                    <Button 
-                        onClick={handleGenerateReport} 
-                        disabled={generatingReport}
-                        className="w-full bg-gradient-to-r from-accent to-orange-600 shadow-lg text-lg py-6"
-                    >
-                        {generatingReport ? (
-                            <><Loader2 className="mr-2 h-5 w-5 animate-spin"/> Generating...</>
-                        ) : (
-                            <>Generate My Report Now <ArrowRight className="ml-2 h-5 w-5"/></>
-                        )}
-                    </Button>
+                    <ul className="text-left text-sm text-foreground/80 mb-8 space-y-2 bg-accent/5 p-4 rounded-xl border border-accent/10">
+                        <li className="flex items-center gap-2">
+                            <span className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">1</span>
+                            Completed the Career Assessment
+                        </li>
+                        <li className="flex items-center gap-2">
+                             <span className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">2</span>
+                            Updated your Bio Profile
+                        </li>
+                    </ul>
+                    
+                    <div className="flex flex-col gap-3">
+                        <Link href={ROUTES.assessment}>
+                             <Button 
+                                variant="outline"
+                                className="w-full border-accent/30 hover:bg-accent/5"
+                            >
+                                Take Assessment
+                            </Button>
+                        </Link>
+                        <Button 
+                            onClick={handleGenerateReport} 
+                            disabled={generatingReport}
+                            className="w-full bg-gradient-to-r from-accent to-orange-600 shadow-lg text-lg py-4"
+                        >
+                            {generatingReport ? (
+                                <><Loader2 className="mr-2 h-5 w-5 animate-spin"/> Generating...</>
+                            ) : (
+                                <>Generate My Report Now <ArrowRight className="ml-2 h-5 w-5"/></>
+                            )}
+                        </Button>
+                    </div>
                 </div>
             </div>
         );
@@ -417,7 +443,7 @@ export default function CareerReportPage() {
                                 <p className="text-foreground/70 text-sm mb-4">{career.description}</p>
                                 <div className="border-t border-foreground/10 pt-4 flex-1">
                                     <p className="text-xs font-semibold text-foreground/50 mb-2">Requirements:</p>
-                                    <div className="space-y-1 mb-6">
+                                    <div className="space-y-1">
                                         {career.requirements.map((req) => (
                                             <div key={req} className="flex items-center gap-2 text-sm text-foreground/70">
                                                 <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -427,13 +453,7 @@ export default function CareerReportPage() {
                                             </div>
                                         ))}
                                     </div>
-                                    <Button
-                                        onClick={() => handleGenerateRoadmap(career.title)}
-                                        disabled={generatingRoadmap && activeRoadmap?.career_title !== career.title}
-                                        className="w-full bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-white transition-all text-xs"
-                                    >
-                                        {generatingRoadmap ? "Analyzing..." : "Generate AI Blueprint"}
-                                    </Button>
+
                                 </div>
                             </div>
                         ))}

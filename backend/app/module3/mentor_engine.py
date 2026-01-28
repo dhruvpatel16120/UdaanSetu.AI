@@ -36,7 +36,7 @@ class MentorEngine:
                     model=self.model_name, 
                     google_api_key=self.api_key,
                     temperature=0.4,
-                    max_output_tokens=1024,
+                    max_output_tokens=2048,
                 )
             except Exception as e:
                 logger.error(f"Error initializing LLM: {e}")
@@ -116,7 +116,7 @@ User Profile:
 </student_context>
 
 <instructions>
-1. **DIRECT ANSWER**: Start immediately by answering the query "{query}" with the authority of a 10-year veteran expert.
+1. **DIRECT ANSWER**: DO NOT say "Hello" or "Good question". Start IMMEDIATELY with the core answer. Address the query "{query}" directly.
 2. **Psychological & Strategic Depth**: Go beyond surface level. Explain *why* a path fits their psychology (Psychologist view) and *how* to execute it for success (Coach view).
 3. **Context-Driven**: Base your advice heavily on the <career_report_summary> and <psychometric_profile>.
 4. **Values**: Promote growth mindset, resilience, and strategic thinking.

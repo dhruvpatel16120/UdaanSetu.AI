@@ -33,37 +33,28 @@ export default function MentorPage() {
     const [mounted, setMounted] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { user } = useAuth();
-    const { t, language } = useI18n();
+    const { t, language, setLanguage } = useI18n();
     const { theme } = useTheme();
     const [showLanguagePopup, setShowLanguagePopup] = useState(false);
     const [hasShownInitialPopup, setHasShownInitialPopup] = useState(false);
     const prevLanguageRef = useRef<"en" | "gu">(language);
 
-    // Show popup on initial mount and when language changes from navbar
+    // Show popup on initial mount
     useEffect(() => {
         if (!mounted) return;
         
-        // Show popup on first visit
-        if (!hasShownInitialPopup && typeof window !== 'undefined') {
-            const hasSeenPopup = localStorage.getItem('mentor_language_popup_seen');
-            if (!hasSeenPopup) {
-                setShowLanguagePopup(true);
-            }
+        // Always show popup on visit to ask for preference
+        if (!hasShownInitialPopup) {
+            setShowLanguagePopup(true);
             setHasShownInitialPopup(true);
         }
         
-        // Show popup when language changes from navbar
-        if (prevLanguageRef.current !== language) {
-            setShowLanguagePopup(true);
-            prevLanguageRef.current = language;
-        }
-    }, [language, mounted, hasShownInitialPopup]);
+    }, [mounted, hasShownInitialPopup]);
 
-    const handleLanguageConfirm = () => {
+    // Update language when user selects
+    const handleLanguageSelect = (lang: "en" | "gu") => {
+        setLanguage(lang);
         setShowLanguagePopup(false);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('mentor_language_popup_seen', 'true');
-        }
     };
 
     // Initialize welcome message on client side only to avoid hydration mismatch
@@ -215,29 +206,33 @@ export default function MentorPage() {
                                     <Globe className="w-10 h-10 text-white" />
                                 </motion.div>
                                 <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-accent to-orange-600 bg-clip-text text-transparent">
-                                    Select Language
+                                    Choose Language
                                 </h2>
                                 <p className="text-foreground/70 text-sm">
-                                    Please choose your preferred language to continue
+                                    Which language do you prefer for chatting?
                                 </p>
                                 <p className="text-foreground/70 text-sm mt-1">
-                                    આગળ વધવા માટે કૃપા કરીને તમારી પસંદગીની ભાષા પસંદ કરો
+                                    તમે વાતચીત માટે કઈ ભાષા પસંદ કરો છો?
                                 </p>
                             </div>
-                            <div className="text-center">
-                                <p className="text-foreground/80 mb-4">
-                                    {language === "en" 
-                                        ? "Language changed successfully! Your chat mentor will now respond in " 
-                                        : "ભાષા સફળતાપૂર્વક બદલાઈ ગઈ! તમારો ચેટ માર્ગદર્શક હવે "}
-                                    <span className="font-bold text-accent">
-                                        {language === "en" ? "English" : "ગુજરાતી"}
-                                    </span>
-                                </p>
+                            
+                            <div className="grid grid-cols-1 gap-4">
                                 <Button
-                                    onClick={handleLanguageConfirm}
-                                    className="w-full bg-gradient-to-r from-accent to-orange-600 hover:scale-105 transition-all duration-300 py-3"
+                                    onClick={() => handleLanguageSelect('en')}
+                                    className="w-full bg-white text-black hover:bg-gray-100 border-2 border-transparent hover:border-accent transition-all duration-300 py-6 text-lg shadow-lg group relative overflow-hidden"
                                 >
-                                    {language === "en" ? "Got it! ✓" : "સમજાયું! ✓"}
+                                    <span className="relative z-10 flex items-center justify-center gap-2">
+                                        <span className="text-2xl">🇬🇧</span> English
+                                    </span>
+                                </Button>
+                                
+                                <Button
+                                    onClick={() => handleLanguageSelect('gu')}
+                                    className="w-full bg-gradient-to-r from-accent to-orange-600 hover:scale-105 transition-all duration-300 py-6 text-lg shadow-lg group relative overflow-hidden"
+                                >
+                                    <span className="relative z-10 flex items-center justify-center gap-2">
+                                        <span className="text-2xl">🇮🇳</span> ગુજરાતી
+                                    </span>
                                 </Button>
                             </div>
                         </motion.div>
