@@ -511,7 +511,7 @@ export function ModernAssessment() {
                                 <div className="grid md:grid-cols-1 gap-8">
                                     <div className="space-y-2 relative">
                                         <label className="text-sm font-semibold text-foreground opacity-80 flex items-center gap-2">
-                                            <BookOpen className="w-4 h-4 text-accent" /> {(t as any)("assessment.educationLabel") || "Education Qualification"}
+                                            <BookOpen className="w-4 h-4 text-accent" /> {t("assessment.educationLabel")}
                                         </label>
                                         <div className="relative">
                                             <select
