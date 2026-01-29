@@ -392,7 +392,7 @@ export default function MentorPage() {
                                                     ),
                                                    
                                                     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-                                                    code: ({inline, className: _className, children, ...props}: any) => {
+                                                    code: ({inline, children, ...props}: any) => {
                                                         const isInline = inline;
                                                         return isInline ? (
                                                             <code 

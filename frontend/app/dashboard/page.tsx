@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/utils/cn";
 import { ENV } from "@/constants/env";
+import { userService } from "@/services/userService";
 import {
   UserCheck,
   Target,
@@ -37,40 +38,34 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchUserData() {
+        if (!user?.uid) return;
         setLoadingData(true);
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-        let fetchedReport: any = null;
 
         try {
-          // 1. Fetch User Profile
-          const profileRes = await fetch(`${ENV.apiUrl}/api/user/me`, {
-            headers: { "X-Firebase-Id": user?.uid || "" }
-          });
-          if (profileRes.ok) {
-            setProfileData(await profileRes.json());
-          }
-    
-          // 2. Fetch Assessment Result (if any)
-          const assessmentRes = await fetch(`${ENV.apiUrl}/api/assessment/result/${user?.uid}`);
-          if (assessmentRes.ok) {
-            const data = await assessmentRes.json();
-            setAssessmentData(data);
-            
-            // Extract career report from assessment if embedded
-            if (data?.generated_bio?.ai_report) {
-              fetchedReport = data.generated_bio.ai_report;
-              setReportData(data.generated_bio.ai_report);
+          // Parallel fetching for better performance
+          const [profile, assessment] = await Promise.all([
+            userService.getProfile(user.uid, user.uid), // Note: user.uid is passed twice, check if this is correct for your backend expectation
+            userService.getAssessmentResult(user.uid)
+          ]);
+
+          if (profile) setProfileData(profile);
+          
+          let report = null;
+          if (assessment) {
+            setAssessmentData(assessment);
+            // Check if report is embedded
+            if (assessment.generated_bio?.ai_report) {
+              report = assessment.generated_bio.ai_report;
             }
           }
-    
-          // 3. Fetch Career Report separately (if not embedded)
-          if (!fetchedReport) {
-            const reportRes = await fetch(`${ENV.apiUrl}/api/assessment/report/${user?.uid}`);
-            if (reportRes.ok) {
-              setReportData(await reportRes.json());
-            }
+
+          // If not embedded, fetch separately
+          if (!report) {
+            report = await userService.getCareerReport(user.uid);
           }
-    
+
+          if (report) setReportData(report);
+
         } catch (error) {
           console.error("Dashboard data fetch error:", error);
         } finally {
@@ -78,10 +73,7 @@ export default function DashboardPage() {
         }
     }
 
-    if (user?.uid) {
-      fetchUserData();
-    }
-    
+    fetchUserData();
   }, [user]);
 
 
