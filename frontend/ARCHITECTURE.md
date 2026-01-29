@@ -38,7 +38,7 @@ UdaanSetu.AI is architected as a robust, scalable **Single Page Application (SPA
 
 ## 🌊 Technical Flow
 
-```mermaid
+```
 graph TD
     User([👤 Rural Student]) --> App[🚀 Next.js App Router]
 
