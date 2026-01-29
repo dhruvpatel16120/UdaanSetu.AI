@@ -88,9 +88,9 @@ Rural youth in India face a **"Guidance Gap"**:
       <td align="center"><b>Dashboard</b></td>
     </tr>
     <tr>
-      <td><img src="logos/banner.jpeg" width="300" /></td>
-      <td><img src="logos/banner.jpeg" width="300" /></td>
-      <td><img src="logos/banner.jpeg" width="300" /></td>
+      <td><img src="logos/home.png" width="300" /></td>
+      <td><img src="logos/test.jpeg" width="300" /></td>
+      <td><img src="logos/dashboard.jpeg" width="300" /></td>
     </tr>
   </table>
 </div>
@@ -139,14 +139,14 @@ Rural youth in India face a **"Guidance Gap"**:
    - Open `http://localhost:8000/docs` for API documentation.
 
 ---
-
 ## 👥 Team FutureMinds
 
-| Role               | Name            | Contribution                             |
-| :----------------- | :-------------- | :--------------------------------------- |
-| **Lead Developer** | **Dhruv Patel** | Full Stack Architecture & AI Integration |
-| **UI/UX**          | **Your Name**   | Design System & Animation                |
-| **Research**       | **Your Name**   | Psychometric Models & Content            |
+| Role | Name | Contribution |
+|------|------|--------------|
+| **Team Leader & System Architecture** | **Dhruv Patel** | Overall system design, architecture planning, and AI strategy |
+| **Frontend & UI/UX** | **Prajwal Yadav** | User interface design, user experience, and frontend development |
+| **Research & Content** | **Kalyani Sanjarkhan** | Psychometric research, career content creation, and assessment models |
+| **Backend & AI Integration** | **Vasu Patil** | Backend development, API design, and AI model integration |
 
 ---
 
