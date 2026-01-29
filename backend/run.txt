@@ -29,16 +29,7 @@ python -m pip install --upgrade pip
 # Step 4: Install requirements
 pip install -r requirements.txt
 
-# Step 5: Generate Prisma client
-prisma generate
-
-# Step 6: Test database connection (optional)
-python verify_prisma.py
-
-# Step 7: Sync database schema (optional)
-prisma db push
-
-# Step 8: Run the backend server
+# Step 5: Run the backend server
 python -m uvicorn main:app --reload
 
 ========================================

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
-from app.module2.market_analyzer import market_analyzer
+from app.career_logic.market_analyzer import market_analyzer
 from app.services.db_firebase import get_assessment_result
 
 router = APIRouter()

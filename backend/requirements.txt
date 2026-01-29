@@ -16,12 +16,6 @@ google-generativeai
 # Vector Store & Embeddings
 faiss-cpu
 sentence-transformers
-langchain-postgres
-
-# Database
-psycopg2-binary
-pgvector
-asyncpg
 
 # Data Processing
 pandas

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Header, HTTPException, Body
 from typing import List, Optional
 from app.models.schemas import Answer
 from app.data.question_bank import get_questions
-from app.module1.qa_engine import get_next_dynamic_question, process_assessment_submission, QUESTION_LIMIT
+from app.assessment_logic.qa_engine import get_next_dynamic_question, process_assessment_submission, QUESTION_LIMIT
 from app.services.db_firebase import get_assessment_result
 
 router = APIRouter()
@@ -35,10 +35,6 @@ async def get_question(question_id: str):
 
 @router.post("/next-question")
 async def next_question(
-    # history: List[Answer] = Body(...),
-    # For now, frontend might only send current answer. 
-    # We ideally need history to make it "AI powered".
-    # I'll update the expected body to handle history if provided.
     payload: dict = Body(...)
 ):
     """
@@ -85,7 +81,7 @@ async def generate_report_manual(user_id: str):
     Manually triggers Module 2 Career Generation on existing assessment data.
     Useful if the report is missing or needs an update.
     """
-    from app.module2.career_generator import generate_career_report
+    from app.career_logic.career_generator import generate_career_report
     from app.services.db_firebase import save_assessment_result, save_user_profile
     
     # 1. Fetch existing assessment

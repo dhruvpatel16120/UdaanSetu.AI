@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, validator
 from typing import List, Optional
-from app.module2.roadmap_engine import roadmap_engine
+from app.career_logic.roadmap_engine import roadmap_engine
 from app.services.db_firebase import init_firebase
 from firebase_admin import firestore
 import firebase_admin

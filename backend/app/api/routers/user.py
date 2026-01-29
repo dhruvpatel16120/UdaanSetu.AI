@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from typing import Optional
 from app.services.user_service import get_user_by_firebase_id, create_or_update_user, update_user_profile
-from app.module1.bio_generator import generate_user_bio_profile
+from app.assessment_logic.bio_generator import generate_user_bio_profile
 from pydantic import BaseModel
 
 router = APIRouter()

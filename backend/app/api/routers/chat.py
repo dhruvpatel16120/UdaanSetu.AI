@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict
-from app.module3.mentor_engine import mentor_engine
+from app.mentor_logic.mentor_engine import mentor_engine
 from app.services.db_firebase import init_firebase, get_career_report, get_assessment_result, get_user_profile
 from firebase_admin import firestore
 import firebase_admin

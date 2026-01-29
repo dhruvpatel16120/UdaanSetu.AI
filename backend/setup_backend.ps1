@@ -226,46 +226,6 @@ function Setup-Backend {
             Write-ColorOutput "[OK] All packages installed successfully" $SuccessColor
         }
 
-        # Step 4: Generate Prisma Client
-        Write-Section "Step 4: Generating Prisma Client"
-        
-        $PrismaSchemaPath = Join-Path $BackendPath "prisma\schema.prisma"
-        
-        if (-not (Test-Path $PrismaSchemaPath)) {
-            Write-ColorOutput "[ERROR] Prisma schema not found at: $PrismaSchemaPath" $ErrorColor
-            throw "Prisma schema file missing"
-        }
-        
-        try {
-            Write-ColorOutput "Running prisma generate..." $InfoColor
-            
-            # Use venv python to run prisma
-            & $VenvPython -m prisma generate
-            
-            if ($LASTEXITCODE -ne 0) {
-                throw "Prisma generate failed"
-            }
-            
-            Write-ColorOutput "[OK] Prisma client generated successfully" $SuccessColor
-            
-        } catch {
-            Write-ColorOutput "[ERROR] Error generating Prisma client: $_" $ErrorColor
-            Write-ColorOutput "Attempting to reinstall prisma..." $WarningColor
-            
-            try {
-                & $VenvPip install --force-reinstall prisma
-                & $VenvPython -m prisma generate
-                
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Prisma generate failed after reinstall"
-                }
-                
-                Write-ColorOutput "[OK] Prisma client generated successfully" $SuccessColor
-            } catch {
-                Write-ColorOutput "[ERROR] Failed to generate Prisma client: $_" $ErrorColor
-                Write-ColorOutput "You may need to run manually: python -m prisma generate" $WarningColor
-            }
-        }
 
         # Step 5: Check Environment Variables
         Write-Section "Step 5: Validating Environment Configuration"
@@ -275,7 +235,6 @@ function Setup-Backend {
         if (-not (Test-Path $EnvPath)) {
             Write-ColorOutput "[WARNING] .env file not found!" $WarningColor
             Write-ColorOutput "Please create a .env file with the following variables:" $WarningColor
-            Write-ColorOutput "  - DATABASE_URL" $WarningColor
             Write-ColorOutput "  - GEMINI_API_KEY" $WarningColor
         } else {
             Write-ColorOutput "[OK] .env file found" $SuccessColor
@@ -283,7 +242,7 @@ function Setup-Backend {
             # Check for required variables
             $EnvContent = Get-Content $EnvPath -Raw
             
-            $RequiredVars = @("DATABASE_URL", "GEMINI_API_KEY")
+            $RequiredVars = @("GEMINI_API_KEY")
             $MissingVars = @()
             
             foreach ($Var in $RequiredVars) {
@@ -302,102 +261,6 @@ function Setup-Backend {
             }
         }
 
-        # Step 6: Test Database Connection
-        Write-Section "Step 6: Testing Database Connection"
-        
-        try {
-            # Create a test script
-            $TestScript = @"
-import sys
-import os
-from pathlib import Path
-
-# Add backend to path
-sys.path.insert(0, str(Path(__file__).parent))
-
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-    
-    from prisma import Prisma
-    import asyncio
-    
-    async def test_connection():
-        db = Prisma()
-        print('[INFO] Connecting to database...')
-        await db.connect()
-        print('[OK] Database connection successful!')
-        await db.disconnect()
-        print('[OK] Database disconnected cleanly')
-        return True
-    
-    result = asyncio.run(test_connection())
-    sys.exit(0)
-    
-except ImportError as e:
-    print(f'[ERROR] Import error: {e}')
-    print('[INFO] Make sure all dependencies are installed')
-    sys.exit(1)
-    
-except Exception as e:
-    print(f'[ERROR] Database connection failed: {e}')
-    print('[INFO] Please check your DATABASE_URL in .env file')
-    sys.exit(1)
-"@
-            
-            $TestScriptPath = Join-Path $BackendPath "test_db_connection_temp.py"
-            Set-Content -Path $TestScriptPath -Value $TestScript -Encoding UTF8
-            
-            Write-ColorOutput "Testing database connection..." $InfoColor
-            & $VenvPython $TestScriptPath
-            
-            $TestResult = $LASTEXITCODE
-            
-            # Clean up test script
-            Remove-Item $TestScriptPath -ErrorAction SilentlyContinue
-            
-            if ($TestResult -eq 0) {
-                Write-ColorOutput "[OK] Database connection test passed!" $SuccessColor
-            } else {
-                Write-ColorOutput "[ERROR] Database connection test failed" $ErrorColor
-                Write-ColorOutput "Please verify:" $WarningColor
-                Write-ColorOutput "  1. DATABASE_URL is correctly set in .env" $WarningColor
-                Write-ColorOutput "  2. Database server is running and accessible" $WarningColor
-                Write-ColorOutput "  3. Credentials are correct" $WarningColor
-            }
-            
-        } catch {
-            Write-ColorOutput "[ERROR] Error testing database connection: $_" $ErrorColor
-            Write-ColorOutput "Please manually verify database connectivity" $WarningColor
-        }
-
-        # Step 7: Database Schema Sync (Optional)
-        Write-Section "Step 7: Database Schema Synchronization"
-        
-        Write-ColorOutput "Would you like to sync the database schema now? (Y/N)" $WarningColor
-        Write-ColorOutput "(This will apply any pending migrations to your database)" $InfoColor
-        $Response = Read-Host "Enter choice"
-        
-        if ($Response -eq 'Y' -or $Response -eq 'y') {
-            try {
-                Write-ColorOutput "Running prisma db push..." $InfoColor
-                & $VenvPython -m prisma db push
-                
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Prisma db push failed"
-                }
-                
-                Write-ColorOutput "[OK] Database schema synced successfully!" $SuccessColor
-            } catch {
-                Write-ColorOutput "[ERROR] Error syncing database schema: $_" $ErrorColor
-                Write-ColorOutput "You can manually run later:" $WarningColor
-                Write-ColorOutput "  .\venv\Scripts\Activate.ps1" $WarningColor
-                Write-ColorOutput "  python -m prisma db push" $WarningColor
-            }
-        } else {
-            Write-ColorOutput "[SKIP] Skipping database schema sync" $InfoColor
-            Write-ColorOutput "Run manually when ready: python -m prisma db push" $InfoColor
-        }
 
         # Final Summary
         Write-Section "Setup Complete!"
