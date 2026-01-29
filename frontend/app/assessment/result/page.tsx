@@ -22,12 +22,23 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/utils/cn";
 
+interface AssessmentResult {
+  generated_bio?: {
+    readiness_score?: number;
+    trait_scores?: Record<string, number>;
+    snapshot?: {
+      key_insights?: string[];
+      top_recommendation?: string;
+    };
+  };
+}
+
 export default function AssessmentResultPage() {
   const { user, status } = useAuth();
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<AssessmentResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,8 +57,12 @@ export default function AssessmentResultPage() {
 
         const data = await res.json();
         setResult(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+            setError(err.message);
+        } else {
+            setError("An unknown error occurred");
+        }
       } finally {
         setLoading(false);
       }
@@ -163,7 +178,7 @@ export default function AssessmentResultPage() {
 
             {/* Sub Scores */}
             <div className="w-full grid grid-cols-2 gap-4 mt-4 text-center">
-              {Object.entries(traits).slice(0, 6).map(([key, val]: any) => (
+              {Object.entries(traits).slice(0, 6).map(([key, val]) => (
                 <div key={key} className="flex flex-col items-center justify-center p-2 bg-muted/20 rounded-lg">
                   <span className="text-lg font-black text-foreground">{val}%</span>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate w-full">

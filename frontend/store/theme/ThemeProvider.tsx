@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useState, useLayoutEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
 
@@ -22,15 +22,14 @@ export function useTheme() {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Initialize with light but we'll sync it in useLayoutEffect
+  // Initialize with light but we'll sync it in useEffect
   const [theme, setThemeState] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
 
-  // Use useLayoutEffect to sync with the class applied by the blocking script
-  useLayoutEffect(() => {
+  // Use useEffect to sync with the class applied by the blocking script
+  useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark");
-    setThemeState(isDark ? "dark" : "light");
-    setMounted(true);
+    // Defer state update to avoid synchronous render warning
+    setTimeout(() => setThemeState(isDark ? "dark" : "light"), 0);
   }, []);
 
   const setTheme = (newTheme: Theme) => {

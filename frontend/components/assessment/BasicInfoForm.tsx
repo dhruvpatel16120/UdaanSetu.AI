@@ -30,7 +30,6 @@ export function BasicInfoForm({ onSubmit }: BasicInfoFormProps) {
   });
 
   const [errors, setErrors] = useState<Partial<BasicInfo>>({});
-  const [activeField, setActiveField] = useState<string | null>(null);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<BasicInfo> = {};
@@ -104,8 +103,6 @@ export function BasicInfoForm({ onSubmit }: BasicInfoFormProps) {
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
-                  onFocus={() => setActiveField('name')}
-                  onBlur={() => setActiveField(null)}
                   placeholder={t("assessment.namePlaceholder")}
                   className={cn(
                     "w-full px-5 py-4 rounded-xl border-2 bg-background/50 outline-none transition-all duration-300",
@@ -129,8 +126,6 @@ export function BasicInfoForm({ onSubmit }: BasicInfoFormProps) {
                 type="date"
                 value={formData.dateOfBirth}
                 onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                onFocus={() => setActiveField('dob')}
-                onBlur={() => setActiveField(null)}
                 max={new Date().toISOString().split('T')[0]}
                 className={cn(
                   "w-full px-5 py-4 rounded-xl border-2 bg-background/50 outline-none transition-all duration-300",
@@ -205,8 +200,6 @@ export function BasicInfoForm({ onSubmit }: BasicInfoFormProps) {
               <select
                 value={formData.location}
                 onChange={(e) => handleInputChange("location", e.target.value)}
-                onFocus={() => setActiveField('location')}
-                onBlur={() => setActiveField(null)}
                 className={cn(
                   "w-full px-5 py-4 rounded-xl border-2 bg-background/50 outline-none appearance-none transition-all duration-300 cursor-pointer",
                   errors.location 

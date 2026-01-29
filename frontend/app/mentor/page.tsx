@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/hooks/useI18n";
 import { useTheme } from "@/store/theme/ThemeProvider";
@@ -33,11 +32,10 @@ export default function MentorPage() {
     const [mounted, setMounted] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { user } = useAuth();
-    const { t, language, setLanguage } = useI18n();
+    const { language, setLanguage } = useI18n();
     const { theme } = useTheme();
     const [showLanguagePopup, setShowLanguagePopup] = useState(false);
     const [hasShownInitialPopup, setHasShownInitialPopup] = useState(false);
-    const prevLanguageRef = useRef<"en" | "gu">(language);
 
     // Show popup on initial mount
     useEffect(() => {
@@ -320,7 +318,7 @@ export default function MentorPage() {
                                             <ReactMarkdown
                                                 remarkPlugins={[remarkGfm]}
                                                 components={{
-                                                    p: ({node, children, ...props}) => (
+                                                    p: ({children, ...props}) => (
                                                         <p 
                                                             className="mb-2 last:mb-0 font-bold"
                                                             style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
@@ -329,7 +327,7 @@ export default function MentorPage() {
                                                             {children}
                                                         </p>
                                                     ),
-                                                    strong: ({node, children, ...props}) => (
+                                                    strong: ({children, ...props}) => (
                                                         <strong 
                                                             className="font-extrabold"
                                                             style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 200, 100)' }}
@@ -338,7 +336,7 @@ export default function MentorPage() {
                                                             {children}
                                                         </strong>
                                                     ),
-                                                    ul: ({node, children, ...props}) => (
+                                                    ul: ({children, ...props}) => (
                                                         <ul 
                                                             className="list-disc list-inside my-2 space-y-1 font-bold"
                                                             style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
@@ -347,7 +345,7 @@ export default function MentorPage() {
                                                             {children}
                                                         </ul>
                                                     ),
-                                                    ol: ({node, children, ...props}) => (
+                                                    ol: ({children, ...props}) => (
                                                         <ol 
                                                             className="list-decimal list-inside my-2 space-y-1 font-bold"
                                                             style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
@@ -356,7 +354,7 @@ export default function MentorPage() {
                                                             {children}
                                                         </ol>
                                                     ),
-                                                    li: ({node, children, ...props}) => (
+                                                    li: ({children, ...props}) => (
                                                         <li 
                                                             className="ml-2 font-bold"
                                                             style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
@@ -365,7 +363,7 @@ export default function MentorPage() {
                                                             {children}
                                                         </li>
                                                     ),
-                                                    h1: ({node, children, ...props}) => (
+                                                    h1: ({children, ...props}) => (
                                                         <h1 
                                                             className="text-xl font-extrabold mb-2 mt-3 first:mt-0"
                                                             style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
@@ -374,7 +372,7 @@ export default function MentorPage() {
                                                             {children}
                                                         </h1>
                                                     ),
-                                                    h2: ({node, children, ...props}) => (
+                                                    h2: ({children, ...props}) => (
                                                         <h2 
                                                             className="text-lg font-extrabold mb-2 mt-3 first:mt-0"
                                                             style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
@@ -383,7 +381,7 @@ export default function MentorPage() {
                                                             {children}
                                                         </h2>
                                                     ),
-                                                    h3: ({node, children, ...props}) => (
+                                                    h3: ({children, ...props}) => (
                                                         <h3 
                                                             className="text-base font-extrabold mb-1 mt-2 first:mt-0"
                                                             style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}
@@ -392,7 +390,9 @@ export default function MentorPage() {
                                                             {children}
                                                         </h3>
                                                     ),
-                                                    code: ({node, inline, children, ...props}: any) => {
+                                                   
+                                                    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                                                    code: ({inline, className: _className, children, ...props}: any) => {
                                                         const isInline = inline;
                                                         return isInline ? (
                                                             <code 
@@ -412,7 +412,7 @@ export default function MentorPage() {
                                                             </code>
                                                         );
                                                     },
-                                                    blockquote: ({node, children, ...props}) => (
+                                                    blockquote: ({children, ...props}) => (
                                                         <blockquote 
                                                             className="border-l-4 border-accent pl-3 italic my-2 font-bold"
                                                             style={message.role === "assistant" ? { color: 'rgb(0, 0, 0)' } : { color: 'rgb(255, 255, 255)' }}

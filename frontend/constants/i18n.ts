@@ -7,8 +7,11 @@ import { authTranslations } from "./translations/auth";
 import { chatbotTranslations } from "./translations/chatbot";
 import { assessmentTranslations } from "./translations/assessment";
 import { resourcesTranslations } from "./translations/resources";
+import { profileTranslations } from "./translations/profile";
+import { commonTranslations } from "./translations/common";
 
 // Merge all translations for each language
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 const mergeTranslations = (...translationObjects: Record<string, string>[]) => {
   return translationObjects.reduce((acc, obj) => ({ ...acc, ...obj }), {});
 };
@@ -23,6 +26,8 @@ export const translations = {
     ...chatbotTranslations.en,
     ...assessmentTranslations.en,
     ...resourcesTranslations.en,
+    ...profileTranslations.en,
+    ...commonTranslations.en,
   },
   gu: {
     ...navTranslations.gu,
@@ -33,6 +38,8 @@ export const translations = {
     ...chatbotTranslations.gu,
     ...assessmentTranslations.gu,
     ...resourcesTranslations.gu,
+    ...profileTranslations.gu,
+    ...commonTranslations.gu,
   },
 } as const;
 

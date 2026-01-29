@@ -37,7 +37,7 @@ export default function AssessmentPage() {
             router.push(ROUTES.assessmentResult);
             return;
           }
-        } catch (e) {
+        } catch {
           // Ignore error, proceed to assessment
         }
       }

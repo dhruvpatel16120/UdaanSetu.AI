@@ -107,9 +107,10 @@ export default function EditProfilePage() {
             
             // Optionally redirect or stay on page
             setTimeout(() => router.push(ROUTES.profile), 1000);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Update failed", err);
-            toast.error(err.message || "Failed to update profile. Please try again.");
+            const msg = err instanceof Error ? err.message : "Failed to update profile. Please try again.";
+            toast.error(msg);
         } finally {
             setSaving(false);
         }

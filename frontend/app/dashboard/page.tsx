@@ -4,31 +4,30 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
-import { useI18n } from "@/hooks/useI18n";
-import { useTheme } from "@/store/theme/ThemeProvider";
+
 import { Button } from "@/components/ui/Button";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/utils/cn";
 import { ENV } from "@/constants/env";
 import {
-  FileText,
   UserCheck,
   Target,
-  Clock,
   Briefcase,
   MapPin,
   TrendingUp,
   BrainCircuit,
-  GraduationCap
+  GraduationCap,
+  FileText
 } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, status } = useAuth();
-  const { t } = useI18n();
-  const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const [profileData, setProfileData] = useState<any>(null);
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const [assessmentData, setAssessmentData] = useState<any>(null);
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const [reportData, setReportData] = useState<any>(null);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -37,48 +36,54 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    async function fetchUserData() {
+        setLoadingData(true);
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+        let fetchedReport: any = null;
+
+        try {
+          // 1. Fetch User Profile
+          const profileRes = await fetch(`${ENV.apiUrl}/api/user/me`, {
+            headers: { "X-Firebase-Id": user?.uid || "" }
+          });
+          if (profileRes.ok) {
+            setProfileData(await profileRes.json());
+          }
+    
+          // 2. Fetch Assessment Result (if any)
+          const assessmentRes = await fetch(`${ENV.apiUrl}/api/assessment/result/${user?.uid}`);
+          if (assessmentRes.ok) {
+            const data = await assessmentRes.json();
+            setAssessmentData(data);
+            
+            // Extract career report from assessment if embedded
+            if (data?.generated_bio?.ai_report) {
+              fetchedReport = data.generated_bio.ai_report;
+              setReportData(data.generated_bio.ai_report);
+            }
+          }
+    
+          // 3. Fetch Career Report separately (if not embedded)
+          if (!fetchedReport) {
+            const reportRes = await fetch(`${ENV.apiUrl}/api/assessment/report/${user?.uid}`);
+            if (reportRes.ok) {
+              setReportData(await reportRes.json());
+            }
+          }
+    
+        } catch (error) {
+          console.error("Dashboard data fetch error:", error);
+        } finally {
+          setLoadingData(false);
+        }
+    }
+
     if (user?.uid) {
       fetchUserData();
     }
+    
   }, [user]);
 
-  const fetchUserData = async () => {
-    setLoadingData(true);
-    try {
-      // 1. Fetch User Profile
-      const profileRes = await fetch(`${ENV.apiUrl}/api/user/me`, {
-        headers: { "X-Firebase-Id": user?.uid || "" }
-      });
-      if (profileRes.ok) {
-        setProfileData(await profileRes.json());
-      }
-
-      // 2. Fetch Assessment Result (if any)
-      const assessmentRes = await fetch(`${ENV.apiUrl}/api/assessment/result/${user?.uid}`);
-      if (assessmentRes.ok) {
-        const data = await assessmentRes.json();
-        setAssessmentData(data);
-        
-        // Extract career report from assessment if embedded
-        if (data?.generated_bio?.ai_report) {
-          setReportData(data.generated_bio.ai_report);
-        }
-      }
-
-      // 3. Fetch Career Report separately (if not embedded)
-      if (!reportData) {
-        const reportRes = await fetch(`${ENV.apiUrl}/api/assessment/report/${user?.uid}`);
-        if (reportRes.ok) {
-          setReportData(await reportRes.json());
-        }
-      }
-
-    } catch (error) {
-      console.error("Dashboard data fetch error:", error);
-    } finally {
-      setLoadingData(false);
-    }
-  };
 
   if (status === "loading" || (status === "authenticated" && loadingData)) {
     return (
@@ -121,12 +126,7 @@ export default function DashboardPage() {
     'Explorer';
   const userInitial = userName[0].toUpperCase();
   
-  // Get location from multiple sources
-  const userLocation = 
-    profileData?.basic_info?.location ||
-    profileData?.profile?.location ||
-    assessmentData?.analysis?.basic_info?.location ||
-    "Gujarat, India";
+
 
   // Derived Stats
   const hasAssessment = !!assessmentData && assessmentData.status === "complete";
@@ -157,16 +157,13 @@ export default function DashboardPage() {
 
   // Career paths
   const recommendedPaths = 
-    reportData?.recommendations?.map((r: any) => r.title) ||
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    assessmentData?.analysis?.career_paths?.map((p: any) => p.title) ||
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any  */
     assessmentData?.analysis?.career_paths?.map((p: any) => p.title) ||
     [];
 
-  // Readiness score
-  const readinessScore = 
-    reportData?.careerReadiness ||
-    assessmentData?.generated_bio?.readiness_score ||
-    assessmentData?.analysis?.readiness_score ||
-    0;
+
 
   const quickActions = [
     {
@@ -239,12 +236,12 @@ export default function DashboardPage() {
             <div className="flex gap-4">
                {hasReport && (
                  <Link href={ROUTES.careerReport}>
-                  <Button className="bg-foreground text-background hover:bg-foreground/90 font-semibold shadow-lg">
+                  <Button className="bg-background text-foreground hover:bg-foreground/90 font-semibold shadow-lg">
                     View Full Report
                   </Button>
                  </Link>
                )}
-            </div>
+            </div>  
           </div>
         </div>
 

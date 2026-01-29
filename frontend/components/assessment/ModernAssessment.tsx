@@ -27,7 +27,6 @@ import {
     Truck,
     Languages
 } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "next/navigation";
@@ -44,6 +43,7 @@ import { STATIC_QUESTIONS } from "@/constants/data/questions";
 interface BackendOption {
     id: string;
     text: { en: string; gu: string };
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     traits?: Record<string, any>;
 }
 
@@ -58,7 +58,7 @@ interface BackendQuestion {
 }
 
 // --- Icons Mapping ---
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ElementType> = {
     user: User,
     map_pin: MapPin,
     calendar: Calendar,
@@ -87,7 +87,7 @@ const iconMap: Record<string, any> = {
 };
 
 // --- Sub-Components ---
-const ScreenWrapper = ({ children, className }: any) => (
+const ScreenWrapper = ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -125,6 +125,21 @@ export function ModernAssessment() {
 
     // --- Effects ---
     useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const res = await fetch(`${ENV.apiUrl}/api/assessment/config`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setMaxQuestions(data.max_questions || 10);
+                    if (data.questions) {
+                        setAllQuestionBank(data.questions);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch config", e);
+            }
+        };
+
         fetchConfig();
         
         // Instant start: Pick a random question immediately if not already set
@@ -136,9 +151,34 @@ export function ModernAssessment() {
                  : STATIC_QUESTIONS[0];
              setQuestions([firstQ]);
         }
-    }, []);
+    }, [questions.length]);
 
     useEffect(() => {
+        const fetchFirstQuestion = async () => {
+            setIsLoading(true);
+            try {
+                // Pick from local bank if available, otherwise fetch
+                if (allQuestionBank.length > 0) {
+                    const startPool = ["q1_edu_level", "q3_family_type", "q5_interest", "q7_mindset_games"];
+                    const available = allQuestionBank.filter(q => startPool.includes(q.id));
+                    const firstQ = available.length > 0
+                        ? available[Math.floor(Math.random() * available.length)]
+                        : allQuestionBank[0];
+                    setQuestions([firstQ]);
+                } else {
+                    const res = await fetch(`${ENV.apiUrl}/api/assessment/question/start`);
+                    if (!res.ok) throw new Error(t("assessment.errorStart"));
+                    const firstQ = await res.json();
+                    setQuestions([firstQ]);
+                }
+            } catch {
+                setStep("error");
+                setErrorMessage(t("assessment.errorConnect"));
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         if (step === "assessment" && questions.length === 0) {
             fetchFirstQuestion();
         }
@@ -163,48 +203,10 @@ export function ModernAssessment() {
         return () => {
             if (statusInterval) clearInterval(statusInterval);
         };
-    }, [step]);
+    }, [step, questions.length, allQuestionBank, t]);
 
     // --- Handlers ---
-    const fetchConfig = async () => {
-        try {
-            const res = await fetch(`${ENV.apiUrl}/api/assessment/config`);
-            if (res.ok) {
-                const data = await res.json();
-                setMaxQuestions(data.max_questions || 10);
-                if (data.questions) {
-                    setAllQuestionBank(data.questions);
-                }
-            }
-        } catch (e) {
-            console.error("Failed to fetch config", e);
-        }
-    };
 
-    const fetchFirstQuestion = async () => {
-        setIsLoading(true);
-        try {
-            // Pick from local bank if available, otherwise fetch
-            if (allQuestionBank.length > 0) {
-                const startPool = ["q1_edu_level", "q3_family_type", "q5_interest", "q7_mindset_games"];
-                const available = allQuestionBank.filter(q => startPool.includes(q.id));
-                const firstQ = available.length > 0
-                    ? available[Math.floor(Math.random() * available.length)]
-                    : allQuestionBank[0];
-                setQuestions([firstQ]);
-            } else {
-                const res = await fetch(`${ENV.apiUrl}/api/assessment/question/start`);
-                if (!res.ok) throw new Error(t("assessment.errorStart"));
-                const firstQ = await res.json();
-                setQuestions([firstQ]);
-            }
-        } catch (err) {
-            setStep("error");
-            setErrorMessage(t("assessment.errorConnect"));
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const handleInfoSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -273,7 +275,7 @@ export function ModernAssessment() {
             } else {
                 await submitFinalAssessment();
             }
-        } catch (err) {
+        } catch {
             setErrorMessage(t("assessment.errorTimeout"));
         } finally {
             setIsLoading(false);
@@ -316,7 +318,7 @@ export function ModernAssessment() {
             setTimeout(() => {
                 router.push(ROUTES.assessmentResult);
             }, 2500);
-        } catch (err) {
+        } catch {
             setStep("error");
             setErrorMessage(t("assessment.errorGenerateReport"));
         }
@@ -526,8 +528,8 @@ export function ModernAssessment() {
                                                 <option value="school">High School (Class 8-10)</option>
                                                 <option value="high_school">Higher Secondary (Class 11-12)</option>
                                                 <option value="diploma">Diploma / Vocational Training</option>
-                                                <option value="degree">Graduate / Bachelor's Degree</option>
-                                                <option value="post_graduate">Postgraduate / Master's Degree</option>
+                                                <option value="degree">Graduate / Bachelor&apos;s Degree</option>
+                                                <option value="post_graduate">Postgraduate / Master&apos;s Degree</option>
                                                 <option value="phd">Doctorate / PhD</option>
                                             </select>
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
@@ -588,6 +590,7 @@ export function ModernAssessment() {
                                         )}
                                     </div>
                                     <h3 className="text-xl font-bold mb-4 uppercase tracking-widest text-accent">
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                         {t(`assessment.${questions[currentIndex].section.toLowerCase().replace(/\s+/g, '')}` as any) || questions[currentIndex].section}
                                     </h3>
                                     <p className="text-foreground opacity-80 leading-relaxed italic font-medium">

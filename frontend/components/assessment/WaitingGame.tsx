@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Sparkles, Zap, Fingerprint } from "lucide-react";
+import { Brain, Zap, Fingerprint } from "lucide-react";
 
 interface WaitingGameProps {
     onComplete: () => void;
@@ -19,11 +19,10 @@ interface Orb {
     speedY: number;
 }
 
-export function WaitingGame({ onComplete, status }: WaitingGameProps) {
+export function WaitingGame({ status }: WaitingGameProps) {
     const [score, setScore] = useState(0);
     const [orbs, setOrbs] = useState<Orb[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
-    const [timeLeft, setTimeLeft] = useState(100); // Progress bar basically
 
     // Initialize Orbs
     useEffect(() => {
@@ -38,12 +37,13 @@ export function WaitingGame({ onComplete, status }: WaitingGameProps) {
         });
 
         const initialOrbs = Array.from({ length: 5 }).map(createOrb);
-        setOrbs(initialOrbs);
+        // Defer state update to avoid synchronous/cascading render warning
+        setTimeout(() => setOrbs(initialOrbs), 0);
 
         const interval = setInterval(() => {
             setOrbs(prev => prev.map(orb => {
-                let newX = orb.x + orb.speedX;
-                let newY = orb.y + orb.speedY;
+                const newX = orb.x + orb.speedX;
+                const newY = orb.y + orb.speedY;
 
                 // Bounce
                 if (newX <= 0 || newX >= 100) orb.speedX *= -1;

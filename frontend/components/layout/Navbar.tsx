@@ -23,7 +23,8 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Defer mounting to avoid synchronous setState warning
+    setTimeout(() => setMounted(true), 0);
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
@@ -43,13 +44,6 @@ export function Navbar() {
     { name: t("nav.about"), href: ROUTES.about },
     { name: t("nav.assessment"), href: ROUTES.assessment },
     { name: t("nav.resources"), href: ROUTES.resources },
-  ];
-
-  const authNavigation = [
-    { name: t("nav.dashboard"), href: ROUTES.dashboard },
-    { name: t("nav.assessmentResults"), href: ROUTES.assessmentResult },
-    { name: t("nav.mentor"), href: ROUTES.mentor },
-    { name: t("nav.careerReport"), href: ROUTES.careerReport },
   ];
 
   return (
@@ -137,7 +131,7 @@ export function Navbar() {
                 { name: t("nav.mentor"), href: ROUTES.mentor },
                 { name: t("nav.careerReport"), href: ROUTES.careerReport },
                 { name: t("nav.dashboard"), href: ROUTES.dashboard },
-              ].map((item: any) => (
+              ].map((item: { name: string; href: string }) => (
                 <Link
                   key={item.name}
                   href={item.href}

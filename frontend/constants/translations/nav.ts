@@ -12,6 +12,7 @@ export const navTranslations = {
     "nav.signUp": "Sign Up",
     "nav.signOut": "Sign Out",
     "nav.getStarted": "Get Started",
+    "nav.startAssessment": "Start Assessment Now",
   },
   gu: {
     "nav.home": "હોમ",
@@ -26,5 +27,6 @@ export const navTranslations = {
     "nav.signUp": "સાઇન અપ",
     "nav.signOut": "સાઇન આઉટ",
     "nav.getStarted": "શરૂ કરો",
+    "nav.startAssessment": "હવે મૂલ્યાંકન શરૂ કરો",
   }
 } as const;

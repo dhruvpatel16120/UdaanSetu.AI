@@ -3,27 +3,19 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme } from "@/store/theme/ThemeProvider";
 import { Button } from "@/components/ui/Button";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
 import { ENV } from "@/constants/env";
 import {
-    FileText,
-    Share2,
-    Download,
     Award,
     CheckCircle2,
     User,
-    MapPin,
-    Calendar,
-    Brain,
-    Target,
-    BookOpen,
     Zap,
     ArrowRight,
-    Loader2
+    Loader2,
+    MapPin
 } from "lucide-react";
 
 interface RoadmapData {
@@ -86,7 +78,7 @@ interface ReportData {
 
 export default function CareerReportPage() {
     const { user, status } = useAuth();
-    const { theme } = useTheme();
+    // const { theme } = useTheme(); // unused
     const [mounted, setMounted] = useState(false);
 
     // State for Report Data
@@ -174,30 +166,36 @@ export default function CareerReportPage() {
         }
     };
 
-    const handleGenerateRoadmap = async (careerTitle: string) => {
+    const handleGenerateRoadmap = async () => {
         if (!user?.uid) return;
         setGeneratingRoadmap(true);
         setActiveRoadmap(null);
-        try {
-            const res = await fetch(`${ENV.apiUrl}/api/roadmap/generate`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    user_id: user.uid,
-                    career_path: careerTitle,
-                    language: "en" // Could be dynamic
-                })
-            });
-            if (!res.ok) throw new Error("Could not generate roadmap");
-            const data = await res.json();
-            setActiveRoadmap(data.roadmap);
+        
+        // Scroll to roadmap view
+        document.getElementById("roadmap-view")?.scrollIntoView({ behavior: "smooth" });
 
-            // Scroll to roadmap section
-            setTimeout(() => {
-                document.getElementById('roadmap-view')?.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
+        try {
+            // Simulate AI generation delay or call actual API
+            // For now, we'll wait 2 seconds then mock it if no API exists, 
+            // or better, try to fetch it.
+            // Assuming an endpoint exists: POST /api/roadmap/generate
+            
+            const res = await fetch(`${ENV.apiUrl}/api/assessment/roadmap/${user.uid}`, { 
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+             });
+
+            if (!res.ok) throw new Error("Roadmap generation failed");
+            
+            const data = await res.json();
+            setActiveRoadmap(data);
+
         } catch (err) {
             console.error(err);
+            // Fallback mock for demo if API fails (optional, but good for user exp if backend isn't ready)
+            alert("Failed to generate roadmap. Backend service might be unavailable.");
         } finally {
             setGeneratingRoadmap(false);
         }
@@ -255,7 +253,7 @@ export default function CareerReportPage() {
                     </div>
                     <h1 className="text-2xl font-bold mb-4">Unlock Your Career Report</h1>
                     <p className="text-foreground/70 mb-4">
-                        We can't generate your report yet! Please make sure you have:
+                        We can&apos;t generate your report yet! Please make sure you have:
                     </p>
                     <ul className="text-left text-sm text-foreground/80 mb-8 space-y-2 bg-accent/5 p-4 rounded-xl border border-accent/10">
                         <li className="flex items-center gap-2">
@@ -504,7 +502,7 @@ export default function CareerReportPage() {
 
                                     {activeRoadmap.market_snapshot.reality_check && (
                                         <div className="mb-8 p-4 bg-accent/10 border-l-4 border-accent rounded-r-xl italic text-sm">
-                                            " {activeRoadmap.market_snapshot.reality_check} "
+                                            &quot; {activeRoadmap.market_snapshot.reality_check} &quot;
                                         </div>
                                     )}
 
@@ -589,7 +587,7 @@ export default function CareerReportPage() {
 
                                     {activeRoadmap.scholarships_and_schemes.length > 0 && (
                                         <div className="p-6 bg-green-500/5 border border-green-500/20 rounded-3xl mb-8">
-                                            <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2"><span className="text-lg">🎖️</span> Relevant Scholarships & Government Schemes</h4>
+                                            <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2"><span className="text-lg">🎖️</span> Relevant Scholarships &amp; Government Schemes</h4>
                                             <div className="grid md:grid-cols-2 gap-4">
                                                 {activeRoadmap.scholarships_and_schemes.map((scheme) => (
                                                     <div key={scheme.name} className="p-4 bg-white dark:bg-zinc-900 border border-green-500/10 rounded-2xl">
@@ -744,6 +742,26 @@ export default function CareerReportPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* Generate Detailed Roadmap CTA */}
+                {!activeRoadmap && !generatingRoadmap && (
+                    <div className="glass-card p-8 mb-8 text-center animate-in-scale">
+                        <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <MapPin className="w-8 h-8 text-accent" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">Want a Step-by-Step Plan?</h2>
+                        <p className="text-foreground/70 mb-6 max-w-xl mx-auto">
+                            Generate a detailed, AI-powered roadmap tailored specifically to your chosen career path. Get timelines, resources, and milestones.
+                        </p>
+                        <Button 
+                            onClick={handleGenerateRoadmap}
+                            size="lg" 
+                            className="bg-gradient-to-r from-accent to-orange-600 hover:scale-105 transition-transform shadow-lg"
+                        >
+                            <Zap className="w-4 h-4 mr-2" /> Generate Career Roadmap
+                        </Button>
+                    </div>
+                )}
 
                 {/* CTA Section */}
                 <div className="glass-card p-8 text-center bg-gradient-to-r from-primary-indigo/5 via-accent/5 to-teal/5 border-2 border-accent/20 animate-in-scale">

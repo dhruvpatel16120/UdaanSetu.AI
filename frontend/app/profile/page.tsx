@@ -2,30 +2,34 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useI18n } from "@/hooks/useI18n";
 import { useTheme } from "@/store/theme/ThemeProvider";
 import { useRouter } from "next/navigation";
 import { ENV } from "@/constants/env";
 import { ROUTES } from "@/constants/routes";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-    User, Mail, Calendar, MapPin,
-    BookOpen, Briefcase, Target,
-    Edit, Save, Loader2, Award, Zap, AlertTriangle
+    User, Mail, MapPin,
+    BookOpen, Target,
+    Edit, Loader2, Award, Zap, AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/utils/cn";
 
 export default function ProfilePage() {
     const { user, status } = useAuth();
+    const { t } = useI18n();
     const { theme } = useTheme();
     const router = useRouter();
 
     // State
     const [loading, setLoading] = useState(true);
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const [profile, setProfile] = useState<any>(null);
     const [assessment, setAssessment] = useState<any>(null);
-    const [error, setError] = useState<string | null>(null);
+
     const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
     const countdownTimer = useRef<NodeJS.Timeout | null>(null);
@@ -61,9 +65,8 @@ export default function ProfilePage() {
                     setRedirectCountdown(7);
                 }
 
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Failed to load profile data", err);
-                setError("Could not load full profile.");
             } finally {
                 setLoading(false);
             }
@@ -101,7 +104,7 @@ export default function ProfilePage() {
         return (
             <div className="min-h-screen flex items-center justify-center p-4">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-4">Please Sign In</h1>
+                    <h1 className="text-2xl font-bold mb-4">{t("auth.action.signIn")}</h1>
                     <Link href={ROUTES.auth.signIn}>
                         <Button>Sign In</Button>
                     </Link>
@@ -127,9 +130,9 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="space-y-2">
-                        <h2 className="text-2xl font-bold text-foreground">Assessment Required</h2>
+                        <h2 className="text-2xl font-bold text-foreground">{t("assessment.required")}</h2>
                         <p className="text-muted-foreground">
-                            To view your profile and personalized guidance, you must first complete the UdaanSetu assessment test.
+                            {t("assessment.requiredDesc") || "To view your profile and personalized guidance, you must first complete the UdaanSetu assessment test."}
                         </p>
                     </div>
 
@@ -137,12 +140,12 @@ export default function ProfilePage() {
                         <div className="text-4xl font-extrabold text-accent">
                             {redirectCountdown}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-widest">Redirecting in seconds</p>
+                        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-widest">{t("common.redirecting")}</p>
                     </div>
 
                     <Link href={ROUTES.assessment || "/assessment"}>
                         <Button className="w-full bg-accent text-white py-6 text-lg font-bold shadow-lg shadow-accent/20">
-                            Start Assessment Now
+                            {t("nav.startAssessment")}
                         </Button>
                     </Link>
                 </motion.div>
@@ -179,7 +182,7 @@ export default function ProfilePage() {
                         <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-tr from-accent to-orange-500 p-1 shadow-2xl">
                             <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                                 {user.photoURL ? (
-                                    <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                                    <Image src={user.photoURL} alt="Profile" className="object-cover" fill />
                                 ) : (
                                     <User className="w-12 h-12 text-muted-foreground" />
                                 )}
@@ -212,7 +215,7 @@ export default function ProfilePage() {
 
                         <Link href={ROUTES.profileEdit}>
                             <Button variant="outline" className="gap-2">
-                                <Edit className="w-4 h-4" /> Edit Profile
+                                <Edit className="w-4 h-4" /> {t("profile.edit")}
                             </Button>
                         </Link>
                     </div>
@@ -232,7 +235,7 @@ export default function ProfilePage() {
                             className="glass-card p-8 bg-card border-border"
                         >
                             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                                <Award className="w-5 h-5 text-accent" /> Professional Bio
+                                <Award className="w-5 h-5 text-accent" /> {t("profile.bio")}
                             </h2>
                             {profileBio ? (
                                 <div className="prose dark:prose-invert max-w-none">
@@ -242,9 +245,9 @@ export default function ProfilePage() {
                                 </div>
                             ) : (
                                 <div className="text-center py-8 bg-muted/30 rounded-xl">
-                                    <p className="text-muted-foreground mb-4">No bio generated yet.</p>
+                                    <p className="text-muted-foreground mb-4">{t("profile.noBio")}</p>
                                     <Link href={ROUTES.assessment}>
-                                        <Button>Take Assessment</Button>
+                                        <Button>{t("nav.startAssessment")}</Button>
                                     </Link>
                                 </div>
                             )}
@@ -258,7 +261,7 @@ export default function ProfilePage() {
                             className="glass-card p-8 bg-card border-border"
                         >
                             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-yellow-500" /> Top Strengths
+                                <Zap className="w-5 h-5 text-yellow-500" /> {t("profile.topStrengths")}
                             </h2>
                             <div className="grid sm:grid-cols-2 gap-4">
                                 {aiReport.topStrengths?.map((strength: string, i: number) => (
@@ -266,7 +269,7 @@ export default function ProfilePage() {
                                         <div className="w-2 h-2 rounded-full bg-accent" />
                                         <span className="font-medium text-foreground">{strength}</span>
                                     </div>
-                                )) || <p className="text-muted-foreground">Strengths will appear here after assessment.</p>}
+                                )) || <p className="text-muted-foreground">{t("profile.noStrengths")}</p>}
                             </div>
                         </motion.div>
 
@@ -281,7 +284,7 @@ export default function ProfilePage() {
                             className="glass-card p-6 bg-card border-border sticky top-24"
                         >
                             <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
-                                <Target className="w-5 h-5 text-blue-500" /> Skill Profile
+                                <Target className="w-5 h-5 text-blue-500" /> {t("profile.skillProfile")}
                             </h2>
 
                             {Object.entries(scores).length > 0 ? (
@@ -307,15 +310,15 @@ export default function ProfilePage() {
                                 </div>
                             ) : (
                                 <div className="text-center py-8">
-                                    <p className="text-sm text-muted-foreground mb-4">Complete assessment to see scores</p>
+                                    <p className="text-sm text-muted-foreground mb-4">{t("profile.completeAssessment")}</p>
                                     <Link href={ROUTES.assessment}>
-                                        <Button variant="outline" size="sm">Start Now</Button>
+                                        <Button variant="outline" size="sm">{t("common.startNow")}</Button>
                                     </Link>
                                 </div>
                             )}
 
                             <div className="mt-8 pt-6 border-t border-border">
-                                <h3 className="text-sm font-semibold mb-2">Recommended Path</h3>
+                                <h3 className="text-sm font-semibold mb-2">{t("profile.recommendedPath")}</h3>
                                 <div className="p-4 bg-green-500/10 rounded-xl border border-green-500/20">
                                     <p className="font-bold text-green-600 dark:text-green-400">
                                         {aiReport.recommendations?.[0]?.title || "General Exploratory"}

@@ -2,7 +2,7 @@
 
 import React, { createContext, useCallback, useEffect, useMemo, useState } from "react";
 
-import { DEFAULT_LANGUAGE, LANGUAGE_LABELS, TRANSLATIONS } from "@/constants/i18n";
+import { DEFAULT_LANGUAGE, LANGUAGE_LABELS, translations } from "@/constants/i18n";
 import { STORAGE_KEYS } from "@/constants/storageKeys";
 import type { Language, TranslationKey } from "@/types/i18n";
 
@@ -49,8 +49,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   const t = useCallback(
     (key: TranslationKey, params?: Record<string, string | number>) => {
-      const bundle = TRANSLATIONS[language];
-      let text: string = bundle[key] ?? TRANSLATIONS[DEFAULT_LANGUAGE][key] ?? key;
+      const bundle = translations[language];
+      let text: string = bundle[key] ?? translations[DEFAULT_LANGUAGE][key] ?? key;
 
       if (params) {
         Object.entries(params).forEach(([paramKey, paramValue]) => {

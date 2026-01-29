@@ -13,6 +13,7 @@ import { ENV } from "@/constants/env";
 interface BackendOption {
   id: string;
   text: { en: string; gu: string };
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   traits?: Record<string, any>;
 }
 
@@ -84,7 +85,7 @@ export function BackendQASection() {
     return language === "gu" ? textObj.gu : textObj.en;
   };
 
-  const handleBasicInfoSubmit = (info: any) => {
+  const handleBasicInfoSubmit = (info: { name: string; gender: string; dateOfBirth: string; location: string; }) => {
     setAssessmentData(prev => ({
       ...prev,
       background: { ...info }
