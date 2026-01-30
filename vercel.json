@@ -16,8 +16,8 @@
       "destination": "/backend/main.py"
     },
     {
-      "source": "/_next/(.*)",
-      "destination": "/frontend/_next/$1"
+      "source": "/(.*)",
+      "destination": "/frontend/$1"
     }
   ]
 }
