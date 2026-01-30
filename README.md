@@ -164,7 +164,14 @@ git clone https://github.com/dhruvpatel16120/UdaanSetu.AI.git
 cd UdaanSetu.AI
 ```
 
-### 2. Component Setup
+### 2. Environment Configuration
+
+UdaanSetu requires several environment variables for Firebase and Google Gemini to work.
+
+- See **[` .env.example.txt`](./.env.example.txt)** for the required template.
+- Create a `.env` file in the `frontend/` directory and another in the `backend/` directory based on the template.
+
+### 3. Component Setup
 
 Detailed instructions for setting up each part of the monorepo:
 

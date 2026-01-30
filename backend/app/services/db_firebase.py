@@ -34,8 +34,29 @@ import json
 def init_firebase():
     if not firebase_admin._apps:
         try:
-            # 1. Try Environment Variable (Best for Vercel)
-            env_creds = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+            # 1. Try File Path (Preferred for Local Dev)
+            possible_paths = [
+                "serviceAccountKey.json",
+                os.path.join(os.getcwd(), "serviceAccountKey.json"),
+                os.path.join(os.path.dirname(__file__), "../../serviceAccountKey.json"),
+                os.path.join(os.path.dirname(__file__), "../../../serviceAccountKey.json")
+            ]
+            
+            cred_path = None
+            for p in possible_paths:
+                if os.path.exists(p):
+                    cred_path = p
+                    break
+
+            if cred_path:
+                cred = credentials.Certificate(cred_path)
+                firebase_admin.initialize_app(cred)
+                print(f"Firebase Admin Initialized with {cred_path}")
+                return
+
+            # 2. Try Environment Variable (Best for Cloud/Vercel)
+            # Support multiple possible env var names
+            env_creds = os.getenv("FIREBASE_SERVICE_ACCOUNT") or os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
             if env_creds:
                 try:
                     cred_dict = json.loads(env_creds)
@@ -44,28 +65,9 @@ def init_firebase():
                     print("Firebase Admin Initialized from Environment Variable")
                     return
                 except json.JSONDecodeError as e:
-                    print(f"❌ Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON: {e}")
+                    print(f"❌ Failed to parse Firebase Environment Variable: {e}")
 
-            # 2. Try File Path (Fallback for Local)
-            possible_paths = [
-                "serviceAccountKey.json",
-                os.path.join(os.getcwd(), "serviceAccountKey.json"),
-                os.path.join(os.path.dirname(__file__), "../../serviceAccountKey.json"),
-                os.path.join(os.path.dirname(__file__), "../../../serviceAccountKey.json")
-            ]
-            
-            cred_path = possible_paths[0]
-            for p in possible_paths:
-                if os.path.exists(p):
-                    cred_path = p
-                    break
-
-            if os.path.exists(cred_path):
-                cred = credentials.Certificate(cred_path)
-                firebase_admin.initialize_app(cred)
-                print(f"Firebase Admin Initialized with {cred_path}")
-            else:
-                print("Warning: serviceAccountKey.json not found and FIREBASE_SERVICE_ACCOUNT_JSON not set. Firestore saving will fail.")
+            print("⚠️ Warning: No Firebase credentials found (JSON file or Environment Variable). Firestore saving will fail.")
         except Exception as e:
             print(f"Failed to initialize Firebase: {e}")
 
