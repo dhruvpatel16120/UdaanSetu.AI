@@ -1,14 +1,18 @@
 # 🚀 Deployment Guide: UdaanSetu.AI on Vercel
 
-This guide explains how to deploy the full-stack UdaanSetu application on Vercel's free tier. We use a **Vercel-first monorepo strategy**, where both the Next.js frontend and Python backend are hosted on the same platform.
+> **"From Localhost to Rural India."**
+
+This guide explains how to deploy the full-stack **UdaanSetu.AI** application on Vercel's free tier. We use a **Monorepo Strategy**, where both the Next.js frontend and Python FastAPI backend are hosted on the same domain.
 
 ---
 
-## 🏗️ Deployment Strategy
+## 🏗️ Deployment Architecture
 
-- **Frontend**: Next.js (App Router) deployed as standard web pages.
-- **Backend**: Python scripts inside the `backend/` directory deployed as **Serverless Functions**.
-- **Integration**: The root `vercel.json` coordinates routing between the two.
+- **Frontend**: Next.js 16 (App Router) deployed as Edge/Serverless functions.
+- **Backend**: Python FastAPI deployed as a **Serverless Function** via the `@vercel/python` runtime.
+- **Routing**: The root `vercel.json` handles traffic:
+  - `/api/*` -> Backend (`backend/main.py`)
+  - `/*` -> Frontend (Next.js)
 
 ---
 
@@ -16,59 +20,68 @@ This guide explains how to deploy the full-stack UdaanSetu application on Vercel
 
 1.  A **Vercel** account (connected to GitHub).
 2.  A **Firebase** project with Firestore and Authentication enabled.
-3.  A **Google AI Studio** API Key (for Gemini).
-4.  (Optional) A **Railway** or **Supabase** PostgreSQL instance for the RAG knowledge base.
+3.  A **Google AI Studio** API Key (for Gemini 1.5).
+4.  Git installed locally.
 
 ---
 
 ## 🛠️ Step-by-Step Setup
 
-### 1. Configure `vercel.json`
+### 1. Prepare Firebase Credentials
 
-Ensuring the root contains a `vercel.json` that redirects `/api/*` requests to the backend:
+Vercel cannot securely store `serviceAccountKey.json` files. We must convert it to a string.
 
-```json
-{
-  "rewrite": [{ "source": "/api/(.*)", "destination": "/backend/$1" }]
-}
-```
+1.  Open your `backend/serviceAccountKey.json`.
+2.  Minify the JSON content (remove newlines/spaces) using an online tool or script.
+3.  Copy the entire JSON string.
 
-### 2. Prepare Environment Variables
+### 2. Configure Environment Variables
 
-Add the following secrets to your Vercel Project Settings (**Settings > Environment Variables**):
+Go to your Vercel Project Dashboard > **Settings** > **Environment Variables** and add:
 
-| Variable                          | Source                                    |
-| :-------------------------------- | :---------------------------------------- |
-| `NEXT_PUBLIC_FIREBASE_API_KEY`    | Firebase Config                           |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase Config                           |
-| `GEMINI_API_KEY`                  | Google AI Studio                          |
-| `FIREBASE_SERVICE_ACCOUNT`        | Minified `serviceAccountKey.json` content |
-| `DATABASE_URL`                    | PostgreSQL Connection String              |
+| Key | Value | Purpose |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | *(From your local .env)* | Frontend Auth |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | *(From your local .env)* | Frontend Auth |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | *(From your local .env)* | Frontend Auth |
+| `GEMINI_API_KEY` | `AIzaSy...` | Backend AI Logic |
+| `FIREBASE_SERVICE_ACCOUNT` | `{"type": "service_account", ...}` | Backend Auth (The JSON string from Step 1) |
+| `NEXT_PUBLIC_API_URL` | *(Leave Empty)* | Frontend API Base URL (empty means relative path) |
+
+> **Note:** Do NOT set `NEXT_PUBLIC_API_URL` to `localhost`. Leaving it empty or undefined ensures calls go to `/api/...`, which `vercel.json` routes correctly.
 
 ### 3. Deploy from GitHub
 
-1.  Push your code to a GitHub repository.
-2.  Import the project in Vercel.
-3.  Vercel will automatically detect the Next.js frontend.
-4.  Ensure the **Root Directory** is set to the repository root.
+1.  Push your latest code to GitHub.
+2.  Log in to Vercel and **Add New Project**.
+3.  Select your repository `UdaanSetu.AI`.
+4.  **Framework Preset**: Select **Next.js**.
+5.  **Root Directory**: Keep it as `./` (Root).
+6.  Click **Deploy**.
+
+Vercel will detect the `vercel.json` and automatically configure the Python runtime for the `backend/` folder and Next.js for the `frontend/` folder.
 
 ---
 
 ## ⚙️ Backend Serverless Constraints
 
-When running on Vercel Free Tier, keep these limits in mind:
+Using Python on Vercel (AWS Lambda under the hood) has specific limits:
 
-- **Execution Timeout**: 10 seconds (standard) or 30 seconds (Pro). Ensure AI calls are optimized.
-- **Memory**: 1024 MB.
-- **Statelessness**: No local files are saved between requests. Use Firestore for persistence.
+- **Cold Starts**: The first request might take 3-5 seconds to boot the Python environment.
+- **Execution Timeout**: Max **10 seconds** on Free Tier. (Our AI responses stream to avoid this, but long initial generations might hit limits).
+- **No Local Files**: You cannot save generated PDFs or images to the disk. We use Firestore for all persistence.
+- **Memory**: 1024 MB limit. This is why we replaced FAISS with **LeanRAG** (JSON-based).
 
 ---
 
-## 🛠️ Troubleshooting Deployment
+## 🛠️ Troubleshooting
 
-- **404 on API Routes**: Check if `vercel.json` has the correct rewrites.
-- **Python Dependency Errors**: Ensure `backend/requirements.txt` is up to date. Vercel automatically installs these during deployment.
-- **CORS Issues**: Our `vercel.json` strategy typically avoids CORS by hosting everything on the same domain.
+| Issue | Solution |
+| :--- | :--- |
+| **404 on /api/user/me** | Check root `vercel.json`. Ensure `backend/requirements.txt` is present. |
+| **"Invalid Grant" Error** | You pasted the `FIREBASE_SERVICE_ACCOUNT` incorrectly. It must be valid JSON. |
+| **Build Fail (Python)** | Check logs. Ensure you aren't using heavy libraries like `torch` or `transformers`. |
+| **CORS Errors** | Should not happen if `NEXT_PUBLIC_API_URL` is empty (Same Origin). |
 
 ---
 

@@ -57,7 +57,7 @@ This document outlines the structured architecture for the backend reasoning and
   - **Vector Search**: Search across the Knowledge Base and the User's specific Report.
   - **Contextual Answer**: LLM answers _specifically_ for this user (e.g., "Considering your interest in tech (Module 1 detection)...").
 - **Tech Stack**:
-  - Retrieval: FAISS / Pinecone / ChromaDB.
+  - Retrieval: LeanRAG (JSON-based Keyword Search) for Serverless Efficiency.
   - LLM: Gemini 1.5 Pro/Flash.
 
 ---

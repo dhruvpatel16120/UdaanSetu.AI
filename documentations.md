@@ -44,9 +44,9 @@ For deep-dives into specific parts of the system, please refer to the following:
 
 | Layer        | Technology                                                  |
 | :----------- | :---------------------------------------------------------- |
-| **Frontend** | Next.js 15, Tailwind CSS, Framer Motion                     |
+| **Frontend** | Next.js 16, Tailwind CSS 4, Framer Motion                   |
 | **Backend**  | Python (FastAPI / Serverless), LangChain                    |
-| **Database** | Firebase Firestore (Real-time), PostgreSQL (Knowledge Base) |
+| **Database** | Firebase Firestore (Real-time), JSON (Knowledge Base)       |
 | **AI / LLM** | Google Gemini 1.5 Pro/Flash                                 |
 | **Auth**     | Firebase Authentication                                     |
 | **Hosting**  | Vercel (Frontend & Backend)                                 |

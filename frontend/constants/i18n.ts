@@ -9,6 +9,9 @@ import { assessmentTranslations } from "./translations/assessment";
 import { resourcesTranslations } from "./translations/resources";
 import { profileTranslations } from "./translations/profile";
 import { commonTranslations } from "./translations/common";
+import { dashboardTranslations } from "./translations/dashboard";
+import { careerReportTranslations } from "./translations/career_report";
+import { mentorTranslations } from "./translations/mentor";
 
 // Merge all translations for each language
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
@@ -28,6 +31,9 @@ export const translations = {
     ...resourcesTranslations.en,
     ...profileTranslations.en,
     ...commonTranslations.en,
+    ...dashboardTranslations.en,
+    ...careerReportTranslations.en,
+    ...mentorTranslations.en,
   },
   gu: {
     ...navTranslations.gu,
@@ -40,6 +46,9 @@ export const translations = {
     ...resourcesTranslations.gu,
     ...profileTranslations.gu,
     ...commonTranslations.gu,
+    ...dashboardTranslations.gu,
+    ...careerReportTranslations.gu,
+    ...mentorTranslations.gu,
   },
 } as const;
 

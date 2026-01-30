@@ -7,28 +7,15 @@ python-dotenv
 # Firebase & Auth
 firebase-admin
 
-# LangChain & AI
+# LangChain & AI (Core Pillars)
 langchain
 langchain-google-genai
 langchain-community
 google-genai
 
-# Vector Store & Embeddings
-faiss-cpu
-sentence-transformers
-
-# Data Processing
-pandas
-numpy
-
-# Web Scraping & Search
+# Web Search (Pillar 3)
 duckduckgo-search
-beautifulsoup4
 requests
-
-# Document Loaders
-pypdf
-python-docx
 
 # Utilities
 python-multipart

@@ -8,15 +8,14 @@ import { ROUTES } from "@/constants/routes";
 import { cn } from "@/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
 import { ENV } from "@/constants/env";
+import { useI18n } from "@/hooks/useI18n";
+import { useCareerReport } from "@/hooks/useUserData";
 import {
     Award,
-    CheckCircle2,
-    User,
-    Zap,
-    ArrowRight,
-    Loader2,
-    MapPin
+    CheckCircle2, Loader2,
+    User, Zap, MapPin
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface RoadmapData {
     career_title: string;
@@ -78,15 +77,45 @@ interface ReportData {
 
 export default function CareerReportPage() {
     const { user, status } = useAuth();
+    const { t } = useI18n();
     // const { theme } = useTheme(); // unused
     const [mounted, setMounted] = useState(false);
 
     // State for Report Data
+    const { data: aiReport, isLoading: loadingReport, error: swrError } = useCareerReport(user?.uid);
     const [reportData, setReportData] = useState<ReportData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [generatingReport, setGeneratingReport] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [isReportMissing, setIsReportMissing] = useState(false);
+
+    useEffect(() => {
+        if (!loadingReport && !swrError && !aiReport) {
+            setIsReportMissing(true);
+            setLoading(false);
+        } else if (aiReport) {
+            const transformedData: ReportData = {
+                generatedAt: new Date(Date.now()),
+                careerReadiness: aiReport.careerReadiness || 50,
+                topStrengths: aiReport.topStrengths || [],
+                personalityTraits: aiReport.personalityTraits || [],
+                recommendations: aiReport.recommendations || [],
+                currentSkills: aiReport.currentSkills || [],
+                recommendedSkills: aiReport.recommendedSkills || [],
+                learningPaths: aiReport.learningPaths || [],
+                actionPlan: aiReport.actionPlan || { shortTerm: [], longTerm: [] }
+            };
+            setReportData(transformedData);
+            setIsReportMissing(false);
+            setLoading(false);
+        } else if (swrError && swrError.status === 404) {
+            setIsReportMissing(true);
+            setLoading(false);
+        } else if (swrError) {
+            setError(swrError.message);
+            setLoading(false);
+        }
+    }, [aiReport, loadingReport, swrError]);
     const [generatingRoadmap, setGeneratingRoadmap] = useState(false);
     const [activeRoadmap, setActiveRoadmap] = useState<RoadmapData | null>(null);
 
@@ -97,77 +126,53 @@ export default function CareerReportPage() {
     useEffect(() => {
         if (status === "loading") return;
 
-        async function fetchReport() {
-            if (!user?.uid) return;
-            const userId = user.uid;
-            try {
-                // Fetch Direct Career Report (New Architecture)
-                const res = await fetch(`${ENV.apiUrl}/api/assessment/report/${userId}`);
-                
-                if (!res.ok) {
-                    if (res.status === 404) {
-                        setIsReportMissing(true);
-                        setLoading(false);
-                        return;
-                    }
-                    throw new Error("Failed to load report");
-                }
-                
-                const aiReport = await res.json();
-
-                // Direct Mapping from Dedicated Report Collection
-                const transformedData: ReportData = {
-                    generatedAt: new Date(Date.now()), // Or fetch timestamp if we returned it
-                    careerReadiness: aiReport.careerReadiness || 50,
-                    topStrengths: aiReport.topStrengths || [],
-                    personalityTraits: aiReport.personalityTraits || [],
-                    recommendations: aiReport.recommendations || [],
-                    currentSkills: aiReport.currentSkills || [],
-                    recommendedSkills: aiReport.recommendedSkills || [],
-                    learningPaths: aiReport.learningPaths || [],
-                    actionPlan: aiReport.actionPlan || { shortTerm: [], longTerm: [] }
-                };
-
-                setReportData(transformedData);
-
-            } catch (err) {
-                console.error(err);
-                const errorMessage = err instanceof Error ? err.message : "Failed to load report";
-                setError(errorMessage);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        if (status === "authenticated") {
-            // Check for assessment and report status
-            fetchReport();
-        } else if (status === "unauthenticated") {
+        // Report is fetched via SWR hook
+        // The logic below is for handling authentication status, not fetching the report itself.
+        if (status === "unauthenticated") {
             setLoading(false);
         }
 
-    }, [user, status]);
+    }, [user, status, t]);
 
     // Check if assessment is not done (implicitly handled by 404 on report, but explicit check is better if API supports it)
     // For now, relies on isReportMissing state which is set on 404 from report endpoint
 
 
     const handleGenerateReport = async () => {
-        if (!user?.uid) return;
+        if (!user?.uid) {
+            toast.error(t("report.signInToView"));
+            return;
+        }
         setGeneratingReport(true);
         try {
-            const res = await fetch(`${ENV.apiUrl}/api/assessment/generate-report/${user.uid}`, { method: "POST" });
-            if (!res.ok) throw new Error("Generation failed");
+            const res = await fetch(`${ENV.apiUrl}/api/roadmap/generate`, { 
+                method: "POST",
+                headers: {
+                   'Content-Type': 'application/json',
+                   'x-firebase-id': user.uid
+                },
+                body: JSON.stringify({ career_goal: "Software Engineering" }) // Default for now
+            });
+            
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || "Generation failed");
+            }
+            
+            toast.success(t("report.linkCopied")); // Reusing key for success
             window.location.reload(); // Reload to fetch fresh data
         } catch (err) {
             console.error(err);
-            alert("Failed to generate report. Please try again.");
+            toast.error(err instanceof Error ? err.message : t("report.failedGenerate"));
             setGeneratingReport(false);
         }
     };
 
     const handleGenerateRoadmap = async () => {
-        if (!user?.uid) return;
+        if (!user?.uid) {
+             toast.error(t("report.signInToView"));
+             return;
+        }
         setGeneratingRoadmap(true);
         setActiveRoadmap(null);
         
@@ -175,27 +180,27 @@ export default function CareerReportPage() {
         document.getElementById("roadmap-view")?.scrollIntoView({ behavior: "smooth" });
 
         try {
-            // Simulate AI generation delay or call actual API
-            // For now, we'll wait 2 seconds then mock it if no API exists, 
-            // or better, try to fetch it.
-            // Assuming an endpoint exists: POST /api/roadmap/generate
-            
-            const res = await fetch(`${ENV.apiUrl}/api/assessment/roadmap/${user.uid}`, { 
+            const res = await fetch(`${ENV.apiUrl}/api/roadmap/generate`, { 
                 method: "POST",
                 headers: {
-                    'Content-Type': 'application/json'
-                }
+                    'Content-Type': 'application/json',
+                    'x-firebase-id': user.uid
+                },
+                body: JSON.stringify({ career_goal: reportData?.recommendations[0]?.title || "Software Engineering" })
              });
 
-            if (!res.ok) throw new Error("Roadmap generation failed");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || "Roadmap generation failed");
+            }
             
             const data = await res.json();
             setActiveRoadmap(data);
+            toast.success(t("report.linkCopied")); // Trans: Generated success
 
         } catch (err) {
             console.error(err);
-            // Fallback mock for demo if API fails (optional, but good for user exp if backend isn't ready)
-            alert("Failed to generate roadmap. Backend service might be unavailable.");
+            toast.error(t("report.failedRoadmap"));
         } finally {
             setGeneratingRoadmap(false);
         }
@@ -219,10 +224,11 @@ export default function CareerReportPage() {
                 await navigator.share(shareData);
             } else {
                 await navigator.clipboard.writeText(shareUrl);
-                alert("Link copied to clipboard!");
+                toast.success(t("report.linkCopied"));
             }
         } catch (err) {
             console.error("Error sharing:", err);
+            toast.error("Failed to share link.");
         }
     };
 
@@ -237,7 +243,7 @@ export default function CareerReportPage() {
                     <div className="w-20 h-20 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
                     <div className="absolute inset-0 w-20 h-20 border-4 border-primary-indigo/20 border-t-transparent rounded-full animate-spin animation-delay-200"></div>
                     <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-foreground/60 font-medium animate-pulse">
-                        Analyzing Profile...
+                        {t("assessment.analyzing")}
                     </p>
                 </div>
             </div>
@@ -251,18 +257,18 @@ export default function CareerReportPage() {
                     <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
                          <Zap className="w-8 h-8 text-accent animate-pulse" />
                     </div>
-                    <h1 className="text-2xl font-bold mb-4">Unlock Your Career Report</h1>
+                    <h1 className="text-2xl font-bold mb-4">{t("report.unlockTitle")}</h1>
                     <p className="text-foreground/70 mb-4">
-                        We can&apos;t generate your report yet! Please make sure you have:
+                        {t("report.unlockDesc")}
                     </p>
                     <ul className="text-left text-sm text-foreground/80 mb-8 space-y-2 bg-accent/5 p-4 rounded-xl border border-accent/10">
                         <li className="flex items-center gap-2">
                             <span className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">1</span>
-                            Completed the Career Assessment
+                            {t("report.unlockStep1")}
                         </li>
                         <li className="flex items-center gap-2">
                              <span className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">2</span>
-                            Updated your Bio Profile
+                            {t("report.unlockStep2")}
                         </li>
                     </ul>
                     
@@ -272,19 +278,20 @@ export default function CareerReportPage() {
                                 variant="outline"
                                 className="w-full border-accent/30 hover:bg-accent/5"
                             >
-                                Take Assessment
+                                {t("report.takeAssessment")}
                             </Button>
                         </Link>
                         <Button 
                             onClick={handleGenerateReport} 
                             disabled={generatingReport}
-                            className="w-full bg-gradient-to-r from-accent to-orange-600 shadow-lg text-lg py-4"
+                            className="w-full bg-gradient-to-r from-accent to-orange-600 shadow-lg shadow-accent/20"
                         >
                             {generatingReport ? (
-                                <><Loader2 className="mr-2 h-5 w-5 animate-spin"/> Generating...</>
-                            ) : (
-                                <>Generate My Report Now <ArrowRight className="ml-2 h-5 w-5"/></>
-                            )}
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    {t("report.generating")}
+                                </>
+                            ) : t("report.generateNow")}
                         </Button>
                     </div>
                 </div>
@@ -301,10 +308,10 @@ export default function CareerReportPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-bold mb-4">Report Unavailable</h1>
+                    <h1 className="text-2xl font-bold mb-4">{t("report.unavailable")}</h1>
                     <p className="text-foreground/70 mb-6">{error}</p>
                     <Link href="/assessment">
-                        <Button className="bg-gradient-to-r from-accent to-orange-600 shadow-lg hover:scale-105 transition-transform">Take Assessment</Button>
+                        <Button className="bg-gradient-to-r from-accent to-orange-600 shadow-lg hover:scale-105 transition-transform">{t("report.takeAssessment")}</Button>
                     </Link>
                 </div>
             </div>
@@ -320,10 +327,10 @@ export default function CareerReportPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-                    <p className="text-foreground/70 mb-6">Please sign in to view your career report.</p>
+                    <h1 className="text-2xl font-bold mb-4">{t("report.accessDenied")}</h1>
+                    <p className="text-foreground/70 mb-6">{t("report.signInToView")}</p>
                     <Link href="/auth?mode=sign-in">
-                        <Button className="bg-gradient-to-r from-accent to-orange-600">Sign In</Button>
+                        <Button className="bg-gradient-to-r from-accent to-orange-600">{t("auth.action.signIn")}</Button>
                     </Link>
                 </div>
             </div>
@@ -340,10 +347,10 @@ export default function CareerReportPage() {
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div>
                             <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-indigo via-accent to-teal bg-clip-text text-transparent">
-                                Your Career Report
+                                {t("report.title")}
                             </h1>
                             <p className="text-foreground/60" suppressHydrationWarning>
-                                Generated on {mounted && reportData.generatedAt.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                {t("report.generatedOn")} {mounted && reportData.generatedAt.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                             </p>
                         </div>
                         <div className="flex gap-3 no-print">
@@ -351,13 +358,13 @@ export default function CareerReportPage() {
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
-                                Export PDF
+                                {t("report.exportPdf")}
                             </Button>
                             <Button variant="outline" size="sm" onClick={handleShare}>
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                                 </svg>
-                                Share
+                                {t("report.share")}
                             </Button>
                         </div>
                     </div>
@@ -367,7 +374,7 @@ export default function CareerReportPage() {
                 <div className="glass-card p-8 mb-8 animate-in-scale animation-delay-100">
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                         <span className="text-3xl">👤</span>
-                        Profile Summary
+                        {t("report.profileSummary")}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Career Readiness */}
@@ -392,12 +399,12 @@ export default function CareerReportPage() {
                                     <span className="text-3xl font-bold">{reportData.careerReadiness}%</span>
                                 </div>
                             </div>
-                            <p className="font-semibold text-lg">Career Readiness</p>
+                            <p className="font-semibold text-lg">{t("report.careerReadiness")}</p>
                         </div>
 
                         {/* Top Strengths */}
                         <div>
-                            <h3 className="font-semibold text-lg mb-3 text-accent">Top Strengths</h3>
+                            <h3 className="font-semibold text-lg mb-3 text-accent">{t("report.topStrengths")}</h3>
                             <div className="space-y-2">
                                 {reportData.topStrengths.map((strength, index) => (
                                     <div key={strength} className="flex items-center gap-2 animate-in-scale" style={{ animationDelay: `${index * 100}ms` }}>
@@ -410,7 +417,7 @@ export default function CareerReportPage() {
 
                         {/* Personality Traits */}
                         <div>
-                            <h3 className="font-semibold text-lg mb-3 text-primary-indigo">Personality Traits</h3>
+                            <h3 className="font-semibold text-lg mb-3 text-primary-indigo">{t("report.personalityTraits")}</h3>
                             <div className="space-y-2">
                                 {reportData.personalityTraits.map((trait, index) => (
                                     <div key={trait} className="px-3 py-2 bg-primary-indigo/10 rounded-lg border border-primary-indigo/20 text-sm animate-in-scale" style={{ animationDelay: `${index * 100}ms` }}>
@@ -427,7 +434,7 @@ export default function CareerReportPage() {
                 <div className="mb-8">
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                         <span className="text-3xl">🎯</span>
-                        Recommended Career Paths
+                        {t("report.recommendedPaths")}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {reportData.recommendations.map((career, index) => (
@@ -435,12 +442,12 @@ export default function CareerReportPage() {
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="font-semibold text-lg">{career.title}</h3>
                                     <div className="px-3 py-1 bg-gradient-to-r from-accent/20 to-orange-600/20 rounded-full border border-accent/30 text-sm font-bold text-accent">
-                                        {career.match}%
+                                        {career.match}% {t("report.match")}
                                     </div>
                                 </div>
                                 <p className="text-foreground/70 text-sm mb-4">{career.description}</p>
                                 <div className="border-t border-foreground/10 pt-4 flex-1">
-                                    <p className="text-xs font-semibold text-foreground/50 mb-2">Requirements:</p>
+                                    <p className="text-xs font-semibold text-foreground/50 mb-2">{t("report.requirements")}:</p>
                                     <div className="space-y-1">
                                         {career.requirements.map((req) => (
                                             <div key={req} className="flex items-center gap-2 text-sm text-foreground/70">
@@ -484,18 +491,18 @@ export default function CareerReportPage() {
                                     <div className="absolute top-0 right-0 p-8 opacity-10">
                                         <svg className="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" /></svg>
                                     </div>
-                                    <h2 className="text-3xl font-black mb-4">Strategic Blueprint: {activeRoadmap.career_title}</h2>
+                                    <h2 className="text-3xl font-black mb-4">{t("report.strategicBlueprint")}: {activeRoadmap.career_title}</h2>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                                         <div className="p-4 bg-background/50 rounded-2xl border border-border">
-                                            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Market Demand</p>
+                                            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">{t("report.marketDemand")}</p>
                                             <p className="text-xl font-bold text-accent">{activeRoadmap.market_snapshot.demand}</p>
                                         </div>
                                         <div className="p-4 bg-background/50 rounded-2xl border border-border">
-                                            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Entry Salary</p>
+                                            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">{t("report.entrySalary")}</p>
                                             <p className="text-xl font-bold text-green-500">{activeRoadmap.market_snapshot.salary}</p>
                                         </div>
                                         <div className="p-4 bg-background/50 rounded-2xl border border-border">
-                                            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Job Ready</p>
+                                            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">{t("report.jobReady")}</p>
                                             <p className="text-xl font-bold text-blue-500">{activeRoadmap.readiness_score}%</p>
                                         </div>
                                     </div>
@@ -512,7 +519,7 @@ export default function CareerReportPage() {
                                             <div className="p-6 bg-background/60 rounded-3xl border border-border">
                                                 <h4 className="font-bold mb-4 flex items-center gap-2 text-accent">
                                                     <span className="w-6 h-6 bg-accent/20 rounded flex items-center justify-center text-xs">A</span>
-                                                    Immediate Steps
+                                                    {t("report.immediateSteps")}
                                                 </h4>
                                                 <div className="space-y-2">
                                                     {activeRoadmap.action_plan.short_term.map((step, i) => (
@@ -526,7 +533,7 @@ export default function CareerReportPage() {
                                             <div className="p-6 bg-background/60 rounded-3xl border border-border">
                                                 <h4 className="font-bold mb-4 flex items-center gap-2 text-primary-indigo">
                                                     <span className="w-6 h-6 bg-primary-indigo/20 rounded flex items-center justify-center text-xs">B</span>
-                                                    Long Term Growth
+                                                    {t("report.longTermGrowth")}
                                                 </h4>
                                                 <div className="space-y-2">
                                                     {activeRoadmap.action_plan.long_term.map((step, i) => (
@@ -554,7 +561,7 @@ export default function CareerReportPage() {
 
                                                     <div className="grid md:grid-cols-2 gap-8">
                                                         <div className="space-y-4">
-                                                            <h5 className="font-bold flex items-center gap-2"><span className="p-1 bg-accent/20 rounded">🎯</span> Key Skills</h5>
+                                                            <h5 className="font-bold flex items-center gap-2"><span className="p-1 bg-accent/20 rounded">🎯</span> {t("report.keySkills")}</h5>
                                                             <div className="space-y-2">
                                                                 {phase.skills.map((skill, i) => (
                                                                     <div key={i} className="flex justify-between items-center p-3 bg-background/40 rounded-xl border border-border/50">
@@ -566,7 +573,7 @@ export default function CareerReportPage() {
                                                         </div>
 
                                                         <div className="space-y-4">
-                                                            <h5 className="font-bold flex items-center gap-2"><span className="p-1 bg-blue-500/20 rounded">📚</span> Verified Resources</h5>
+                                                            <h5 className="font-bold flex items-center gap-2"><span className="p-1 bg-blue-500/20 rounded">📚</span> {t("report.verifiedResources")}</h5>
                                                             <div className="space-y-2">
                                                                 {phase.resources.map((res, i) => (
                                                                     <a key={i} href={res.url} target="_blank" className="flex items-center justify-between p-3 bg-background/40 rounded-xl border border-border/50 hover:border-accent/40 transition-all">
@@ -587,7 +594,7 @@ export default function CareerReportPage() {
 
                                     {activeRoadmap.scholarships_and_schemes.length > 0 && (
                                         <div className="p-6 bg-green-500/5 border border-green-500/20 rounded-3xl mb-8">
-                                            <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2"><span className="text-lg">🎖️</span> Relevant Scholarships &amp; Government Schemes</h4>
+                                            <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2"><span className="text-lg">🎖️</span> {t("report.scholarships")}</h4>
                                             <div className="grid md:grid-cols-2 gap-4">
                                                 {activeRoadmap.scholarships_and_schemes.map((scheme) => (
                                                     <div key={scheme.name} className="p-4 bg-white dark:bg-zinc-900 border border-green-500/10 rounded-2xl">
@@ -600,8 +607,8 @@ export default function CareerReportPage() {
                                     )}
 
                                     <div className="flex gap-4">
-                                        <Button className="flex-1 bg-accent text-white py-6 rounded-2xl shadow-xl">Complete Roadmap as PDF</Button>
-                                        <Button variant="outline" className="flex-1 py-6 rounded-2xl">Remind me on WhatsApp</Button>
+                                        <Button className="flex-1 bg-accent text-white py-6 rounded-2xl shadow-xl">{t("report.completePdf")}</Button>
+                                        <Button variant="outline" className="flex-1 py-6 rounded-2xl">{t("report.whatsappRemind")}</Button>
                                     </div>
                                 </div>
                             </motion.div>
@@ -615,7 +622,7 @@ export default function CareerReportPage() {
                     <div className="glass-card p-6 animate-in-scale">
                         <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                             <span className="text-2xl">💪</span>
-                            Current Skills
+                            {t("report.currentSkills")}
                         </h3>
                         <div className="space-y-4">
                             {reportData.currentSkills.map((skill, index) => (
@@ -639,7 +646,7 @@ export default function CareerReportPage() {
                     <div className="glass-card p-6 animate-in-scale animation-delay-100">
                         <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                             <span className="text-2xl">🎓</span>
-                            Skills to Develop
+                            {t("report.skillsToDevelop")}
                         </h3>
                         <div className="space-y-3">
                             {reportData.recommendedSkills.map((skill, index) => (
@@ -658,7 +665,7 @@ export default function CareerReportPage() {
                                         skill.priority === "high" ? "bg-red-500/20 text-red-600 dark:text-red-400" :
                                             "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
                                     )}>
-                                        {skill.priority}
+                                        {skill.priority === "high" ? t("common.priorityHigh") : t("common.priorityMedium")}
                                     </span>
                                 </div>
                             ))}
@@ -670,7 +677,7 @@ export default function CareerReportPage() {
                 <div className="glass-card p-8 mb-8 animate-in-scale">
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                         <span className="text-3xl">📚</span>
-                        Learning Pathways
+                        {t("report.learningPathways")}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {reportData.learningPaths.map((path, index) => (
@@ -702,7 +709,7 @@ export default function CareerReportPage() {
                     <div className="glass-card p-6 animate-in-scale">
                         <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                             <span className="text-2xl">🎯</span>
-                            Short-Term Goals (1-3 months)
+                            {t("report.shortTerm")}
                         </h3>
                         <div className="space-y-3">
                             {reportData.actionPlan.shortTerm.map((goal, index) => (
@@ -724,7 +731,7 @@ export default function CareerReportPage() {
                     <div className="glass-card p-6 animate-in-scale animation-delay-100">
                         <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                             <span className="text-2xl">🚀</span>
-                            Long-Term Goals (6-12 months)
+                            {t("report.longTerm")}
                         </h3>
                         <div className="space-y-3">
                             {reportData.actionPlan.longTerm.map((goal, index) => (
@@ -749,35 +756,35 @@ export default function CareerReportPage() {
                         <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
                             <MapPin className="w-8 h-8 text-accent" />
                         </div>
-                        <h2 className="text-2xl font-bold mb-2">Want a Step-by-Step Plan?</h2>
+                        <h2 className="text-2xl font-bold mb-2">{t("report.stepByStep")}</h2>
                         <p className="text-foreground/70 mb-6 max-w-xl mx-auto">
-                            Generate a detailed, AI-powered roadmap tailored specifically to your chosen career path. Get timelines, resources, and milestones.
+                            {t("report.stepByStepDesc")}
                         </p>
                         <Button 
                             onClick={handleGenerateRoadmap}
                             size="lg" 
                             className="bg-gradient-to-r from-accent to-orange-600 hover:scale-105 transition-transform shadow-lg"
                         >
-                            <Zap className="w-4 h-4 mr-2" /> Generate Career Roadmap
+                            <Zap className="w-4 h-4 mr-2" /> {t("report.generateRoadmap")}
                         </Button>
                     </div>
                 )}
 
                 {/* CTA Section */}
                 <div className="glass-card p-8 text-center bg-gradient-to-r from-primary-indigo/5 via-accent/5 to-teal/5 border-2 border-accent/20 animate-in-scale">
-                    <h2 className="text-2xl font-bold mb-3">Need Guidance?</h2>
+                    <h2 className="text-2xl font-bold mb-3">{t("report.needGuidance")}?</h2>
                     <p className="text-foreground/70 mb-6 max-w-2xl mx-auto">
-                        Chat with our AI mentor to get personalized advice, clarify your career path, and discuss specific challenges.
+                        {t("report.chatMentorDesc")}
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center no-print">
                         <Link href={ROUTES.mentor}>
                             <Button size="lg" className="bg-gradient-to-r from-accent to-orange-600 hover:scale-105 transition-transform shadow-lg">
-                                Chat with Mentor
+                                {t("report.chatMentor")}
                             </Button>
                         </Link>
                         <Link href={ROUTES.resources}>
                             <Button size="lg" variant="outline" className="border-primary-indigo text-primary-indigo hover:bg-primary-indigo/10">
-                                Explore Resources
+                                {t("report.exploreResources")}
                             </Button>
                         </Link>
                     </div>

@@ -522,15 +522,15 @@ export function ModernAssessment() {
                                                 onChange={e => setBasicInfo({ ...basicInfo, education: e.target.value })}
                                                 className="w-full bg-muted/50 border border-border rounded-2xl p-4 outline-none focus:border-accent focus:bg-background transition-all text-lg text-foreground appearance-none shadow-sm cursor-pointer"
                                             >
-                                                <option value="" disabled hidden className="bg-background text-foreground">Select Education Level</option>
-                                                <option value="no_schooling">No Formal Schooling</option>
-                                                <option value="elementary">Primary Schooling (Class 1-7)</option>
-                                                <option value="school">High School (Class 8-10)</option>
-                                                <option value="high_school">Higher Secondary (Class 11-12)</option>
-                                                <option value="diploma">Diploma / Vocational Training</option>
-                                                <option value="degree">Graduate / Bachelor&apos;s Degree</option>
-                                                <option value="post_graduate">Postgraduate / Master&apos;s Degree</option>
-                                                <option value="phd">Doctorate / PhD</option>
+                                                <option value="" disabled hidden className="bg-background text-foreground">{t("assessment.edu.select")}</option>
+                                                <option value="no_schooling">{t("assessment.edu.no_schooling")}</option>
+                                                <option value="elementary">{t("assessment.edu.elementary")}</option>
+                                                <option value="school">{t("assessment.edu.school")}</option>
+                                                <option value="high_school">{t("assessment.edu.high_school")}</option>
+                                                <option value="diploma">{t("assessment.edu.diploma")}</option>
+                                                <option value="degree">{t("assessment.edu.degree")}</option>
+                                                <option value="post_graduate">{t("assessment.edu.post_graduate")}</option>
+                                                <option value="phd">{t("assessment.edu.phd")}</option>
                                             </select>
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
                                                 <ArrowRight className="w-5 h-5 rotate-90" />

@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Next.js-16-black?style=flat&logo=next.js&logoColor=white" alt="Next.js" />
   <img src="https://img.shields.io/badge/FastAPI-Python-009688?style=flat&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Google_Gemini-8E75B2?style=flat&logo=googlegemini&logoColor=white" alt="Gemini" />
   <img src="https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black" alt="Firebase" />
@@ -123,13 +123,13 @@ Rural students often lack access to personalized, expert career guidance. They f
 
 | Layer             | Technology                  | Badge                                                                                                      | Purpose                                |
 | :---------------- | :-------------------------- | :--------------------------------------------------------------------------------------------------------- | :------------------------------------- |
-| **Frontend**      | **Next.js 15 (App Router)** | ![Next.js](https://img.shields.io/badge/Next.js-black?style=flat&logo=next.js&logoColor=white)             | High-performance, SEO-friendly UI.     |
+| **Frontend**      | **Next.js 16 (App Router)** | ![Next.js](https://img.shields.io/badge/Next.js-black?style=flat&logo=next.js&logoColor=white)             | High-performance, SEO-friendly UI.     |
 | **Backend**       | **Python (FastAPI)**        | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)            | Async REST API & AI Orchestration.     |
 | **Generative AI** | **Google Gemini 1.5**       | ![Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=flat&logo=googlegemini&logoColor=white)  | Core intelligence for analysis & chat. |
 | **Orchestration** | **LangChain**               | ![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=flat&logo=chainlink&logoColor=white)      | RAG chain management.                  |
 | **Database**      | **Firebase Firestore**      | ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)         | Real-time user session storage.        |
-| **Vector Index**  | **FAISS**                   | ![FAISS](https://img.shields.io/badge/FAISS-0055FF?style=flat&logo=data-base&logoColor=white)              | High-speed semantic search.            |
-| **Styling**       | **Tailwind CSS**            | ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white) | Modern utility-first CSS.              |
+| **Retrieval**     | **JSON (Serverless)**       | ![JSON](https://img.shields.io/badge/JSON-000000?style=flat&logo=json&logoColor=white)                     | Keyword-based search (No Vector DB).   |
+| **Styling**       | **Tailwind CSS 4.0**        | ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white) | Modern utility-first CSS.              |
 
 ---
 

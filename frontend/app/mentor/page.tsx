@@ -7,9 +7,12 @@ import { useTheme } from "@/store/theme/ThemeProvider";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Lightbulb, TrendingUp, Users, Globe } from "lucide-react";
+import { Sparkles, Send, Lightbulb, TrendingUp, Users, Globe, Lock, ChevronRight, ClipboardCheck, FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { ENV } from "@/constants/env";
+import { useRouter } from "next/navigation";
 import remarkGfm from "remark-gfm";
+import { TranslationKey } from "@/types/i18n";
 
 interface Message {
     id: string;
@@ -19,10 +22,10 @@ interface Message {
 }
 
 const quickActions = [
-    { icon: Lightbulb, text: "What skills should I learn?", gu: "મારે કઈ કુશળતા શીખવી જોઈએ?" },
-    { icon: TrendingUp, text: "Best career for me?", gu: "મારા માટે શ્રેષ્ઠ કારકિર્દી?" },
-    { icon: Users, text: "How to start?", gu: "હું કેવી રીતે શરૂ કરું?" },
-    { icon: Globe, text: "What is UdaanSetu.AI?", gu: "ઉડાનસેતુ.AI શું છે?" },
+    { icon: Lightbulb, key: "mentor.qa.skills" as TranslationKey },
+    { icon: TrendingUp, key: "mentor.qa.career" as TranslationKey },
+    { icon: Users, key: "mentor.qa.start" as TranslationKey },
+    { icon: Globe, key: "mentor.qa.whatIs" as TranslationKey },
 ];
 
 export default function MentorPage() {
@@ -32,22 +35,60 @@ export default function MentorPage() {
     const [mounted, setMounted] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { user } = useAuth();
-    const { language, setLanguage } = useI18n();
+    const { language, setLanguage, t } = useI18n();
     const { theme } = useTheme();
     const [showLanguagePopup, setShowLanguagePopup] = useState(false);
     const [hasShownInitialPopup, setHasShownInitialPopup] = useState(false);
+    const [prereqStatus, setPrereqStatus] = useState<{
+        hasAssessment: boolean;
+        hasCareerReport: boolean;
+        loading: boolean;
+    }>({ hasAssessment: false, hasCareerReport: false, loading: true });
+    const router = useRouter();
 
-    // Show popup on initial mount
+    // Check prerequisites on mount
+    useEffect(() => {
+        if (!user) return;
+
+        const checkPrereqs = async () => {
+            try {
+                const token = await user.getIdToken?.();
+                const response = await fetch(`${ENV.apiUrl}/api/assessment/status`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setPrereqStatus({
+                        hasAssessment: !!data.has_assessment,
+                        hasCareerReport: !!data.has_report,
+                        loading: false
+                    });
+                } else {
+                    setPrereqStatus(prev => ({ ...prev, loading: false }));
+                }
+            } catch (err) {
+                console.error("Failed to check prerequisites:", err);
+                setPrereqStatus(prev => ({ ...prev, loading: false }));
+            }
+        };
+
+        checkPrereqs();
+    }, [user]);
+
+    // Show popup on initial mount - only if prereqs are met or still loading
     useEffect(() => {
         if (!mounted) return;
         
         // Always show popup on visit to ask for preference
-        if (!hasShownInitialPopup) {
+        if (!hasShownInitialPopup && prereqStatus.hasAssessment && prereqStatus.hasCareerReport) {
             setShowLanguagePopup(true);
             setHasShownInitialPopup(true);
         }
         
-    }, [mounted, hasShownInitialPopup]);
+    }, [mounted, hasShownInitialPopup, prereqStatus]);
 
     // Update language when user selects
     const handleLanguageSelect = (lang: "en" | "gu") => {
@@ -62,13 +103,11 @@ export default function MentorPage() {
             {
                 id: "welcome",
                 role: "assistant",
-                content: language === "en" 
-                    ? "Hello! 👋 I'm your AI career mentor from UdaanSetu.AI. I'm here to help you discover your skills, build your future, and guide you from rural dreams to digital careers. You can ask me about career guidance, educational paths, or learn more about how UdaanSetu.AI helps rural students like you. How can I assist you today?"
-                    : "નમસ્તે! 👋 હું ઉડાનસેતુ.AI તરફથી તમારો AI કારકિર્દી માર્ગદર્શક છું. તમારી કુશળતા શોધવા, તમારું ભવિષ્ય બનાવવા અને ગ્રામીણ સપનાઓથી ડિજિટલ કારકિર્દી તરફ માર્ગદર્શન આપવા હું અહીં છું. તમે કારકિર્દી માર્ગદર્શન, શૈક્ષણિક માર્ગો વિશે અથવા ઉડાનસેતુ.AI તમારા જેવા ગ્રામીણ વિદ્યાર્થીઓને કેવી રીતે મદદ કરે છે તે વિશે પૂછી શકો છો. હું તમને કેવી રીતે મદદ કરી શકું?",
+                content: t("mentor.welcome"),
                 timestamp: new Date(),
             },
         ]);
-    }, [language]);
+    }, [language, t]);
 
     // Auto-scroll to bottom when new messages arrive
     const scrollToBottom = () => {
@@ -145,9 +184,7 @@ export default function MentorPage() {
              const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: language === "en"
-                    ? "Sorry, I'm having trouble connecting to the server. Please try again later."
-                    : "માફ કરશો, મને સર્વર સાથે કનેક્ટ કરવામાં મુશ્કેલી આવી રહી છે. કૃપા કરીને પછીથી ફરી પ્રયત્ન કરો.",
+                content: t("mentor.errorMsg"),
                 timestamp: new Date(),
             };
             setMessages((prev) => [...prev, errorMessage]);
@@ -204,13 +241,13 @@ export default function MentorPage() {
                                     <Globe className="w-10 h-10 text-white" />
                                 </motion.div>
                                 <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-accent to-orange-600 bg-clip-text text-transparent">
-                                    Choose Language
+                                    {t("mentor.chooseLang")}
                                 </h2>
                                 <p className="text-foreground/70 text-sm">
-                                    Which language do you prefer for chatting?
+                                    {t("mentor.whichLang")}
                                 </p>
                                 <p className="text-foreground/70 text-sm mt-1">
-                                    તમે વાતચીત માટે કઈ ભાષા પસંદ કરો છો?
+                                    {t("mentor.whichLangGu")}
                                 </p>
                             </div>
                             
@@ -233,6 +270,93 @@ export default function MentorPage() {
                                     </span>
                                 </Button>
                             </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Prerequisite Restriction Modal */}
+            <AnimatePresence>
+                {mounted && !prereqStatus.loading && (!prereqStatus.hasAssessment || !prereqStatus.hasCareerReport) && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-xl"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            className="bg-background border border-foreground/10 rounded-3xl p-8 shadow-2xl max-w-lg w-full mx-4 text-center relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-accent via-primary-indigo to-teal"></div>
+                            
+                            <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Lock className="w-10 h-10 text-accent" />
+                            </div>
+
+                            <h2 className="text-2xl font-bold mb-4">
+                                {t("mentor.unlockTitle")}
+                            </h2>
+                            
+                            <p className="text-foreground/70 mb-8 leading-relaxed">
+                                {t("mentor.unlockDesc")}
+                            </p>
+
+                            <div className="space-y-4">
+                                <div className={cn(
+                                    "flex items-center justify-between p-4 rounded-2xl border transition-all",
+                                    prereqStatus.hasAssessment ? "bg-teal/5 border-teal/20" : "bg-foreground/5 border-foreground/10 opacity-70"
+                                )}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn("p-2 rounded-lg", prereqStatus.hasAssessment ? "bg-teal/20 text-teal-600" : "bg-foreground/10 text-foreground/40")}>
+                                            <ClipboardCheck className="w-5 h-5" />
+                                        </div>
+                                        <span className="font-semibold">{t("mentor.assessment")}</span>
+                                    </div>
+                                    {prereqStatus.hasAssessment ? (
+                                        <span className="text-xs font-bold text-teal-600 bg-teal/10 px-2 py-1 rounded-full">{t("mentor.completed")}</span>
+                                    ) : (
+                                        <Button size="sm" onClick={() => router.push('/assessment')} className="bg-accent hover:bg-orange-600 text-white text-xs py-1 h-auto">
+                                            {t("mentor.startNow")} <ChevronRight className="w-3 h-3 ml-1" />
+                                        </Button>
+                                    )}
+                                </div>
+
+                                <div className={cn(
+                                    "flex items-center justify-between p-4 rounded-2xl border transition-all",
+                                    prereqStatus.hasCareerReport ? "bg-teal/5 border-teal/20" : "bg-foreground/5 border-foreground/10 opacity-70"
+                                )}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn("p-2 rounded-lg", prereqStatus.hasCareerReport ? "bg-teal/20 text-teal-600" : "bg-foreground/10 text-foreground/40")}>
+                                            <FileText className="w-5 h-5" />
+                                        </div>
+                                        <span className="font-semibold">{t("mentor.report")}</span>
+                                    </div>
+                                    {prereqStatus.hasCareerReport ? (
+                                        <span className="text-xs font-bold text-teal-600 bg-teal/10 px-2 py-1 rounded-full">{t("mentor.generated")}</span>
+                                    ) : (
+                                        <Button 
+                                            size="sm" 
+                                            disabled={!prereqStatus.hasAssessment}
+                                            onClick={() => router.push('/career-report')} 
+                                            className={cn(
+                                                "text-white text-xs py-1 h-auto",
+                                                prereqStatus.hasAssessment ? "bg-accent hover:bg-orange-600" : "bg-muted cursor-not-allowed"
+                                            )}
+                                        >
+                                            {t("mentor.generate")} <ChevronRight className="w-3 h-3 ml-1" />
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+
+                            <Button 
+                                variant="ghost" 
+                                className="mt-8 text-foreground/50 hover:text-foreground"
+                                onClick={() => router.push('/dashboard')}
+                            >
+                                {t("mentor.returnDashboard")}
+                            </Button>
                         </motion.div>
                     </motion.div>
                 )}
@@ -455,13 +579,13 @@ export default function MentorPage() {
                                         transition={{ delay: i * 0.1 }}
                                         whileHover={{ scale: 1.05, y: -2 }}
                                         whileTap={{ scale: 0.95 }}
-                                        onClick={() => handleQuickAction(language === "en" ? action.text : action.gu)}
+                                        onClick={() => handleQuickAction(t(action.key))}
                                         className="group glass-card bg-white/70 dark:bg-background/60 backdrop-blur-xl border border-foreground/20 dark:border-foreground/10 hover:border-accent/50 px-4 py-3 rounded-xl shadow-lg hover:shadow-accent/20 transition-all duration-300"
                                     >
                                         <div className="flex items-center gap-2">
                                             <Icon className="w-4 h-4 text-accent group-hover:rotate-12 transition-transform" />
                                             <span className="text-sm font-medium text-foreground dark:text-foreground">
-                                                {language === "en" ? action.text : action.gu}
+                                                {t(action.key)}
                                             </span>
                                         </div>
                                     </motion.button>
@@ -520,7 +644,7 @@ export default function MentorPage() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyPress={handleKeyPress}
-                                placeholder={language === "en" ? "Type your message..." : "તમારો સંદેશ ટાઇપ કરો..."}
+                                placeholder={t("mentor.typeMessage")}
                                 rows={1}
                                 className={cn(
                                     "w-full px-4 py-3 pr-12 rounded-2xl border-2 resize-none transition-all duration-200 outline-none shadow-lg",
@@ -558,9 +682,7 @@ export default function MentorPage() {
                         </Button>
                     </div>
                     <p className="text-xs text-foreground/50 mt-2 text-center">
-                        {language === "en" 
-                            ? "Press Enter to send • Shift + Enter for new line"
-                            : "મોકલવા માટે Enter દબાવો • નવી લાઇન માટે Shift + Enter"}
+                        {t("mentor.pressEnter")}
                     </p>
                 </div>
             </div>

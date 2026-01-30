@@ -5,6 +5,10 @@ import asyncio
 from functools import partial
 import time
 
+# Global Firestore client to be reused
+_db = None
+_firebase_initialized = False
+
 # Simple In-Memory Cache
 # Format: { "key": { "data": struct, "expires": timestamp } }
 _cache = {}
@@ -15,18 +19,29 @@ def _get_cache(key):
     if entry and entry["expires"] > time.time():
         return entry["data"]
     if entry:
-        del _cache[key]
+        _cache.pop(key, None)
     return None
 
 def _set_cache(key, data):
+    # Optional: limit cache size
+    if len(_cache) > 1000:
+         _cache.clear()
     _cache[key] = {
         "data": data,
         "expires": time.time() + CACHE_TTL
     }
 
 def _invalidate_cache(key):
-    if key in _cache:
-        del _cache[key]
+    _cache.pop(key, None)
+
+def get_db():
+    global _db, _firebase_initialized
+    if not _firebase_initialized:
+        init_firebase()
+        _firebase_initialized = True
+    if _db is None:
+        _db = firestore.client()
+    return _db
 
 import json
 
@@ -60,12 +75,18 @@ def init_firebase():
             if env_creds:
                 try:
                     cred_dict = json.loads(env_creds)
+                    # Force the project ID from the creds or env to ensure no mismatch
+                    project_id = cred_dict.get("project_id", "udaansetu45")
                     cred = credentials.Certificate(cred_dict)
-                    firebase_admin.initialize_app(cred)
-                    print("Firebase Admin Initialized from Environment Variable")
+                    firebase_admin.initialize_app(cred, {
+                        'projectId': project_id
+                    })
+                    print(f"Firebase Admin Initialized from Environment Variable for project: {project_id}")
                     return
                 except json.JSONDecodeError as e:
                     print(f"❌ Failed to parse Firebase Environment Variable: {e}")
+                except Exception as e:
+                    print(f"❌ Error during Firebase initialization from Env: {e}")
 
             print("⚠️ Warning: No Firebase credentials found (JSON file or Environment Variable). Firestore saving will fail.")
         except Exception as e:
@@ -77,8 +98,7 @@ from app.core.exceptions import DatabaseException
 # --- Internal Blocking Helpers (Run in ThreadPool) ---
 def _save_assessment_sync(user_id: str, data: dict):
     try:
-        if not firebase_admin._apps: init_firebase()
-        db = firestore.client()
+        db = get_db()
         doc_ref = db.collection("assessments").document(user_id)
         update_data = {
             "assessment_result": data,
@@ -94,8 +114,7 @@ def _save_assessment_sync(user_id: str, data: dict):
 
 def _get_assessment_sync(user_id: str):
     try:
-        if not firebase_admin._apps: init_firebase()
-        db = firestore.client()
+        db = get_db()
         doc = db.collection("assessments").document(user_id).get()
         if doc.exists:
             return doc.to_dict().get("assessment_result", None)
@@ -106,8 +125,7 @@ def _get_assessment_sync(user_id: str):
 
 def _save_profile_sync(user_id: str, data: dict):
     try:
-        if not firebase_admin._apps: init_firebase()
-        db = firestore.client()
+        db = get_db()
         db.collection("users").document(user_id).set(data, merge=True)
         return True
     except Exception as e:
@@ -116,8 +134,7 @@ def _save_profile_sync(user_id: str, data: dict):
 
 def _get_profile_sync(user_id: str):
     try:
-        if not firebase_admin._apps: init_firebase()
-        db = firestore.client()
+        db = get_db()
         doc = db.collection("users").document(user_id).get()
         if doc.exists:
             return doc.to_dict()
@@ -185,8 +202,7 @@ async def get_user_profile(user_id: str):
 
 def _save_career_report_sync(user_id: str, data: dict):
     try:
-        if not firebase_admin._apps: init_firebase()
-        db = firestore.client()
+        db = get_db()
         db.collection("career_reports").document(user_id).set({
             "report": data,
             "updated_at": firestore.SERVER_TIMESTAMP
@@ -200,8 +216,7 @@ def _save_career_report_sync(user_id: str, data: dict):
 
 def _get_career_report_sync(user_id: str):
     try:
-        if not firebase_admin._apps: init_firebase()
-        db = firestore.client()
+        db = get_db()
         doc = db.collection("career_reports").document(user_id).get()
         if doc.exists:
             return doc.to_dict().get("report")

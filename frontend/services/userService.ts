@@ -12,9 +12,9 @@ export interface UserProfile {
 
 export interface AssessmentResult {
   status: string;
-  analysis?: any;
+  analysis?: unknown;
   generated_bio?: {
-    ai_report?: any;
+    ai_report?: unknown;
     snapshot?: {
       top_recommendation?: string;
     };
@@ -35,7 +35,7 @@ const getAuthToken = async () => {
 };
 
 export const userService = {
-  async getProfile(uid: string): Promise<UserProfile | null> {
+  async getProfile(): Promise<UserProfile | null> {
     try {
       const token = await getAuthToken();
       if (!token) return null;
@@ -56,7 +56,7 @@ export const userService = {
   async getAssessmentResult(uid: string): Promise<AssessmentResult | null> {
     try {
       const token = await getAuthToken();
-      const headers: any = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
@@ -69,10 +69,10 @@ export const userService = {
     }
   },
 
-  async getCareerReport(uid: string): Promise<any | null> {
+  async getCareerReport(uid: string): Promise<unknown | null> {
     try {
       const token = await getAuthToken();
-      const headers: any = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }

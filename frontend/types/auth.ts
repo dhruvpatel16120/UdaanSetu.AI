@@ -4,6 +4,7 @@ export type AuthUser = {
   displayName: string | null;
   emailVerified: boolean;
   photoURL: string | null;
+  getIdToken?: (forceRefresh?: boolean) => Promise<string>;
 };
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";

@@ -118,7 +118,7 @@ The application uses a **Tiered State Model**:
 
 ## 🛠️ Key Technologies & Specs
 
-- **Base**: Next.js 15 (React 19), TypeScript 5.x
+- **Base**: Next.js 16 (React 19), TypeScript 5.x
 - **Security**: Firebase Auth SDK with Admin verification.
 - **Styling**: PostCSS 8 + Tailwind 4 (JIT Mode).
 - **State**: Context API (Stateless at the Page level).

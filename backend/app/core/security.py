@@ -23,6 +23,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     Returns the user's decoded token payload (uid, email, etc.).
     """
     token = credentials.credentials
+    print(f"📡 Verifying Token: {token[:10]}...{token[-10:]}")
     try:
         # Verify the ID token while checking if the token is revoked.
         decoded_token = auth.verify_id_token(token, check_revoked=True)
@@ -41,11 +42,17 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         )
     except Exception as e:
         error_msg = str(e)
-        if "RefreshError" in error_msg or "Invalid JWT" in error_msg:
-             # This is a server configuration error, not a user error
+        print(f"❌ Auth Error: {error_msg}")
+        
+        # Check for clock skew / config errors
+        is_clock_issue = any(phrase in error_msg for phrase in ["RefreshError", "Invalid JWT", "too early", "invalid_grant"])
+        
+        if is_clock_issue:
+             print("🚨 CRITICAL: Firebase Auth failed due to Clock Desync or Invalid Config!")
+             print("👉 FIX: Please sync your Windows system clock (Settings > Time & Language > Date & Time > Sync now)")
              raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Authentication Service Unavailable (System Clock/Config Error).",
+                detail="Authentication Service Unavailable. Your system clock might be out of sync. Please sync it in Windows settings.",
             )
             
         raise HTTPException(

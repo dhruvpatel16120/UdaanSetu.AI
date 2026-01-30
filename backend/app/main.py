@@ -12,8 +12,9 @@ app = FastAPI(title="UdaanSetu Assessment Engine")
 
 
 # CORS config to allow frontend communication
-# CORS config to allow frontend communication
-origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+# Note: allow_origins=["*"] is not compatible with allow_credentials=True
+raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,https://udaansetuai.vercel.app").split(",")
+origins = [origin.strip() for origin in raw_origins if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,14 +41,12 @@ app.add_exception_handler(Exception, generic_exception_handler)
 def read_root():
     return {"message": "UdaanSetu Backend is Running (Modularized)"}
 
-# Include Routers
-app.include_router(assessment.router, prefix="/api/assessment", tags=["Assessment"])
-from app.api.routers import chat, user, roadmap
-app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
-app.include_router(user.router, prefix="/api/user", tags=["User"])
-app.include_router(roadmap.router, prefix="/api/roadmap", tags=["Career Roadmap"])
+from app.api.routers import assessment, user, career, mentor
 
-from app.api.routers import market, knowledge
-app.include_router(market.router, prefix="/api/market", tags=["Market Intelligence"])
-app.include_router(knowledge.router, prefix="/api/knowledge", tags=["Knowledge Base"])
+# Include Routers (Maintenance of existing prefixes for frontend compatibility)
+app.include_router(assessment.router, prefix="/api/assessment", tags=["Pillar 1: Assessment"])
+app.include_router(user.router, prefix="/api/user", tags=["Pillar 2: Profile"])
+app.include_router(career.router, prefix="/api/roadmap", tags=["Pillar 3: Career"])
+app.include_router(career.router, prefix="/api/market", tags=["Pillar 3: Market"])
+app.include_router(mentor.router, prefix="/api/chat", tags=["Pillar 4: Mentor"])
 

@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/hooks/useI18n";
 import { useTheme } from "@/store/theme/ThemeProvider";
-import { ENV } from "@/constants/env";
+import { useAssessmentResult } from "@/hooks/useUserData";
 import { ROUTES } from "@/constants/routes";
 import { motion } from "framer-motion";
 
@@ -21,61 +20,16 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/utils/cn";
+type BilingualText = { en: string; gu: string } | string;
 
-interface AssessmentResult {
-  generated_bio?: {
-    readiness_score?: number;
-    trait_scores?: Record<string, number>;
-    snapshot?: {
-      key_insights?: Array<{ en: string; gu: string }>;
-      top_recommendation?: { en: string; gu: string };
-    };
-    bio_texts?: { en: string; gu: string };
-    swot?: {
-      strengths: Array<{ en: string; gu: string }>;
-      weaknesses: Array<{ en: string; gu: string }>;
-      opportunities: Array<{ en: string; gu: string }>;
-      threats: Array<{ en: string; gu: string }>;
-    };
-  };
-}
+
 
 export default function AssessmentResultPage() {
-  const { user, status } = useAuth();
+  const { user } = useAuth();
   const { t, language } = useI18n();
   const { theme } = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState<AssessmentResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (status === "loading") return;
-
-    async function fetchResult() {
-      try {
-        const userId = user?.uid || "demo_user_123";
-        const res = await fetch(`${ENV.apiUrl}/api/assessment/result/${userId}`);
-
-        if (!res.ok) {
-          if (res.status === 404) throw new Error("No assessment result found. Please complete the assessment first.");
-          throw new Error("Failed to load results.");
-        }
-
-        const data = await res.json();
-        setResult(data);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-            setError(err.message);
-        } else {
-            setError("An unknown error occurred");
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchResult();
-  }, [user, status]);
+  const { data: result, isLoading: loading, error: swrError } = useAssessmentResult(user?.uid);
+  const error = swrError ? (swrError.info?.message || swrError.message) : null;
 
   if (loading) {
     return (
@@ -110,7 +64,7 @@ export default function AssessmentResultPage() {
   const snapshot = bioData.snapshot || {};
   
   // Helper to handle bilingual objects
-  const getText = (obj: any) => {
+  const getText = (obj: BilingualText | undefined) => {
     if (!obj) return "";
     if (typeof obj === 'string') return obj;
     return language === 'gu' ? (obj.gu || obj.en) : obj.en;
@@ -217,7 +171,7 @@ export default function AssessmentResultPage() {
               <Target className="w-6 h-6 text-accent" /> Key Insights
             </h3>
             <div className="space-y-6 flex-grow">
-              {insights.map((insight: any, i: number) => (
+              {insights.map((insight: BilingualText, i: number) => (
                 <div key={i} className="flex items-start gap-4">
                   <div className="mt-1 w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                     <CheckCircle2 className="w-3 h-3 text-green-500" />
@@ -258,7 +212,7 @@ export default function AssessmentResultPage() {
               <div key={s.type} className={cn("glass-card p-6 border-border", s.bg)}>
                 <h4 className={cn("text-lg font-bold mb-4 uppercase tracking-wider", s.color)}>{s.title}</h4>
                 <ul className="space-y-3">
-                  {(bioData.swot as any)[s.type]?.map((item: any, idx: number) => (
+                  {(bioData.swot as Record<string, BilingualText[]>)[s.type]?.map((item: BilingualText, idx: number) => (
                     <li key={idx} className="text-sm font-medium text-foreground/70 leading-relaxed flex gap-2">
                        <span className="opacity-40">•</span> {getText(item)}
                     </li>

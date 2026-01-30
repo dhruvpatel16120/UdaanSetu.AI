@@ -106,7 +106,7 @@ export default function ProfilePage() {
                 <div className="text-center">
                     <h1 className="text-2xl font-bold mb-4">{t("auth.action.signIn")}</h1>
                     <Link href={ROUTES.auth.signIn}>
-                        <Button>Sign In</Button>
+                        <Button>{t("auth.action.signIn")}</Button>
                     </Link>
                 </div>
             </div>

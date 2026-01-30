@@ -8,8 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/utils/cn";
-import { ENV } from "@/constants/env";
-import { userService } from "@/services/userService";
+import { toast } from "sonner";
 import {
   UserCheck,
   Target,
@@ -20,71 +19,38 @@ import {
   GraduationCap,
   FileText
 } from "lucide-react";
-
-import { toast } from "sonner";
 import { useI18n } from "@/hooks/useI18n";
+import { useProfile, useAssessmentResult, useCareerReport } from "@/hooks/useUserData";
 
 export default function DashboardPage() {
   const { user, status } = useAuth();
-  const { language } = useI18n();
-  const [mounted, setMounted] = useState(false);
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  const [profileData, setProfileData] = useState<any>(null);
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  const [assessmentData, setAssessmentData] = useState<any>(null);
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  const [reportData, setReportData] = useState<any>(null);
-  const [loadingData, setLoadingData] = useState(true);
+  const { language, t } = useI18n();
+  const [formattedDate, setFormattedDate] = useState("");
+  const { data: profileData } = useProfile();
+  const { data: assessmentData, isLoading: loadingAssessment } = useAssessmentResult(user?.uid);
+  const { data: reportData, isLoading: loadingReport } = useCareerReport(user?.uid);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    // Avoid synchronous setState in effect body to satisfy lint and performance
+    const dateStr = new Date().toLocaleDateString(language === 'gu' ? 'gu-IN' : 'en-US', { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long' 
+    });
+    const timer = setTimeout(() => {
+      setFormattedDate(dateStr);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [language]);
 
+  // Use toast for data errors
   useEffect(() => {
-    async function fetchUserData() {
-        if (!user?.uid) return;
-        setLoadingData(true);
-
-        try {
-          // Parallel fetching for better performance
-          const [profile, assessment] = await Promise.all([
-            userService.getProfile(user.uid),
-            userService.getAssessmentResult(user.uid)
-          ]);
-
-          if (profile) setProfileData(profile);
-          
-          let report = null;
-          if (assessment) {
-            setAssessmentData(assessment);
-            // Check if report is embedded
-            if (assessment.generated_bio?.ai_report) {
-              report = assessment.generated_bio.ai_report;
-            }
-          }
-
-          // If not embedded, fetch separately
-          if (!report) {
-            report = await userService.getCareerReport(user.uid);
-          }
-
-          if (report) setReportData(report);
-
-        } catch (error) {
-          console.error("Dashboard data fetch error:", error);
-          const errorMsg = language === "gu"
-            ? "માહિતી ઉપલબ્ધ નથી. કૃપા કરીને થોડી વાર પછી પ્રયત્ન કરો."
-            : "Data unavailable. Please try again later.";
-          
-          // Only show toast if it's not a rigorous auth redirect happening
-          toast.error(errorMsg);
-        } finally {
-          setLoadingData(false);
-        }
+    if (status === "authenticated" && !loadingAssessment && !assessmentData && !loadingReport && !reportData) {
+       toast.error(t("dashboard.dataUnavailable"));
     }
+  }, [assessmentData, reportData, loadingAssessment, loadingReport, status, t]);
 
-    fetchUserData();
-  }, [user, language]);
+  const loadingData = loadingAssessment || loadingReport;
 
 
   if (status === "loading" || (status === "authenticated" && loadingData)) {
@@ -107,10 +73,10 @@ export default function DashboardPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-foreground/70 mb-6">Please sign in to access your dashboard.</p>
+          <h1 className="text-2xl font-bold mb-4">{t("report.accessDenied")}</h1>
+          <p className="text-foreground/70 mb-6">{t("report.signInToView")}</p>
           <Link href="/auth?mode=sign-in">
-            <Button className="bg-gradient-to-r from-accent to-orange-600">Sign In</Button>
+            <Button className="bg-gradient-to-r from-accent to-orange-600">{t("auth.action.signIn")}</Button>
           </Link>
         </div>
       </div>
@@ -119,14 +85,24 @@ export default function DashboardPage() {
 
   // === OPTIMIZED DATA EXTRACTION ===
   // Get user name from multiple sources
-  const userName = 
+  // Helper to safely extract text from Bilingual objects
+  const getText = (val: string | { en?: string; gu?: string } | null | undefined): string => {
+    if (!val) return "";
+    if (typeof val === 'string') return val;
+    const result = language === 'gu' ? (val.gu || val.en) : (val.en || val.gu);
+    return result || "";
+  };
+
+  const rawName = 
     profileData?.displayName || 
     profileData?.name || 
     assessmentData?.analysis?.basic_info?.name ||
     user.displayName || 
     user.email?.split('@')[0] || 
-    'Explorer';
-  const userInitial = userName[0].toUpperCase();
+    t("dashboard.explorer");
+
+  const userName = getText(rawName);
+  const userInitial = userName ? userName[0].toUpperCase() : "U";
   
 
 
@@ -144,11 +120,11 @@ export default function DashboardPage() {
 
   // === EXTRACT CAREER DATA ===
   // Top career match - check multiple data paths
-  const topCareer = 
+  const topCareer = getText(
     reportData?.recommendations?.[0]?.title ||
     assessmentData?.analysis?.career_paths?.[0]?.title ||
-    assessmentData?.generated_bio?.snapshot?.top_recommendation ||
-    null;
+    assessmentData?.generated_bio?.snapshot?.top_recommendation
+  );
 
   // Skills extraction
   const topSkills = 
@@ -159,47 +135,44 @@ export default function DashboardPage() {
 
   // Career paths
   const recommendedPaths = 
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    assessmentData?.analysis?.career_paths?.map((p: any) => p.title) ||
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any  */
-    assessmentData?.analysis?.career_paths?.map((p: any) => p.title) ||
+    assessmentData?.analysis?.career_paths?.map((p) => p.title) ||
     [];
 
 
 
   const quickActions = [
     {
-      title: hasAssessment ? "Retake Assessment" : "Start Assessment",
-      description: hasAssessment ? "Update your career path" : "Discover your career path",
+      title: hasAssessment ? t("dashboard.retakeAssessment") : t("dashboard.startAssessment"),
+      description: hasAssessment ? t("dashboard.updateCareerPath") : t("dashboard.discoverCareerPath"),
       icon: <FileText className="w-6 h-6" />,
       href: ROUTES.assessment,
       gradient: "from-blue-500 to-indigo-600",
-      cta: hasAssessment ? "Retake" : "Start Now"
+      cta: hasAssessment ? t("dashboard.retake") : t("dashboard.startNow")
     },
     {
-      title: "View Report",
-      description: hasReport ? "Detailed analysis ready" : "Complete assessment first",
+      title: t("dashboard.viewReport"),
+      description: hasReport ? t("dashboard.detailedAnalysis") : t("dashboard.completeFirst"),
       icon: <TrendingUp className="w-6 h-6" />,
       href: hasReport ? ROUTES.careerReport : ROUTES.assessment,
       gradient: "from-purple-500 to-pink-600",
-      cta: "View Insights",
+      cta: t("dashboard.viewInsights"),
       disabled: !hasReport && !hasAssessment
     },
     {
-      title: "AI Mentor",
-      description: "Chat with your career coach",
+      title: t("dashboard.aiMentor"),
+      description: t("dashboard.chatWithCoach"),
       icon: <BrainCircuit className="w-6 h-6" />,
       href: ROUTES.mentor,
       gradient: "from-teal-500 to-cyan-600",
-      cta: "Chat Now"
+      cta: t("dashboard.chatNow")
     },
     {
-      title: "Update Profile",
-      description: "Keep your info current",
+      title: t("dashboard.updateProfile"),
+      description: t("dashboard.keepInfoCurrent"),
       icon: <UserCheck className="w-6 h-6" />,
       href: ROUTES.profile,
       gradient: "from-orange-500 to-red-600",
-      cta: "Edit Profile"
+      cta: t("dashboard.editProfile")
     }
   ];
 
@@ -227,11 +200,11 @@ export default function DashboardPage() {
               )}
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-2 tracking-tight">
-                  Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-orange-500">{userName}</span>!
+                  {t("dashboard.welcome")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-orange-500">{userName}</span>!
                 </h1>
-                <p className="text-foreground/60 flex items-center gap-2" suppressHydrationWarning>
-                   <MapPin className="w-4 h-4" /> {profileData?.profile?.location || "Gujarat, India"} • {mounted && new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
+                 <p className="text-foreground/60 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" /> {profileData?.profile?.location || "Gujarat, India"} • {formattedDate}
+                 </p>
               </div>
             </div>
             
@@ -239,7 +212,7 @@ export default function DashboardPage() {
                {hasReport && (
                  <Link href={ROUTES.careerReport}>
                   <Button className="bg-background text-foreground hover:bg-foreground/90 font-semibold shadow-lg">
-                    View Full Report
+                    {t("dashboard.viewFullReport")}
                   </Button>
                  </Link>
                )}
@@ -251,20 +224,20 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="glass-card p-6 animate-in-scale animation-delay-100 hover:shadow-lg transition-shadow border-l-4 border-l-green-500">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-foreground/60">Status</h3>
+              <h3 className="text-sm font-medium text-foreground/60">{t("dashboard.status")}</h3>
               <div className="p-2 bg-green-500/10 rounded-lg text-green-500">
                 <Target className="w-5 h-5" />
               </div>
             </div>
             <p className="text-2xl font-bold text-foreground">
-              {hasAssessment ? "Active" : "Pending"}
+              {hasAssessment ? t("dashboard.active") : t("dashboard.pending")}
             </p>
-            <p className="text-xs text-foreground/50 mt-1">Assessment Status</p>
+            <p className="text-xs text-foreground/50 mt-1">{t("dashboard.status")}</p>
           </div>
 
           <div className="glass-card p-6 animate-in-scale animation-delay-200 hover:shadow-lg transition-shadow border-l-4 border-l-accent">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-foreground/60">Profile</h3>
+              <h3 className="text-sm font-medium text-foreground/60">{t("dashboard.profile")}</h3>
               <div className="p-2 bg-accent/10 rounded-lg text-accent">
                 <UserCheck className="w-5 h-5" />
               </div>
@@ -280,7 +253,7 @@ export default function DashboardPage() {
 
           <div className="glass-card p-6 animate-in-scale animation-delay-300 hover:shadow-lg transition-shadow border-l-4 border-l-purple-500">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-foreground/60">Top Match</h3>
+              <h3 className="text-sm font-medium text-foreground/60">{t("dashboard.topMatch")}</h3>
               <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500">
                 <Briefcase className="w-5 h-5" />
               </div>
@@ -288,18 +261,18 @@ export default function DashboardPage() {
             <p className="text-xl font-bold text-foreground line-clamp-1">
               {topCareer || "N/A"}
             </p>
-            <p className="text-xs text-foreground/50 mt-1">Primary Career Path</p>
+            <p className="text-xs text-foreground/50 mt-1">{t("dashboard.primaryPath")}</p>
           </div>
 
           <Link href={ROUTES.mentor} className="glass-card p-6 animate-in-scale animation-delay-400 hover:shadow-lg hover:scale-[1.02] transition-all border-l-4 border-l-blue-500 cursor-pointer group">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-foreground/60">AI Mentor</h3>
+              <h3 className="text-sm font-medium text-foreground/60">{t("dashboard.aiMentor")}</h3>
               <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                 <BrainCircuit className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-xl font-bold text-foreground">Chat Now</p>
-            <p className="text-xs text-foreground/50 mt-1">Get personalized guidance</p>
+            <p className="text-xl font-bold text-foreground">{t("dashboard.chatNow")}</p>
+            <p className="text-xs text-foreground/50 mt-1">{t("dashboard.getGuidance")}</p>
           </Link>
         </div>
 
@@ -307,7 +280,7 @@ export default function DashboardPage() {
         <div className="mb-10">
           <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
             <span className="w-2 h-8 bg-accent rounded-full"></span>
-            Quick Actions
+            {t("dashboard.quickActions")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {quickActions.map((action, index) => (
@@ -352,7 +325,7 @@ export default function DashboardPage() {
                 <div className="p-2 bg-accent/10 rounded-lg">
                   <GraduationCap className="w-6 h-6 text-accent" />
                 </div>
-                <h3 className="text-xl font-bold">Your Top Skills</h3>
+                  <h3 className="text-xl font-bold">{t("dashboard.topSkills")}</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {topSkills.length > 0 ? (
@@ -366,7 +339,7 @@ export default function DashboardPage() {
                     </div>
                     ))
                 ) : (
-                    <p className="text-muted-foreground">No skills analyzed yet.</p>
+                    <p className="text-muted-foreground">{t("dashboard.noSkills")}</p>
                 )}
               </div>
             </div>
@@ -378,7 +351,7 @@ export default function DashboardPage() {
                 <div className="p-2 bg-primary-indigo/10 rounded-lg">
                   <TrendingUp className="w-6 h-6 text-primary-indigo" />
                 </div>
-                <h3 className="text-xl font-bold">Recommended Career Paths</h3>
+                  <h3 className="text-xl font-bold">{t("dashboard.recommendedPaths")}</h3>
               </div>
               <div className="grid sm:grid-cols-2 gap-4 relative z-10">
                 {recommendedPaths.length > 0 ? (
@@ -394,7 +367,7 @@ export default function DashboardPage() {
                     </div>
                     ))
                 ) : (
-                    <p className="text-muted-foreground">Complete the assessment to see career paths.</p>
+                    <p className="text-muted-foreground">{t("dashboard.completeToSeePaths")}</p>
                 )}
               </div>
             </div>
@@ -406,14 +379,14 @@ export default function DashboardPage() {
           <div className="glass-card p-10 text-center bg-gradient-to-r from-primary-indigo/10 via-accent/5 to-teal/10 border-2 border-accent/20 animate-in-scale shadow-2xl relative overflow-hidden">
              <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:[mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.5))] -z-10" />
             
-            <h2 className="text-3xl font-black mb-4 tracking-tight">Your Future Awaits!</h2>
+            <h2 className="text-3xl font-black mb-4 tracking-tight">{t("dashboard.futureAwaits")}</h2>
             <p className="text-lg text-foreground/70 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Unlock your personalized career roadmap by completing our AI-powered assessment. It only takes a few minutes to discover your true potential.
+              {t("dashboard.unlockRoadmap")}
             </p>
             <div className="flex flex-col sm:flex-row gap-5 justify-center">
               <Link href={ROUTES.assessment}>
                 <Button size="lg" className="px-8 py-6 text-lg rounded-full bg-gradient-to-r from-accent to-orange-600 hover:scale-105 transition-transform shadow-[0_0_25px_rgba(249,115,22,0.4)]">
-                   Start Discovery Now <div className="ml-2 bg-white/20 p-1 rounded-full"><TrendingUp className="w-4 h-4"/></div>
+                   {t("dashboard.startDiscovery")} <div className="ml-2 bg-white/20 p-1 rounded-full"><TrendingUp className="w-4 h-4"/></div>
                 </Button>
               </Link>
             </div>

@@ -30,8 +30,8 @@ Our team, **FutureMinds**, believes that talent is universal but opportunity is 
 ### 🛠️ Core Technologies
 
 - **Google Gemini 1.5 Integration**: Leverages the latest generative models for deep psychometric analysis and personalized career roadmap generation.
-- **RAG (Retrieval-Augmented Generation)**: Uses a local knowledge base of PDFs, CSVs, and JSONs to provide grounded, factual advice.
-- **Semantic Search**: Powered by **FAISS** and **Sentence Transformers** for lightning-fast retrieval of career data.
+- **Lean RAG Engine**: A serverless-optimized, JSON-based retrieval system that provides grounded advice without heavy vector databases.
+- **Vercel Optimization**: Architected to run within strict serverless limits by removing heavy ML dependencies like Torch and FAISS.
 - **Async Architecture**: Built on **FastAPI** to ensure low-latency responses for the AI chat mentor.
 
 ---
@@ -63,9 +63,8 @@ Dive deeper into our technical implementations and guides.
 | :------------------ | :-------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
 | **Logic Framework** | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)           | Async Python framework for high performance.     |
 | **Generative AI**   | ![Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=flat&logo=googlegemini&logoColor=white) | **1.5 Pro/Flash** for reasoning and chat.        |
-| **Vector Indexing** | ![FAISS](https://img.shields.io/badge/FAISS-0055FF?style=flat&logo=data-base&logoColor=white)             | Facebook AI Similarity Search for KB retrieval.  |
+| **Retrieval Engine**| ![JSON](https://img.shields.io/badge/JSON-000000?style=flat&logo=json&logoColor=white)                    | Optimized Keyword-based search for Serverless.   |
 | **Cloud Services**  | ![Firebase](https://img.shields.io/badge/Firebase-039BE5?style=flat&logo=Firebase&logoColor=white)        | Auth, Firestore (Real-time DB), and Storage.     |
-| **Data Processing** | ![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat&logo=pandas&logoColor=white)              | Handling career datasets and market information. |
 | **Language Logic**  | ![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=flat&logo=chainlink&logoColor=white)     | Orchestrating LLM chains and prompt templates.   |
 
 ---
@@ -107,13 +106,11 @@ PORT=8000
 
 ### 3️⃣ Step 3: RAG Knowledge Base Initialization
 
-The AI mentor needs an index of career data to function.
+The AI mentor uses JSON data files for context.
 
-1.  Place your data files (JSON, CSV, PDF) in `app/data/`.
-2.  Build the vector index by running the utility script:
-    ```bash
-    python scripts/build_knowledge_base.py
-    ```
+1.  Ensure your data files (JSON) are placed in `app/data/`.
+2.  The application will automatically load them on startup using the `LeanRAG` engine.
+    *(No manual build script is required anymore)*.
 
 ### 4️⃣ Step 4: Installation
 
@@ -147,20 +144,21 @@ backend/
 │   ├── api/                    # API Layer
 │   │   ├── dependencies/       # Security & Auth injectables
 │   │   └── routers/            # Feature-specific API endpoints
-│   ├── assessment_logic/       # AI-driven psychometric engines
-│   ├── career_logic/           # Roadmap & Path synthesis logic
+│   ├── services/               # Core Logic & External Services
+│   │   ├── ai_service.py       # Centralized AI Orchestration
+│   │   ├── rag_engine.py       # Lightweight Vercel-friendly RAG
+│   │   ├── db_firebase.py      # Firestore Database Interface
+│   │   └── assessment_engine.py # Psychometric Logic
 │   ├── core/                   # Platform configurations & constants
-│   ├── data/                   # Knowledge Base source (JSON/CSV/PDF)
-│   ├── mentor_logic/           # RAG-based AI chat mentor logic
+│   ├── data/                   # Knowledge Base source (JSON only)
 │   ├── models/                 # Pydantic data schemas
-│   └── services/               # External service clients (Firebase, AI)
+│   └── main.py                 # Root entry point
 ├── scripts/                    # Developer & Maintenance scripts
-│   ├── build_knowledge_base.py # RAG Index builder
 │   ├── verify_auth.py          # Firebase Auth testing
 │   └── verify_qa_engine.py     # AI Pipeline validation
 ├── ARCHITECTURE.md             # Detailed engineering blueprints
 ├── RAG_GUIDE.md                # Internal RAG implementation guide
-├── main.py                     # Root entry point
+├── main.py                     # Root entry point & Vercel Handler
 ├── requirements.txt            # Project dependencies
 ├── setup_backend.ps1           # Environment setup automation
 └── start_server.ps1            # Dev server quickstart

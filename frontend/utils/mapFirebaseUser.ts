@@ -8,5 +8,6 @@ export function mapFirebaseUser(user: User): AuthUser {
     displayName: user.displayName,
     emailVerified: user.emailVerified,
     photoURL: user.photoURL,
+    getIdToken: user.getIdToken.bind(user),
   };
 }

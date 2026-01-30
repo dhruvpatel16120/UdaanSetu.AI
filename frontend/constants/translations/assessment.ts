@@ -116,6 +116,15 @@ export const assessmentTranslations = {
     "assessment.district.vadodara": "Vadodara",
     "assessment.district.rajkot": "Rajkot",
     "assessment.district.other": "Other",
+    "assessment.edu.select": "Select Education Level",
+    "assessment.edu.no_schooling": "No Formal Schooling",
+    "assessment.edu.elementary": "Primary Schooling (Class 1-7)",
+    "assessment.edu.school": "High School (Class 8-10)",
+    "assessment.edu.high_school": "Higher Secondary (Class 11-12)",
+    "assessment.edu.diploma": "Diploma / Vocational Training",
+    "assessment.edu.degree": "Graduate / Bachelor's Degree",
+    "assessment.edu.post_graduate": "Postgraduate / Master's Degree",
+    "assessment.edu.phd": "Doctorate / PhD",
   },
   gu: {
     // Progress
@@ -235,5 +244,14 @@ export const assessmentTranslations = {
     "assessment.district.vadodara": "વડોદરા",
     "assessment.district.rajkot": "રાજકોટ",
     "assessment.district.other": "અન્ય",
+    "assessment.edu.select": "શિક્ષણ સ્તર પસંદ કરો",
+    "assessment.edu.no_schooling": "કોઈ ઔપચારિક શિક્ષણ નથી",
+    "assessment.edu.elementary": "પ્રાથમિક શિક્ષણ (ધોરણ 1-7)",
+    "assessment.edu.school": "હાઇ સ્કૂલ (ધોરણ 8-10)",
+    "assessment.edu.high_school": "ઉચ્ચતર માધ્યમિક (ધોરણ 11-12)",
+    "assessment.edu.diploma": "ડિપ્લોમા / વ્યાવસાયિક તાલીમ",
+    "assessment.edu.degree": "ગ્રેજ્યુએટ / બેચલર ડિગ્રી",
+    "assessment.edu.post_graduate": "પોસ્ટ ગ્રેજ્યુએટ / માસ્ટર ડિગ્રી",
+    "assessment.edu.phd": "ડોક્ટરેટ / પીએચડી",
   }
 } as const;

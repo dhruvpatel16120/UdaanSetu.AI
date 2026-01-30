@@ -8,6 +8,9 @@ export const profileTranslations = {
     "profile.skillProfile": "Skill Profile",
     "profile.completeAssessment": "Complete assessment to see scores",
     "profile.recommendedPath": "Recommended Path",
+    "profile.candidateInfo": "Candidate Information",
+    "profile.readiness": "Readiness Index",
+    "profile.statusCertified": "Certified Analysis",
   },
   gu: {
     "profile.edit": "પ્રોફાઇલ સંપાદિત કરો",
@@ -18,5 +21,8 @@ export const profileTranslations = {
     "profile.skillProfile": "કૌશલ્ય પ્રોફાઇલ",
     "profile.completeAssessment": "સ્કોર્સ જોવા માટે મૂલ્યાંકન પૂર્ણ કરો",
     "profile.recommendedPath": "ભલામણ કરેલ માર્ગ",
+    "profile.candidateInfo": "ઉમેદવારની માહિતી",
+    "profile.readiness": "તૈયારી સૂચકાંક",
+    "profile.statusCertified": "પ્રમાણિત વિશ્લેષણ",
   }
 } as const;

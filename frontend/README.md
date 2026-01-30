@@ -12,8 +12,8 @@
   <img src="https://img.shields.io/badge/Status-Active-success?style=for-the-badge&logo=github&logoColor=white" alt="Status" />
   <img src="https://img.shields.io/badge/Version-0.1.0-blue?style=for-the-badge&logo=semver&logoColor=white" alt="Version" />
   <img src="https://img.shields.io/badge/License-Apache_2.0-red?style=for-the-badge&logo=apache&logoColor=white" alt="License" />
-  <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
-  <img src="https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Tailwind-CSS-4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind" />
   <a href="https://udaansetuai.vercel.app">
     <img src="https://img.shields.io/badge/Live_Prototype-Vercel-blue?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Prototype" />
   </a>
@@ -37,10 +37,10 @@ For a deep dive into how everything works under the hood, check out our **[Front
 
 | Technology                                                                                                     | Description                                   |
 | :------------------------------------------------------------------------------------------------------------- | :-------------------------------------------- |
-| ![Next.js](https://img.shields.io/badge/Next.js-black?style=flat&logo=next.js&logoColor=white)                 | **Framework**: Next.js 15 (App Router)        |
+| ![Next.js](https://img.shields.io/badge/Next.js-black?style=flat&logo=next.js&logoColor=white)                 | **Framework**: Next.js 16 (App Router)        |
 | ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)       | **Language**: Strong typing for scalable code |
-| ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white) | **Styling**: Utility-first CSS framework      |
-| ![Firebase](https://img.shields.io/badge/Firebase-039BE5?style=flat&logo=Firebase&logoColor=white)             | **Backend/Auth**: fast and secure backend     |
+| ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white) | **Styling**: Tailwind CSS v4 (Utility-first)  |
+| ![Firebase](https://img.shields.io/badge/Firebase-039BE5?style=flat&logo=Firebase&logoColor=white)             | **Backend/Auth**: Firebase v11 (Google Auth)  |
 | ![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=flat&logo=framer&logoColor=white)     | **Animations**: Fluid and complex animations  |
 | ![Lucide](https://img.shields.io/badge/Lucide-F7931A?style=flat&logo=lucide&logoColor=white)                   | **Icons**: Beautiful & consistent icon set    |
 
