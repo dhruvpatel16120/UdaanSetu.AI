@@ -55,12 +55,21 @@ async def generic_exception_handler(request: Request, exc: Exception):
             },
         )
 
+    import os
+    debug_mode = os.getenv("DEBUG_MODE", "false").lower() == "true"
+    
+    response_content = {
+        "error": {
+            "code": "internal_server_error",
+            "message": "An unexpected error occurred. Please try again later."
+        }
+    }
+
+    if debug_mode:
+        response_content["error"]["details"] = str(exc)
+        response_content["error"]["type"] = type(exc).__name__
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": {
-                "code": "internal_server_error",
-                "message": "An unexpected error occurred. Please try again later."
-            }
-        },
+        content=response_content,
     )

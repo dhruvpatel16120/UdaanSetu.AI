@@ -47,8 +47,15 @@ export const authService = {
   },
 
   async signInWithEmailPassword(email: string, password: string) {
-    const auth = requireFirebaseAuth();
-    return signInWithEmailAndPassword(auth, email, password);
+    try {
+      const auth = requireFirebaseAuth();
+      return await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      if (process.env.NEXT_PUBLIC_DEBUG_MODE === "true") {
+        console.error("DEBUG: signInWithEmailPassword error:", error);
+      }
+      throw error;
+    }
   },
 
   async signUpWithEmailPassword(email: string, password: string) {
@@ -59,9 +66,20 @@ export const authService = {
   },
 
   async signInWithGooglePopup() {
-    const auth = requireFirebaseAuth();
-    const provider = new GoogleAuthProvider();
-    return signInWithPopup(auth, provider);
+    try {
+      const auth = requireFirebaseAuth();
+      const provider = new GoogleAuthProvider();
+      return await signInWithPopup(auth, provider);
+    } catch (error) {
+      if (process.env.NEXT_PUBLIC_DEBUG_MODE === "true") {
+        console.error("DEBUG: signInWithGooglePopup error:", error);
+        // Alert helpful validation errors in dev/debug mode
+        if (error instanceof Error && error.message.includes("auth/configuration-not-found")) {
+           alert("Firebase Auth Config Not Found. Check console for details.");
+        }
+      }
+      throw error;
+    }
   },
 
   async sendPasswordReset(email: string) {

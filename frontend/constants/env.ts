@@ -9,4 +9,5 @@ export const ENV = {
   },
   apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "",
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://udaansetuai.vercel.app",
+  debugMode: process.env.NEXT_PUBLIC_DEBUG_MODE === "true",
 } as const;
