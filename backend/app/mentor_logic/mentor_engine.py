@@ -45,89 +45,58 @@ class MentorEngine:
 
     async def chat(self, history: list, student_profile: dict, query: str, language: str = "en", career_report: dict = None, assessment_result: dict = None):
         """
-        Ultra-Fast Mentor Engine: Direct LLM Interaction with Rich Context.
-        Removes heavy RAG/Market retrieval for ChatGPT-like speed.
+        Module 3: Mentor Chat Engine (The "Guide")
+        Context-aware career mentorship using Bio, Report, and Knowledge Base (RAG).
         """
         llm = self.llm
         if not llm:
-            yield "SYSTEM_ERROR: Mentor offline. Please check connection."
+            yield "SYSTEM_ERROR: Mentor offline."
             return
 
-        # --- 1. Context Parsing (Fast) ---
+        # 1. Fetch Knowledge Base Context (RAG)
+        from app.services.rag_engine import get_rag_engine
+        rag_engine = get_rag_engine()
         
-        # A. Basic Identity
-        basic_info = assessment_result.get("analysis", {}).get("basic_info", {}) if assessment_result else {}
-        if not basic_info and student_profile:
-             basic_info = student_profile.get("basic_info", student_profile)
-        
+        # Combine query with career recommendation if available for better RAG
+        target_career = student_profile.get("snapshot", {}).get("top_recommendation", "")
+        rag_query = f"{query} {target_career}"
+        rag_context = rag_engine.get_context_for_query(rag_query, student_profile, k=3)
+
+        # 2. Parse Other Context
+        basic_info = student_profile.get("basic_info", {})
         name = basic_info.get("name", "Friend")
         loc = basic_info.get("location", "Gujarat")
         edu = basic_info.get("education", "School")
 
-        # B. Psychometric Data
-        psycho_context = ""
-        if assessment_result and "analysis" in assessment_result:
-            traits = assessment_result["analysis"].get("personality_traits", [])[:5]
-            interests = assessment_result["analysis"].get("interest_domains", [])[:3]
-            if traits or interests:
-                psycho_context = f"TRAITS: {', '.join(traits)}\nINTERESTS: {', '.join(interests)}"
-
-        # C. Career Report Context
-        career_context = ""
+        career_summary = ""
         if career_report:
-            recs = [r.get("title") for r in career_report.get("recommendations", [])[:3]]
-            score = career_report.get("careerReadiness", "N/A")
-            career_context = f"CAREER ROADMAP:\n- Recommended Paths: {', '.join(recs)}\n- Readiness Score: {score}%"
+            recs = [r.get("title") for r in career_report.get("recommendations", [])[:2]]
+            career_summary = f"CAREER GOAL: {target_career or ', '.join(recs)}"
 
-        # --- 2. Prompt Engineering (The "Magic Formula") ---
-        lang_mode = "ENGLISH (Simple, Clear)"
-        if language == "gu":
-            lang_mode = "GUJARATI (Warm, Respectful tone,Career-Oriented Mindsets )"
-
+        # 3. Prompt Engineering
+        lang_mode = "ENGLISH" if language != "gu" else "GUJARATI"
+        
         system_message = f"""
-<persona>
-You are 'UdaanSetu.ai' platform mentor,that act Senior Career Psychologist and Strategic Life Coach with over 10 years of experience in youth mentorship.
-Role: You combine deep psychological insight with expert career coaching to guide students toward holistic success in life.
-Communication: You possess excellent communication skills—articulate, persuasive, motivating, and authoritative like a seasoned expert.
-Mission: To reveal exactly "what to do to succeed" by aligning {name}'s inner psychology with outer career realities.
-Traits: Deeply Insightful, Experienced (10+ Years), Articulate, Strategic, Encouraging.
-</persona>
-
-<current_role>
-Your specific mission is to mentor {name}, a student in {edu} from {loc}.
-You must guide them using their provided assessment results and career report.
-</current_role>
-
-{self.PLATFORM_CONTEXT}
-
-<student_context>
-User Profile:
-- Name: {name}
-- Education: {edu}
-- Location: {loc}
-
-<psychometric_profile>
-{psycho_context}
-</psychometric_profile>
-
-<career_report_summary>
-{career_context}
-</career_report_summary>
-</student_context>
-
-<instructions>
-1. **DIRECT ANSWER**: DO NOT say "Hello" or "Good question". Start IMMEDIATELY with the core answer. Address the query "{query}" directly.
-2. **Psychological & Strategic Depth**: Go beyond surface level. Explain *why* a path fits their psychology (Psychologist view) and *how* to execute it for success (Coach view).
-3. **Context-Driven**: Base your advice heavily on the <career_report_summary> and <psychometric_profile>.
-4. **Values**: Promote growth mindset, resilience, and strategic thinking.
-5. **Style**: Excellent, high-quality communication. Use clear structure, punchy insights, and professional tone.
-6. **Language**: Respond STRICTLY in {lang_mode}.
-</instructions>
-"""     
-        # --- 3. Fast Stream Generation ---
+        ACT AS: UdaanSetu Mentor - Senior Career Psychologist & Strategic Life Coach.
+        MISSION: Guide {name} ({edu} from {loc}) towards career success.
+        
+        CONTEXT:
+        [Student Bio]: {json.dumps(student_profile)}
+        [Career Summary]: {career_summary}
+        [Verified Knowledge]: {rag_context}
+        
+        INSTRUCTIONS:
+        1. Be authoritative yet encouraging (Mentor persona).
+        2. Use the 'Verified Knowledge' to provide factual advice.
+        3. Reference the student's specific traits/report when possible.
+        4. ALWAYS respond in {lang_mode}.
+        5. Keep answers concise but strategic.
+        6. give only correct and relvent sources and right guidance to {name}
+        """
+        
         messages = [SystemMessage(content=system_message)]
-        # History window (last 3 turns)
-        for msg in history[-3:]:
+        # Add limited history for performance
+        for msg in history[-5:]:
              if msg.get("role") == "user": messages.append(HumanMessage(content=msg.get("content")))
              else: messages.append(AIMessage(content=msg.get("content")))
         messages.append(HumanMessage(content=query))
@@ -136,12 +105,8 @@ User Profile:
             async for chunk in self.llm.astream(messages):
                 yield chunk.content
         except Exception as e:
-            if "429" in str(e):
-                logger.warning("Quota hit.")
-                yield "I'm thinking too hard! Give me a minute to recharge. 🧠"
-            else:
-                logger.error(f"Error: {e}")
-                yield "Connection issue. Please try again."
+            logger.error(f"Chat Error: {e}")
+            yield "I'm having a technical glitch. Try again in a moment."
 
 # Singleton instance
 mentor_engine = MentorEngine()

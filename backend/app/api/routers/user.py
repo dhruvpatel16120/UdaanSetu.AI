@@ -1,14 +1,15 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 from app.services.user_service import get_user_by_firebase_id, create_or_update_user, update_user_profile
 from app.assessment_logic.bio_generator import generate_user_bio_profile
+from app.core.security import get_current_user_uid
 from pydantic import BaseModel
 
 router = APIRouter()
 
 class UserSyncRequest(BaseModel):
-    firebase_id: str
-    email: str
+    # firebase_id attribute is no longer needed in body as we trust the token
+    email: Optional[str] = None
     name: Optional[str] = None
 
 class ProfileUpdateRequest(BaseModel):
@@ -18,39 +19,41 @@ class ProfileUpdateRequest(BaseModel):
     careerGoals: Optional[str] = None
 
 @router.post("/sync")
-async def sync_user(data: UserSyncRequest):
+async def sync_user(data: UserSyncRequest, uid: str = Depends(get_current_user_uid)):
     """
     Sync user data from Firebase after login/signup.
+    Authenticated via Bearer Token.
     """
-    user = await create_or_update_user(data.firebase_id, data.email, data.name)
+    user = await create_or_update_user(uid, data.email, data.name)
     return user
 
 @router.get("/me")
-async def get_my_profile(x_firebase_id: str = Header(...)):
+async def get_my_profile(uid: str = Depends(get_current_user_uid)):
     """
     Retrieve the profile of the currently logged-in user.
     """
-    user = await get_user_by_firebase_id(x_firebase_id)
+    user = await get_user_by_firebase_id(uid)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 @router.put("/profile")
-async def update_my_profile(data: ProfileUpdateRequest, x_firebase_id: str = Header(None)):
+async def update_my_profile(data: ProfileUpdateRequest, uid: str = Depends(get_current_user_uid)):
     """
     Update personal bio information.
     """
-    if not x_firebase_id:
-         raise HTTPException(status_code=400, detail="Header X-Firebase-Id not set")
-    profile = await update_user_profile(x_firebase_id, data.dict(exclude_unset=True))
+    profile = await update_user_profile(uid, data.dict(exclude_unset=True))
     return profile
 
-@router.get("/{uid}")
-async def get_user_profile_by_id(uid: str):
+@router.get("/{target_uid}")
+async def get_user_profile_by_id(target_uid: str, current_uid: str = Depends(get_current_user_uid)):
     """
     Get user profile by Firebase UID.
     """
-    user = await get_user_by_firebase_id(uid)
+    # Optional: Add logic to allow only admin or self to view? 
+    # For now, public profiles are allowed (e.g. mentor viewing student).
+    
+    user = await get_user_by_firebase_id(target_uid)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -71,24 +74,27 @@ async def get_user_profile_by_id(uid: str):
     }
     return result
 
-@router.put("/{uid}/profile")
-async def update_user_profile_by_id(uid: str, data: ProfileUpdateRequest):
+@router.put("/{target_uid}/profile")
+async def update_user_profile_by_id(target_uid: str, data: ProfileUpdateRequest, current_uid: str = Depends(get_current_user_uid)):
     """
     Update user profile by Firebase UID.
+    Restricted: Users can only update their own profile.
     """
-    # data.dict(exclude_unset=True) ensures we only update fields provided in the request
+    if target_uid != current_uid:
+         raise HTTPException(status_code=403, detail="Not authorized to update this profile")
+
     try:
-        updated_profile = await update_user_profile(uid, data.dict(exclude_unset=True))
+        updated_profile = await update_user_profile(target_uid, data.dict(exclude_unset=True))
         return updated_profile
     except Exception as e:
          raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/generate-bio")
-async def generate_bio(x_firebase_id: str = Header(...)):
+async def generate_bio(uid: str = Depends(get_current_user_uid)):
     """
     Trigger Stage 2: Bio-Profile Generation from assessment results.
     """
-    result = await generate_user_bio_profile(x_firebase_id)
+    result = await generate_user_bio_profile(uid)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
     return result

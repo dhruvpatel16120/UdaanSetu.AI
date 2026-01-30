@@ -39,6 +39,22 @@ async def generic_exception_handler(request: Request, exc: Exception):
     """
     # In production, you might want to log the error here
     print(f"Unhandled error: {exc}")
+    
+    error_str = str(exc)
+    
+    # Catch Google Auth / Firebase Token Errors globally
+    if "RefreshError" in error_str or "Invalid JWT Signature" in error_str:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, # Service unavailable due to auth config failure
+            content={
+                "error": {
+                    "code": "auth_configuration_error",
+                    "message": "System authentication service is temporarily unavailable. Please check server clock or credentials.",
+                    "details": error_str
+                }
+            },
+        )
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={

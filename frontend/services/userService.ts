@@ -21,11 +21,30 @@ export interface AssessmentResult {
   };
 }
 
+import { getAuth } from "firebase/auth";
+import { getFirebaseApp } from "@/services/firebase/client"; // Correct import
+
+const getAuthToken = async () => {
+  const app = getFirebaseApp(); // Get app instance
+  const auth = getAuth(app);
+  const user = auth.currentUser;
+  if (user) {
+    return await user.getIdToken();
+  }
+  return null;
+};
+
 export const userService = {
-  async getProfile(uid: string, firebaseId: string): Promise<UserProfile | null> {
+  async getProfile(uid: string): Promise<UserProfile | null> {
     try {
+      const token = await getAuthToken();
+      if (!token) return null;
+      
       const response = await fetch(`${ENV.apiUrl}/api/user/me`, {
-        headers: { "X-Firebase-Id": firebaseId }
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
       });
       return response.ok ? await response.json() : null;
     } catch (error) {
@@ -36,7 +55,13 @@ export const userService = {
 
   async getAssessmentResult(uid: string): Promise<AssessmentResult | null> {
     try {
-      const response = await fetch(`${ENV.apiUrl}/api/assessment/result/${uid}`);
+      const token = await getAuthToken();
+      const headers: any = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${ENV.apiUrl}/api/assessment/result/${uid}`, { headers });
       return response.ok ? await response.json() : null;
     } catch (error) {
       console.error("Error fetching assessment result:", error);
@@ -46,7 +71,13 @@ export const userService = {
 
   async getCareerReport(uid: string): Promise<any | null> {
     try {
-      const response = await fetch(`${ENV.apiUrl}/api/assessment/report/${uid}`);
+      const token = await getAuthToken();
+      const headers: any = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${ENV.apiUrl}/api/assessment/report/${uid}`, { headers });
       return response.ok ? await response.json() : null;
     } catch (error) {
       console.error("Error fetching career report:", error);

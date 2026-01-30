@@ -11,7 +11,7 @@ firebase-admin
 langchain
 langchain-google-genai
 langchain-community
-google-generativeai
+google-genai
 
 # Vector Store & Embeddings
 faiss-cpu

@@ -21,8 +21,12 @@ import {
   FileText
 } from "lucide-react";
 
+import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
+
 export default function DashboardPage() {
   const { user, status } = useAuth();
+  const { language } = useI18n();
   const [mounted, setMounted] = useState(false);
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const [profileData, setProfileData] = useState<any>(null);
@@ -44,7 +48,7 @@ export default function DashboardPage() {
         try {
           // Parallel fetching for better performance
           const [profile, assessment] = await Promise.all([
-            userService.getProfile(user.uid, user.uid), // Note: user.uid is passed twice, check if this is correct for your backend expectation
+            userService.getProfile(user.uid),
             userService.getAssessmentResult(user.uid)
           ]);
 
@@ -68,13 +72,19 @@ export default function DashboardPage() {
 
         } catch (error) {
           console.error("Dashboard data fetch error:", error);
+          const errorMsg = language === "gu"
+            ? "માહિતી ઉપલબ્ધ નથી. કૃપા કરીને થોડી વાર પછી પ્રયત્ન કરો."
+            : "Data unavailable. Please try again later.";
+          
+          // Only show toast if it's not a rigorous auth redirect happening
+          toast.error(errorMsg);
         } finally {
           setLoadingData(false);
         }
     }
 
     fetchUserData();
-  }, [user]);
+  }, [user, language]);
 
 
   if (status === "loading" || (status === "authenticated" && loadingData)) {

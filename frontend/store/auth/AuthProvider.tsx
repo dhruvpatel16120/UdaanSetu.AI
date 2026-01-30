@@ -44,16 +44,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(mappedUser);
         setStatus("authenticated");
 
-        // Sync with Backend
-        fetch('http://localhost:8000/api/user/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            firebase_id: mappedUser.uid,
-            email: mappedUser.email,
-            name: mappedUser.displayName
-          })
-        }).catch(err => console.error("Failed to sync user with backend:", err));
+        // Secure Sync with Backend
+        try {
+          const token = await firebaseUser.getIdToken();
+          const syncRes = await fetch('http://localhost:8000/api/user/sync', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              email: mappedUser.email,
+              name: mappedUser.displayName
+            })
+          });
+
+          if (syncRes.status === 503) {
+            console.error("⚠️ Backend Auth Service Unavailable (Clock/Creds issue). Sync paused.");
+            // We don't block the user from the app, but we know sync failed.
+          } else if (!syncRes.ok) {
+            console.error(`Sync failed with status: ${syncRes.status}`);
+          }
+
+        } catch (err) {
+          console.error("Failed to sync user with backend:", err);
+          // Optional: Show toast error to user?
+        }
       });
 
       return () => unsubscribe();

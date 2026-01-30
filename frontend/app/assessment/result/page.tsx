@@ -27,15 +27,22 @@ interface AssessmentResult {
     readiness_score?: number;
     trait_scores?: Record<string, number>;
     snapshot?: {
-      key_insights?: string[];
-      top_recommendation?: string;
+      key_insights?: Array<{ en: string; gu: string }>;
+      top_recommendation?: { en: string; gu: string };
+    };
+    bio_texts?: { en: string; gu: string };
+    swot?: {
+      strengths: Array<{ en: string; gu: string }>;
+      weaknesses: Array<{ en: string; gu: string }>;
+      opportunities: Array<{ en: string; gu: string }>;
+      threats: Array<{ en: string; gu: string }>;
     };
   };
 }
 
 export default function AssessmentResultPage() {
   const { user, status } = useAuth();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<AssessmentResult | null>(null);
@@ -46,7 +53,6 @@ export default function AssessmentResultPage() {
 
     async function fetchResult() {
       try {
-        // For demo/dev we use demo_user_123 if user.uid is not available
         const userId = user?.uid || "demo_user_123";
         const res = await fetch(`${ENV.apiUrl}/api/assessment/result/${userId}`);
 
@@ -102,8 +108,16 @@ export default function AssessmentResultPage() {
   const readiness = bioData.readiness_score || 0;
   const traits = bioData.trait_scores || {};
   const snapshot = bioData.snapshot || {};
+  
+  // Helper to handle bilingual objects
+  const getText = (obj: any) => {
+    if (!obj) return "";
+    if (typeof obj === 'string') return obj;
+    return language === 'gu' ? (obj.gu || obj.en) : obj.en;
+  };
+
   const insights = snapshot.key_insights || [];
-  const recommendation = snapshot.top_recommendation || "Pending Analysis";
+  const recommendation = getText(snapshot.top_recommendation) || "Pending Analysis";
 
   return (
     <div className={cn(
@@ -203,12 +217,14 @@ export default function AssessmentResultPage() {
               <Target className="w-6 h-6 text-accent" /> Key Insights
             </h3>
             <div className="space-y-6 flex-grow">
-              {insights.map((insight: string, i: number) => (
+              {insights.map((insight: any, i: number) => (
                 <div key={i} className="flex items-start gap-4">
                   <div className="mt-1 w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                     <CheckCircle2 className="w-3 h-3 text-green-500" />
                   </div>
-                  <span className="text-lg font-medium text-foreground/80 leading-tight">{insight}</span>
+                  <span className="text-lg font-medium text-foreground/80 leading-tight">
+                    {getText(insight)}
+                  </span>
                 </div>
               ))}
               {insights.length === 0 && (
@@ -225,6 +241,34 @@ export default function AssessmentResultPage() {
           </motion.div>
         </div>
 
+        {/* SWOT Analysis Section */}
+        {bioData.swot && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12"
+          >
+            {[
+              { title: "Strengths", type: "strengths", color: "text-green-500", bg: "bg-green-500/10" },
+              { title: "Weaknesses", type: "weaknesses", color: "text-red-500", bg: "bg-red-500/10" },
+              { title: "Opportunities", type: "opportunities", color: "text-blue-500", bg: "bg-blue-500/10" },
+              { title: "Threats", type: "threats", color: "text-amber-500", bg: "bg-amber-500/10" }
+            ].map((s) => (
+              <div key={s.type} className={cn("glass-card p-6 border-border", s.bg)}>
+                <h4 className={cn("text-lg font-bold mb-4 uppercase tracking-wider", s.color)}>{s.title}</h4>
+                <ul className="space-y-3">
+                  {(bioData.swot as any)[s.type]?.map((item: any, idx: number) => (
+                    <li key={idx} className="text-sm font-medium text-foreground/70 leading-relaxed flex gap-2">
+                       <span className="opacity-40">•</span> {getText(item)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </motion.div>
+        )}
+
         {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -232,9 +276,9 @@ export default function AssessmentResultPage() {
           transition={{ delay: 0.5 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Link href={ROUTES.profile} className="w-full sm:w-auto">
+          <Link href={ROUTES.careerReport} className="w-full sm:w-auto">
             <Button className="w-full bg-accent hover:bg-accent/90 text-white font-black py-6 px-10 rounded-2xl text-lg shadow-xl shadow-accent/20 transition-all hover:scale-105 active:scale-95">
-              Generate Bio-Profile <ArrowRight className="ml-2 w-6 h-6" />
+              View Detailed Career Roadmap <ArrowRight className="ml-2 w-6 h-6" />
             </Button>
           </Link>
           <Link href={`${ROUTES.assessment}?retake=true`} className="w-full sm:w-auto">
