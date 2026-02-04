@@ -79,8 +79,8 @@ Rural students often lack access to personalized, expert career guidance. They f
 - Providing a **Persistent AI Mentor** for continuous conversation.
 
 > ⚠️ **Note:**
-> Google Gemini API might not work in the live prototype due to strict quota limits. For a fully functional experience, we recommend setting up the project locally with your own **Gemini API Key**.
-
+> Google Gemini API might not work in the live prototype due to strict quota limits. For a fully functional experience, we recommend setting up the project locally with your own **Gemini API Key** and **Firebase Security Configuration**.
+**vercel** have Read-only System,So same Features are **not working** in **Live URL**.
 ---
 
 ## ✨ Features
