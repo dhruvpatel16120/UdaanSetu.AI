@@ -113,11 +113,7 @@ Rural students often lack access to personalized, expert career guidance. They f
   </table>
 </div>
 
-### 📺 Demo Video
 
-📽️ **[Watch the Prototype Demo on YouTube](https://www.youtube.com/watch?v=dQw4w9WgXcQ)**
-
----
 
 ## 🛠️ Tech Stack
 
