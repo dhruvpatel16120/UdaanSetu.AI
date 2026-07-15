@@ -60,7 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const unsubscribe = authService.onAuthStateChanged((firebaseUser) => {
+    // NOTE: Firebase's onAuthStateChanged accepts `(user) => void` but passing
+    // an async function is safe — Firebase ignores the return value.
+    const unsubscribe = authService.onAuthStateChanged(async (firebaseUser) => {
       if (!firebaseUser) {
         setUser(null);
         setStatus("unauthenticated");
@@ -68,8 +70,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // The cached Firebase ID token can still show emailVerified=false even
+      // after the user has clicked the verification link (the token only
+      // refreshes every hour). Force-reload from Firebase servers first so we
+      // always have the ground-truth emailVerified value before routing.
+      if (!firebaseUser.emailVerified) {
+        try {
+          await firebaseUser.reload();
+        } catch {
+          // Network error — proceed with cached data; worse case user gets
+          // shown the verify-email page and can try "Check Verification".
+        }
+      }
+
       // STRICT email verification policy:
-      // If user logs in but their email is not verified, and they are not currently on the verification page
+      // If user logs in but their email is still not verified after reload,
+      // and they are not currently on the verification page, redirect them.
       if (!firebaseUser.emailVerified) {
         const mappedUser = mapFirebaseUser(firebaseUser);
         setUser(mappedUser);

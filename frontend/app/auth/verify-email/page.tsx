@@ -27,13 +27,7 @@ export default function VerifyEmailPage() {
   const { user, refreshUser, signOut, status } = useAuth();
   const { isLoading, error, run, resetError } = useAsyncAction();
 
-  const [resendCount, setResendCount] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("auth_verify_email_resend_count");
-      return stored ? parseInt(stored, 10) : 0;
-    }
-    return 0;
-  });
+  const [resendCount, setResendCount] = useState(0);
 
   // Only redirect after Firebase has resolved the auth state.
   // Without this check, user is null on first render (loading state)
@@ -58,7 +52,12 @@ export default function VerifyEmailPage() {
   }, [error, t]);
 
   const onResend = useCallback(async () => {
-    if (resendCount >= 3) {
+    // Read the current count from localStorage at call time so we always
+    // have the latest value without needing an effect.
+    const stored = localStorage.getItem("auth_verify_email_resend_count");
+    const currentCount = stored ? parseInt(stored, 10) : resendCount;
+
+    if (currentCount >= 3) {
       toast.error("You have reached the limit of 3 verification email requests. Please check your spam folder or try again later.");
       return;
     }
@@ -66,7 +65,7 @@ export default function VerifyEmailPage() {
     resetError();
     await run(async () => {
       await authService.resendVerificationEmail();
-      const newCount = resendCount + 1;
+      const newCount = currentCount + 1;
       setResendCount(newCount);
       localStorage.setItem("auth_verify_email_resend_count", newCount.toString());
       toast.success(`Verification email sent successfully! (${newCount}/3 requests used)`);
@@ -145,7 +144,13 @@ export default function VerifyEmailPage() {
                       t("auth.action.checkVerification")
                     )}
                   </Button>
-                  <Button type="button" variant="outline" onClick={onResend} disabled={isLoading || resendCount >= 3 || status === "loading"}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onResend}
+                    disabled={isLoading || resendCount >= 3 || status === "loading"}
+                    suppressHydrationWarning
+                  >
                     {isLoading ? (
                       <>
                         <Spinner />

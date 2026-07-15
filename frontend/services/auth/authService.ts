@@ -45,7 +45,13 @@ export const authService = {
   // Sign in user with email & password
   async signInWithEmailPassword(email: string, password: string) {
     const auth = requireFirebaseAuth();
-    return await signInWithEmailAndPassword(auth, email, password);
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    // Force-reload the user from Firebase servers so that emailVerified
+    // reflects the actual verification state, not a cached JWT value.
+    // Without this, a user who verified their email in a different session
+    // would still see emailVerified=false until their token naturally refreshes.
+    await reload(credential.user);
+    return credential;
   },
 
   // Create new account and send verification email

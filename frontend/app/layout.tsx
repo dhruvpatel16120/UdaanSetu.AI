@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins, Noto_Sans_Gujarati } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "@/components/layout/Navbar";
@@ -29,6 +30,10 @@ export const metadata: Metadata = {
   },
 };
 
+// Inline theme-detection script as a plain string constant (not inside JSX)
+// to avoid the "script tag inside React component" warning.
+const themeScript = `(function(){function g(){var t=localStorage.getItem('theme');if(t)return t;return window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}var t=g();document.documentElement.classList.remove('light','dark');document.documentElement.classList.add(t);})()`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,22 +42,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                function getTheme() {
-                  const storedTheme = localStorage.getItem('theme');
-                  if (storedTheme) return storedTheme;
-                  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                }
-                const theme = getTheme();
-                document.documentElement.classList.remove('light', 'dark');
-                document.documentElement.classList.add(theme);
-              })()
-            `,
-          }}
-        />
+        {/* Next.js Script with beforeInteractive runs before hydration,
+            equivalent to an inline <script> in <head>, but avoids the React warning. */}
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body
         className={`${poppins.variable} ${gujarati.variable} antialiased min-h-screen`}
