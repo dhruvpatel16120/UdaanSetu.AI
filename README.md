@@ -1,4 +1,4 @@
-# <p align="center">🚀 UdaanSetu.AI</p>
+#
 
 <p align="center">
   <img src="visuals/logo.png" alt="UdaanSetu Logo" width="180" />
@@ -80,7 +80,8 @@ Rural students often lack access to personalized, expert career guidance. They f
 
 > ⚠️ **Note:**
 > Google Gemini API might not work in the live prototype due to strict quota limits. For a fully functional experience, we recommend setting up the project locally with your own **Gemini API Key** and **Firebase Security Configuration**.
-**vercel** have Read-only System,So same Features are **not working** in **Live URL**.
+> **vercel** have Read-only System,So same Features are **not working** in **Live URL**.
+
 ---
 
 ## ✨ Features
@@ -113,8 +114,6 @@ Rural students often lack access to personalized, expert career guidance. They f
   </table>
 </div>
 
-
-
 ## 🛠️ Tech Stack
 
 | Layer             | Technology                  | Badge                                                                                                      | Purpose                                |
@@ -145,8 +144,7 @@ UdaanSetu.AI/
 │   └── main.py           # Entry Point & Vercel Handler
 ├── visuals/              # Logos, Screenshots, and Assets
 ├── vercel.json           # Monorepo Deployment Config
-├── documentations.md     # Technical System Hub
-└── deployment_guide.md   # Step-by-step Hosting Guide
+└── DOC/                  # Centralized documentation folder
 ```
 
 ---
@@ -180,17 +178,17 @@ Detailed instructions for setting up each part of the monorepo:
 
 Once both services are running:
 
-1.  Navigate to **`http://localhost:3000`** in your browser.
-2.  Log in using Google or Email.
-3.  Take the **Adaptive Assessment**.
-4.  Generate your **Career Report**.
-5.  Start a conversation with your **AI Mentor**.
+1. Navigate to **`http://localhost:3000`** in your browser.
+2. Log in using Google or Email.
+3. Take the **Adaptive Assessment**.
+4. Generate your **Career Report**.
+5. Start a conversation with your **AI Mentor**.
 
 ---
 
 ## 📖 Documentation
 
-For a technical deep-dive into our **Module 1 (Bio-Profiler)**, **Module 2 (Deep Thinker)**, and **Module 3 (Guide)**, please visit our **[Technical Documentation Hub](./documentations.md)**.
+For a technical deep-dive into our **Module 1 (Bio-Profiler)**, **Module 2 (Deep Thinker)**, and **Module 3 (Guide)**, please visit our **[Technical Documentation Hub](./DOC/documentations.md)**.
 
 ---
 
@@ -198,17 +196,17 @@ For a technical deep-dive into our **Module 1 (Bio-Profiler)**, **Module 2 (Deep
 
 We welcome contributions! To help us empower rural youth:
 
-1.  **Fork** the project.
-2.  Create your **Feature Branch** (`git checkout -b feature/AmazingFeature`).
-3.  **Commit** your changes (`git commit -m 'Add some AmazingFeature'`).
-4.  **Push** to the branch (`git push origin feature/AmazingFeature`).
-5.  Open a **Pull Request**.
+1. **Fork** the project.
+2. Create your **Feature Branch** (`git checkout -b feature/AmazingFeature`).
+3. **Commit** your changes (`git commit -m 'Add some AmazingFeature'`).
+4. **Push** to the branch (`git push origin feature/AmazingFeature`).
+5. Open a **Pull Request**.
 
 ---
 
 ## 📧 Contact
 
-**Dhruv Patel** - [dhruvpatel16120@gmail.com](mailto:dhruvpatel16120@gmail.com)  
+**Dhruv Patel** - [dhruvpatel16120@gmail.com](mailto:dhruvpatel16120@gmail.com)
 **Project Link**: [https://github.com/dhruvpatel16120/UdaanSetu.AI](https://github.com/dhruvpatel16120/UdaanSetu.AI)
 
 ---

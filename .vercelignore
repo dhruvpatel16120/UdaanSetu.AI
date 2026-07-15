@@ -37,3 +37,9 @@ Thumbs.db
 .env
 .env.*
 serviceAccountKey.json
+
+# Documentation
+DOC/
+backend/DOC/
+frontend/DOC/
+

@@ -29,7 +29,7 @@
 
 The platform provides a complete end-to-end journey: from adaptive assessments and **SWOT analysis** to high-fidelity **Bio-Profiles** and predicted career roadmaps powered by **real-time job market data**.
 
-For a deep dive into how everything works under the hood, check out our **[Frontend Architecture Guide](./ARCHITECTURE.md)**.
+For a deep dive into how everything works under the hood, check out our **[Frontend Architecture Guide](./DOC/ARCHITECTURE.md)**.
 
 ---
 
@@ -81,7 +81,7 @@ For a deep dive into how everything works under the hood, check out our **[Front
 
 3.  **Set up environment variables:**
 
-    Create a `.env` file in the `frontend` directory and add your Firebase configuration. You can refer to `firebase config.example` for the required keys.
+    Create a `.env` file in the `frontend` directory and add your Firebase configuration. You can refer to `DOC/firebase-config.example` for the required keys.
 
 - step 1: create `.env`
 
@@ -147,7 +147,9 @@ frontend/
 ├── constants/            # Global configs, translations, and routes
 ├── types/                # TypeScript interfaces & type definitions
 ├── utils/                # Utility functions & formatting helpers
-└── public/               # Static assets (Images, Logos, Favicons)
+├── public/               # Static assets (Images, Logos, Favicons)
+└── DOC/                  # Local documentation & configuration templates
+
 ```
 
 ---

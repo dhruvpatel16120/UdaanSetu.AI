@@ -13,7 +13,7 @@
     "firebase": "^11.10.0",
     "framer-motion": "^12.29.0",
     "lucide-react": "^0.563.0",
-    "next": "16.1.6",
+    "next": "^16.2.10",
     "react": "19.2.3",
     "react-chatbot-kit": "^2.2.2",
     "react-dom": "19.2.3",

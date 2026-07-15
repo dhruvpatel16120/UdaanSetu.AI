@@ -2,6 +2,7 @@
 
 import React, { createContext, useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import type { User } from "firebase/auth";
 
 import type { AuthStatus, AuthUser } from "@/types/auth";
 import { authService } from "@/services/auth/authService";
@@ -10,7 +11,7 @@ import { ENV } from "@/constants/env";
 import { toast } from "sonner";
 
 const PROTECTED_ROUTES = ["/assessment", "/mentor", "/career-report", "/dashboard", "/profile"];
-const SESSION_TIMEOUT = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+const SESSION_TIMEOUT = 12 * 60 * 60 * 1000; // 12 hours session timeout
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -26,74 +27,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const pathname = usePathname();
   const router = useRouter();
-  const timeoutIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const sessionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const clearSession = useCallback(() => {
     localStorage.removeItem("auth_login_timestamp");
-    if (timeoutIntervalRef.current) {
-      clearInterval(timeoutIntervalRef.current);
+    if (sessionTimeoutRef.current) {
+      clearInterval(sessionTimeoutRef.current);
     }
   }, []);
 
+  // Sync user with backend in background (warnings logged to console, no blocker for frontend)
+  const syncUserWithBackend = async (firebaseUser: User, mappedUser: AuthUser) => {
+    try {
+      const token = await firebaseUser.getIdToken();
+      const syncUrl = `${ENV.apiUrl}/api/user/sync`;
+      
+      await fetch(syncUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          email: mappedUser.email,
+          name: mappedUser.displayName,
+        }),
+      });
+      console.log("User sync request sent to backend (if running).");
+    } catch (err: unknown) {
+      console.warn("Backend user sync skipped (backend is not running):", err);
+    }
+  };
+
   useEffect(() => {
-    // Move sync logic into a separate function to keep onAuthStateChanged synchronous
-    const handleUserSync = async (firebaseUser: import("firebase/auth").User, mappedUser: AuthUser) => {
-      try {
-        const token = await firebaseUser.getIdToken();
-        const syncUrl = `${ENV.apiUrl}/api/user/sync`;
-        
-        const syncRes = await fetch(syncUrl, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            email: mappedUser.email,
-            name: mappedUser.displayName
-          })
-        });
-
-        if (syncRes.status === 503) {
-          console.error("⚠️ Backend Auth Service Unavailable (Clock/Creds issue). Sync paused.");
-          toast.error("Auth server is currently unavailable. Please try again later.", {
-            description: "System clock or credentials issue detected."
-          });
-        } else if (!syncRes.ok) {
-          console.error(`Sync failed with status: ${syncRes.status}`);
-          toast.error(`Sync failed (${syncRes.status}). Some features may be limited.`);
-        } else {
-           console.log("✅ User sync successful");
-        }
-      } catch (err: unknown) {
-        console.error("Failed to sync user with backend:", err);
-        // Specifically handle "Failed to fetch" which usually means server is down or CORS issue
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        if (errorMessage === "Failed to fetch") {
-          toast.error("Network Error: Could not connect to backend server.", {
-            description: "Please check if the backend is running and CORS is configured."
-          });
-        } else {
-          toast.error("An error occurred while syncing your profile.");
-        }
-      }
-    };
-
     const unsubscribe = authService.onAuthStateChanged((firebaseUser) => {
       if (!firebaseUser) {
         setUser(null);
         setStatus("unauthenticated");
+        clearSession();
         return;
       }
 
-      // Enforce Email Verification
+      // STRICT email verification policy:
+      // If user logs in but their email is not verified, and they are not currently on the verification page
       if (!firebaseUser.emailVerified) {
         const isVerifyPage = window.location.pathname.includes("/auth/verify-email");
         if (!isVerifyPage) {
-          console.log("User not verified, signing out...");
+          console.log("User email is not verified. Signing out and blocking access...");
           authService.signOut().then(() => {
             setUser(null);
             setStatus("unauthenticated");
+            clearSession();
+            router.push("/auth/verify-email");
           });
           return;
         }
@@ -103,36 +88,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(mappedUser);
       setStatus("authenticated");
 
-      // Handle Session Timeout Timestamp
+      // Setup session timestamp
       const storedTimestamp = localStorage.getItem("auth_login_timestamp");
       if (!storedTimestamp) {
         localStorage.setItem("auth_login_timestamp", Date.now().toString());
       }
 
-      // Secure Sync with Backend - triggers asynchronously
-      handleUserSync(firebaseUser, mappedUser);
+      // Background synchronization (fails silently without toast notifications)
+      syncUserWithBackend(firebaseUser, mappedUser);
     });
 
     return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-      if (timeoutIntervalRef.current) {
-        clearInterval(timeoutIntervalRef.current);
-      }
+      if (typeof unsubscribe === "function") unsubscribe();
+      if (sessionTimeoutRef.current) clearInterval(sessionTimeoutRef.current);
     };
-  }, []);
+  }, [clearSession, router]);
 
   // Auth Guard Logic
   useEffect(() => {
     if (status === "loading") return;
 
-    const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
-    
+    const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
     if (isProtectedRoute && status === "unauthenticated") {
-      console.log(`Protected route detected: ${pathname}. Redirecting to login.`);
+      console.log(`Access blocked for protected route: ${pathname}. Redirecting to auth.`);
       router.push("/auth");
-      toast.error("Please log in to access this page.");
+      toast.error("Authentication required. Please sign in.");
     }
   }, [pathname, status, router]);
 
@@ -147,8 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const currentTime = Date.now();
         
         if (currentTime - loginTime >= SESSION_TIMEOUT) {
-          console.log("Session expired. Logging out...");
-          toast.info("Your session has expired. Please log in again.");
+          console.log("Session expired. Logging user out...");
+          toast.info("Session expired. Please sign in again.");
           authService.signOut().then(() => {
             clearSession();
             setUser(null);
@@ -159,13 +139,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Check immediately and then every minute
     checkTimeout();
-    timeoutIntervalRef.current = setInterval(checkTimeout, 60000);
+    sessionTimeoutRef.current = setInterval(checkTimeout, 60000); // Check every minute
 
     return () => {
-      if (timeoutIntervalRef.current) {
-        clearInterval(timeoutIntervalRef.current);
+      if (sessionTimeoutRef.current) {
+        clearInterval(sessionTimeoutRef.current);
       }
     };
   }, [status, router, clearSession]);
@@ -178,7 +157,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     await authService.signOut();
     clearSession();
-  }, [clearSession]);
+    setUser(null);
+    setStatus("unauthenticated");
+    router.push("/auth");
+  }, [clearSession, router]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ user, status, refreshUser, signOut }),

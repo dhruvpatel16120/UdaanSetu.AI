@@ -31,10 +31,10 @@ UdaanSetu is designed as a modular, three-tier intelligence system to ensure hig
 
 For deep-dives into specific parts of the system, please refer to the following:
 
-- **Frontend**: [app/README.md](./frontend/README.md) - UI/UX, State Management, and Next.js setup.
-- **Backend**: [backend/README.md](./backend/README.md) - API Endpoints, AI Logic, and Python environment.
-- **Backend Architecture**: [backend/ARCHITECTURE.md](./backend/ARCHITECTURE.md) - Deep technical blueprints of the server.
-- **RAG Implementation**: [backend/RAG_GUIDE.md](./backend/RAG_GUIDE.md) - How we handle vector embeddings and knowledge retrieval.
+- **Frontend**: [frontend/README.md](../frontend/README.md) - UI/UX, State Management, and Next.js setup.
+- **Backend**: [backend/README.md](../backend/README.md) - API Endpoints, AI Logic, and Python environment.
+- **Backend Architecture**: [backend/DOC/ARCHITECTURE.md](../backend/DOC/ARCHITECTURE.md) - Deep technical blueprints of the server.
+- **RAG Implementation**: [backend/DOC/RAG_GUIDE.md](../backend/DOC/RAG_GUIDE.md) - How we handle vector embeddings and knowledge retrieval.
 - **Setup Guide**: [setup_guide.md](./setup_guide.md) - Step-by-step local development setup.
 - **Deployment**: [deployment_guide.md](./deployment_guide.md) - Instructions for hosting on Vercel.
 

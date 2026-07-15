@@ -1,115 +1,98 @@
 import {
-  GoogleAuthProvider,
-  createUserWithEmailAndPassword,
   getAuth,
-  onAuthStateChanged,
-  reload,
-  sendEmailVerification,
-  sendPasswordResetEmail,
+  GoogleAuthProvider,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  onAuthStateChanged,
+  reload,
   type Auth,
   type User,
 } from "firebase/auth";
 
 import { getFirebaseAppSafe } from "@/services/firebase/client";
 
-function getFirebaseAuthSafe(): Auth | null {
+// Get FirebaseAuth helper (returns null if Firebase config is missing)
+function getFirebaseAuth(): Auth | null {
   const app = getFirebaseAppSafe();
-  if (!app) {
-    return null;
-  }
-
+  if (!app) return null;
   return getAuth(app);
 }
 
+// Require FirebaseAuth helper (throws if config is missing)
 function requireFirebaseAuth(): Auth {
-  const auth = getFirebaseAuthSafe();
+  const auth = getFirebaseAuth();
   if (!auth) {
-    throw new Error(
-      "Firebase config missing. Create udaansetu/.env.local and set NEXT_PUBLIC_FIREBASE_* env vars.",
-    );
+    throw new Error("Firebase configuration is missing. Please check your environment variables.");
   }
-
   return auth;
 }
 
 export const authService = {
+  // Auth state listener
   onAuthStateChanged(callback: (user: User | null) => void) {
-    const auth = getFirebaseAuthSafe();
+    const auth = getFirebaseAuth();
     if (!auth) {
       callback(null);
       return () => undefined;
     }
-
     return onAuthStateChanged(auth, callback);
   },
 
+  // Sign in user with email & password
   async signInWithEmailPassword(email: string, password: string) {
-    try {
-      const auth = requireFirebaseAuth();
-      return await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      if (process.env.NEXT_PUBLIC_DEBUG_MODE === "true") {
-        console.error("DEBUG: signInWithEmailPassword error:", error);
-      }
-      throw error;
-    }
+    const auth = requireFirebaseAuth();
+    return await signInWithEmailAndPassword(auth, email, password);
   },
 
+  // Create new account and send verification email
   async signUpWithEmailPassword(email: string, password: string) {
     const auth = requireFirebaseAuth();
     const credential = await createUserWithEmailAndPassword(auth, email, password);
-    await sendEmailVerification(credential.user);
+    if (credential.user) {
+      await sendEmailVerification(credential.user);
+    }
     return credential;
   },
 
+  // Sign in using Google Sign-In popup
   async signInWithGooglePopup() {
-    try {
-      const auth = requireFirebaseAuth();
-      const provider = new GoogleAuthProvider();
-      return await signInWithPopup(auth, provider);
-    } catch (error) {
-      if (process.env.NEXT_PUBLIC_DEBUG_MODE === "true") {
-        console.error("DEBUG: signInWithGooglePopup error:", error);
-        // Alert helpful validation errors in dev/debug mode
-        if (error instanceof Error && error.message.includes("auth/configuration-not-found")) {
-           alert("Firebase Auth Config Not Found. Check console for details.");
-        }
-      }
-      throw error;
-    }
+    const auth = requireFirebaseAuth();
+    const provider = new GoogleAuthProvider();
+    return await signInWithPopup(auth, provider);
   },
 
+  // Send password reset email
   async sendPasswordReset(email: string) {
     const auth = requireFirebaseAuth();
-    return sendPasswordResetEmail(auth, email);
+    return await sendPasswordResetEmail(auth, email);
   },
 
+  // Resend email verification
   async resendVerificationEmail() {
     const auth = requireFirebaseAuth();
     const user = auth.currentUser;
     if (!user) {
-      throw new Error("No authenticated user.");
+      throw new Error("No authenticated user found to verify.");
     }
-
-    return sendEmailVerification(user);
+    return await sendEmailVerification(user);
   },
 
+  // Refresh user data (used to check emailVerified flag state changes)
   async refreshUser() {
     const auth = requireFirebaseAuth();
     const user = auth.currentUser;
-    if (!user) {
-      return null;
-    }
-
+    if (!user) return null;
     await reload(user);
-    return user;
+    return auth.currentUser;
   },
 
+  // Sign out user session
   async signOut() {
     const auth = requireFirebaseAuth();
-    return signOut(auth);
+    return await signOut(auth);
   },
 };

@@ -15,7 +15,7 @@ import { Card } from "@/components/ui/Card";
 import { GoogleIcon } from "@/components/ui/GoogleIcon";
 import { InlineLink } from "@/components/ui/InlineLink";
 import { Spinner } from "@/components/ui/Spinner";
-import { ASSETS } from "@/constants/assets";
+
 import { ROUTES } from "@/constants/routes";
 import { AUTH_THEME } from "@/constants/theme";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
@@ -116,6 +116,7 @@ export function AuthSlider() {
 
       if (!credential.user.emailVerified) {
         await authService.signOut();
+        router.push(ROUTES.auth.verifyEmail);
         throw { code: "auth/unverified-email" };
       }
 
@@ -175,7 +176,7 @@ export function AuthSlider() {
           <div className="mb-5 flex items-center justify-between sm:mb-6">
             <div className="flex items-center gap-3">
               <Link href={ROUTES.home} className="relative h-10 w-10 block hover:opacity-80 transition-opacity">
-                <Image src={ASSETS.logo} alt={t("appName")} fill className="object-contain" priority />
+                <Image src="/logo.png" alt={t("appName")} fill className="object-contain" priority sizes="40px" />
               </Link>
               <Link href={ROUTES.home} className="text-lg font-semibold tracking-tight text-foreground hover:text-accent transition-colors">
                 {t("appName")}
@@ -403,7 +404,7 @@ export function AuthSlider() {
               <div className={cn("relative hidden md:block overflow-hidden", AUTH_THEME.accentBgClass)}>
                 <div className="absolute inset-0" aria-hidden="true">
                   <Image
-                    src={ASSETS.authHero}
+                    src="/auth-hero.png"
                     alt=""
                     fill
                     className="object-cover opacity-30"
@@ -415,7 +416,7 @@ export function AuthSlider() {
                   <div>
                     <div className="flex items-center gap-3">
                       <Link href={ROUTES.home} className="relative h-12 w-12 rounded-2xl bg-white/10 backdrop-blur-sm p-2.5 block hover:bg-white/20 transition-colors">
-                        <Image src={ASSETS.logo} alt={t("appName")} fill className="object-contain" />
+                        <Image src="/logo.png" alt={t("appName")} fill className="object-contain" sizes="48px" />
                       </Link>
                       <Link href={ROUTES.home} className="text-2xl font-bold tracking-tight hover:text-white/80 transition-colors">{t("appName")}</Link>
                     </div>

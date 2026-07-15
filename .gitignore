@@ -50,7 +50,7 @@ MANIFEST
 .env.production.local
 *.env
 serviceAccountKey.json
-serviceAccountKey_ex.json
+
 
 # -------------------------
 # OS / IDE

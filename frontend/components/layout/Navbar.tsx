@@ -70,6 +70,7 @@ export function Navbar() {
                 alt="UdaanSetu.AI Logo"
                 width={40}
                 height={40}
+                sizes="100vw"
                 className="object-contain transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6"
                 priority
               />

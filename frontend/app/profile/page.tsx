@@ -180,9 +180,9 @@ export default function ProfilePage() {
 
                     <div className="flex flex-col md:flex-row gap-8 items-start relative z-10">
                         <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-tr from-accent to-orange-500 p-1 shadow-2xl">
-                            <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
+                            <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden relative">
                                 {user.photoURL ? (
-                                    <Image src={user.photoURL} alt="Profile" className="object-cover" fill />
+                                    <Image src={user.photoURL} alt="Profile" className="object-cover" fill sizes="(max-width: 768px) 96px, 128px" />
                                 ) : (
                                     <User className="w-12 h-12 text-muted-foreground" />
                                 )}
