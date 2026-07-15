@@ -79,25 +79,30 @@ For a deep dive into how everything works under the hood, check out our **[Front
     npm install
     ```
 
-3.  **Set up environment variables:**
+3.  **Set up environment variables & Firebase:**
 
-    Create a `.env` file in the `frontend` directory and add your Firebase configuration. You can refer to `DOC/firebase-config.example` for the required keys.
+    Create a `.env` file in the `frontend` directory and populate your Firebase client configuration.
+    
+    > 📝 **Detailed Setup Tutorial:**
+    > For a complete, step-by-step tutorial on creating a Firebase project, registering a web app, enabling authentication providers, and initializing Firestore, refer to the **[Firebase Configuration Guide](./DOC/firebase-config.example)**.
 
-- step 1: create `.env`
+    - **Step 1:** Create `.env` (or copy the example template):
+      ```bash
+      cp DOC/firebase-config.example .env
+      ```
 
-  ```bash
-  touch .env
-  ```
+    - **Step 2:** Fill in your custom project credentials:
+      ```env
+      NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=1234567890
+      NEXT_PUBLIC_FIREBASE_APP_ID=1:1234567890:web:abcdef1234567890abcdef12
+      ```
 
-- step 2: add firebase required keys.
-  ```
-  NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
-  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-  NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=1234567890
-  NEXT_PUBLIC_FIREBASE_APP_ID=1:1234567890:web:abcdef1234567890abcdef12
-  ```
+    > 🔒 **Database Security (Firestore Rules):**
+    > Remember to copy the secure, production-ready database security configuration from **[Firestore Security Rules](./DOC/firebase-rules.txt)** and publish them under your Firebase Console's Firestore Rules tab to safeguard user profile and assessment documents.
 
 4.  **Run the development server:**
 

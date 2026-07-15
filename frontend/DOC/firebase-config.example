@@ -1,18 +1,94 @@
-# Firebase Configuration Template
-# Copy this file to .env.local and fill in your actual Firebase values
-# Get these values from your Firebase project settings
+# =========================================================================
+# UdaanSetu.AI - Firebase Configuration Template & Setup Guide
+# =========================================================================
+# Copy this file to `.env` or `.env.local` inside the `frontend` folder 
+# and fill in your actual Firebase project values.
+# =========================================================================
 
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=1234567890
 NEXT_PUBLIC_FIREBASE_APP_ID=1:1234567890:web:abcdef1234567890abcdef12
 
-# Steps to get Firebase config:
-# 1. Go to https://console.firebase.google.com
-# 2. Create a new project or select existing one
-# 3. Go to Project Settings > General > Your apps
-# 4. Add a Web app or select existing one
-# 5. Copy the firebaseConfig values
-# 6. Replace the placeholder values above with your actual values
+# =========================================================================
+# 🛠️ STEP-BY-STEP FIREBASE SETUP INSTRUCTIONS
+# =========================================================================
+
+# -------------------------------------------------------------------------
+# 1️⃣ HOW TO CREATE A FIREBASE PROJECT
+# -------------------------------------------------------------------------
+# 1. Open your browser and navigate to the Firebase Console:
+#    👉 https://console.firebase.google.com/
+# 2. Sign in with your Google Account.
+# 3. Click on the "Add project" button (or "Create a project").
+# 4. Enter your project name (e.g., "UdaanSetu-AI") and click "Continue".
+# 5. Choose whether to enable Google Analytics for the project (optional) 
+#    and click "Continue" or "Create project".
+# 6. Wait for the project creation process to finish, then click "Continue".
+
+# -------------------------------------------------------------------------
+# 2️⃣ HOW TO CREATE A WEB APP (Get Config Keys)
+# -------------------------------------------------------------------------
+# 1. In your Firebase Project overview dashboard, click the "Web" icon 
+#    (looks like `</>`) to register a new web application.
+# 2. Enter an App Nickname (e.g., "UdaanSetu Web Client").
+# 3. (Optional) Leave "Also set up Firebase Hosting..." unchecked and click 
+#    "Register app".
+# 4. Firebase will display a code snippet containing the `firebaseConfig` object.
+# 5. Extract and copy the credentials:
+#    - `apiKey`           -> maps to `NEXT_PUBLIC_FIREBASE_API_KEY`
+#    - `authDomain`       -> maps to `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+#    - `projectId`        -> maps to `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+#    - `storageBucket`    -> maps to `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+#    - `messagingSenderId`-> maps to `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+#    - `appId`            -> maps to `NEXT_PUBLIC_FIREBASE_APP_ID`
+# 6. Paste these values into your local `.env` or `.env.local` file.
+
+# -------------------------------------------------------------------------
+# 3️⃣ HOW TO ENABLE FIREBASE AUTHENTICATION
+# -------------------------------------------------------------------------
+# 1. In the Firebase Console left-side navigation bar, click on "Build" > "Authentication".
+# 2. Click "Get started".
+# 3. Under the "Sign-in method" tab, configure the following providers:
+#
+#    A. Email/Password:
+#       - Click on "Email/Password".
+#       - Toggle the first switch to "Enable" (allow user sign-in with email & password).
+#       - Click "Save".
+#
+#    B. Google Sign-In (Optional but recommended):
+#       - Click "Add new provider" and select "Google".
+#       - Toggle the "Enable" switch.
+#       - Select a project support email from the dropdown menu.
+#       - Click "Save".
+#
+# 4. The application is now configured to handle authentication flows.
+
+# -------------------------------------------------------------------------
+# 4️⃣ HOW TO CREATE & CONFIG FIRESTORE DATABASE
+# -------------------------------------------------------------------------
+# 1. In the Firebase Console left-side navigation bar, click on "Build" > "Firestore Database".
+# 2. Click on the "Create database" button.
+# 3. Configure Database Settings:
+#    - Location: Choose a location close to your users (e.g., `asia-south1` for India).
+#    - Click "Next".
+# 4. Security Rules Mode:
+#    - Select "Start in production mode" (this keeps your database secure by default).
+#    - Click "Create".
+# 5. Your Firestore instance will be initialized.
+
+# -------------------------------------------------------------------------
+# 5️⃣ HOW TO ADD SECURITY RULES FOR FIRESTORE
+# -------------------------------------------------------------------------
+# 1. In the Firestore Database section, click on the "Rules" tab at the top.
+# 2. You will see the default rules editor.
+# 3. Open the `firebase-rules.txt` file located in `frontend/DOC/firebase-rules.txt`.
+# 4. Copy the entire content of that file.
+# 5. Paste it into the Firebase Console rules editor, replacing the existing content.
+# 6. Click the "Publish" button to deploy the rules.
+#
+# 💡 Note: These rules restrict read/write access so that authenticated users
+#    can only read and write their own profile and assessment documents.
+# =========================================================================

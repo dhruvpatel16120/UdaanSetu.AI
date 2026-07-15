@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =============================================================
+    // 🔐 GLOBAL DEFAULT RULE
+    // =============================================================
+    // Deny read/write access to all collections by default to prevent 
+    // unauthorized data leaks or modifications.
+    // =============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =============================================================
+    // 👤 USER PROFILE DOCUMENTS (e.g., /users/{userId})
+    // =============================================================
+    // - Users can only read, write, or update their own profile document.
+    // - No user can access or modify another user's private data.
+    // - Auth token UID must match the document path ID.
+    // =============================================================
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Allow the user full access to all subcollections under their user document
+      // (e.g., /users/{userId}/assessments/{assessmentId}, /users/{userId}/reports/{reportId})
+      match /{allSubcollections=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // =============================================================
+    // 🧠 ALTERNATIVE ROOT-LEVEL COLLECTIONS (E.g., /assessments, /reports)
+    // =============================================================
+    // If assessment or career reports are stored in root-level collections
+    // rather than nested under user profiles, access is governed by the 
+    // `userId` field inside the document.
+    // =============================================================
+    
+    // Rules for assessments collection:
+    match /assessments/{assessmentId} {
+      // Allow reading or updating if the document already exists and belongs to the authenticated user
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Allow creation if the new document's userId matches the authenticated user's UID
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Rules for career reports collection:
+    match /reports/{reportId} {
+      // Allow reading or updating if the document already exists and belongs to the authenticated user
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Allow creation if the new document's userId matches the authenticated user's UID
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+  }
+}
