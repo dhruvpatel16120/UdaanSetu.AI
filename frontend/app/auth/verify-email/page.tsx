@@ -28,7 +28,14 @@ export default function VerifyEmailPage() {
   const { user, refreshUser } = useAuth();
   const { isLoading, error, run, resetError } = useAsyncAction();
 
-  const [justChecked, setJustChecked] = useState<boolean>(false);
+  const [resendCount, setResendCount] = useState<number>(0);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("auth_verify_email_resend_count");
+    if (stored) {
+      setResendCount(parseInt(stored, 10));
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -40,30 +47,34 @@ export default function VerifyEmailPage() {
   const subtitle = useMemo(() => t("auth.subtitle.verifyEmail"), [t]);
 
   const onResend = useCallback(async () => {
+    if (resendCount >= 3) {
+      toast.error("You have reached the limit of 3 verification email requests. Please check your spam folder or try again later.");
+      return;
+    }
+
     resetError();
     await run(async () => {
       await authService.resendVerificationEmail();
+      const newCount = resendCount + 1;
+      setResendCount(newCount);
+      localStorage.setItem("auth_verify_email_resend_count", newCount.toString());
+      toast.success(`Verification email sent successfully! (${newCount}/3 requests used)`);
     });
-  }, [resetError, run]);
+  }, [resendCount, resetError, run]);
 
   const onCheck = useCallback(async () => {
     resetError();
     await run(async () => {
-      await refreshUser();
-      setJustChecked(true);
+      const refreshed = await authService.refreshUser();
+      if (refreshed?.emailVerified) {
+        toast.success("Email verified successfully! Proceeding to Sign In...");
+        await refreshUser();
+        router.replace(ROUTES.auth.signIn);
+      } else {
+        toast.error("Email is not verified yet. Please check your inbox or spam folder.");
+      }
     });
-  }, [refreshUser, resetError, run]);
-
-  useEffect(() => {
-    if (!justChecked) {
-      return;
-    }
-
-    if (user?.emailVerified) {
-      toast.success("Email verified! Please sign in to continue.");
-      router.replace(ROUTES.auth.signIn);
-    }
-  }, [justChecked, router, user?.emailVerified]);
+  }, [refreshUser, resetError, run, router]);
 
   const infoMessage = useMemo(() => {
     if (!user?.email) {
@@ -123,14 +134,16 @@ export default function VerifyEmailPage() {
                       t("auth.action.checkVerification")
                     )}
                   </Button>
-                  <Button type="button" variant="outline" onClick={onResend} disabled={isLoading}>
+                  <Button type="button" variant="outline" onClick={onResend} disabled={isLoading || resendCount >= 3}>
                     {isLoading ? (
                       <>
                         <Spinner />
                         {t("auth.action.resendVerification")}
                       </>
+                    ) : resendCount >= 3 ? (
+                      "Resend Limit Reached (3/3)"
                     ) : (
-                      t("auth.action.resendVerification")
+                      `${t("auth.action.resendVerification")}${resendCount > 0 ? ` (${resendCount}/3)` : ""}`
                     )}
                   </Button>
                 </div>
