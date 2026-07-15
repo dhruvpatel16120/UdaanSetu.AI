@@ -10,7 +10,6 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { InlineLink } from "@/components/ui/InlineLink";
 import { Spinner } from "@/components/ui/Spinner";
 
 import { AUTH_THEME } from "@/constants/theme";
@@ -25,26 +24,38 @@ import { toast } from "sonner";
 export default function VerifyEmailPage() {
   const router = useRouter();
   const { t } = useI18n();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, signOut, status } = useAuth();
   const { isLoading, error, run, resetError } = useAsyncAction();
 
-  const [resendCount, setResendCount] = useState<number>(0);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("auth_verify_email_resend_count");
-    if (stored) {
-      setResendCount(parseInt(stored, 10));
+  const [resendCount, setResendCount] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("auth_verify_email_resend_count");
+      return stored ? parseInt(stored, 10) : 0;
     }
-  }, []);
+    return 0;
+  });
 
+  // Only redirect after Firebase has resolved the auth state.
+  // Without this check, user is null on first render (loading state)
+  // and the effect immediately kicks the user back to sign-in.
   useEffect(() => {
-    if (!user) {
+    if (status !== "loading" && !user) {
       router.replace(ROUTES.auth.signIn);
     }
-  }, [router, user]);
+  }, [router, user, status]);
 
   const title = useMemo(() => t("auth.title.verifyEmail"), [t]);
   const subtitle = useMemo(() => t("auth.subtitle.verifyEmail"), [t]);
+
+  // Extract a human-readable error message from the thrown value
+  const errorMessage = useMemo(() => {
+    if (!error) return null;
+    if (error instanceof Error) return error.message;
+    if (typeof error === "object" && error !== null && "message" in error) {
+      return String((error as { message: unknown }).message);
+    }
+    return t("auth.error.generic");
+  }, [error, t]);
 
   const onResend = useCallback(async () => {
     if (resendCount >= 3) {
@@ -67,9 +78,9 @@ export default function VerifyEmailPage() {
     await run(async () => {
       const refreshed = await authService.refreshUser();
       if (refreshed?.emailVerified) {
-        toast.success("Email verified successfully! Proceeding to Sign In...");
+        toast.success("Email verified successfully! Opening Dashboard...");
         await refreshUser();
-        router.replace(ROUTES.auth.signIn);
+        router.replace(ROUTES.dashboard);
       } else {
         toast.error("Email is not verified yet. Please check your inbox or spam folder.");
       }
@@ -82,7 +93,7 @@ export default function VerifyEmailPage() {
     }
 
     return `${t("auth.hint.checkYourEmail")} (${user.email})`;
-  }, [t, user?.email]);
+  }, [t, user]);
 
   return (
     <div className={cn("min-h-screen", AUTH_THEME.backgroundClass)}>
@@ -121,10 +132,10 @@ export default function VerifyEmailPage() {
                 </div>
 
                 {infoMessage ? <Alert variant="info" description={infoMessage} className="mb-6" /> : null}
-                {error ? <Alert variant="error" description={t("auth.error.generic")} className="mb-6" /> : null}
+                {errorMessage ? <Alert variant="error" description={errorMessage} className="mb-6" /> : null}
 
                 <div className="flex flex-col gap-3">
-                  <Button type="button" onClick={onCheck} disabled={isLoading}>
+                  <Button type="button" onClick={onCheck} disabled={isLoading || status === "loading"}>
                     {isLoading ? (
                       <>
                         <Spinner />
@@ -134,7 +145,7 @@ export default function VerifyEmailPage() {
                       t("auth.action.checkVerification")
                     )}
                   </Button>
-                  <Button type="button" variant="outline" onClick={onResend} disabled={isLoading || resendCount >= 3}>
+                  <Button type="button" variant="outline" onClick={onResend} disabled={isLoading || resendCount >= 3 || status === "loading"}>
                     {isLoading ? (
                       <>
                         <Spinner />
@@ -150,7 +161,15 @@ export default function VerifyEmailPage() {
 
                 <div className="mt-6 flex flex-col gap-4">
                   <div className="flex justify-center text-sm text-muted-foreground">
-                    <InlineLink href={ROUTES.auth.signIn}>{t("auth.action.signIn")}</InlineLink>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await signOut();
+                      }}
+                      className="text-zinc-600 dark:text-zinc-400 hover:text-foreground dark:hover:text-zinc-300 font-medium underline underline-offset-4 transition-colors"
+                    >
+                      {t("auth.action.signIn")}
+                    </button>
                   </div>
 
                   <div className="flex justify-center text-sm text-muted-foreground pt-2 border-t border-zinc-200 dark:border-white/10">
@@ -196,7 +215,9 @@ export default function VerifyEmailPage() {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => router.push(ROUTES.auth.signIn)}
+                      onClick={async () => {
+                        await signOut();
+                      }}
                       className="w-fit bg-white/15 hover:bg-white/25 text-white border-white/30 backdrop-blur-sm"
                     >
                       {t("auth.action.signIn")}

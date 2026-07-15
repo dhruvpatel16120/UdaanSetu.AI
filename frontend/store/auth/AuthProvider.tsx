@@ -71,17 +71,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // STRICT email verification policy:
       // If user logs in but their email is not verified, and they are not currently on the verification page
       if (!firebaseUser.emailVerified) {
+        const mappedUser = mapFirebaseUser(firebaseUser);
+        setUser(mappedUser);
+        setStatus("authenticated");
+
         const isVerifyPage = window.location.pathname.includes("/auth/verify-email");
         if (!isVerifyPage) {
-          console.log("User email is not verified. Signing out and blocking access...");
-          authService.signOut().then(() => {
-            setUser(null);
-            setStatus("unauthenticated");
-            clearSession();
-            router.push("/auth/verify-email");
-          });
-          return;
+          console.log("User email is not verified. Redirecting to verify-email...");
+          router.push("/auth/verify-email");
         }
+        return;
       }
 
       const mappedUser = mapFirebaseUser(firebaseUser);
@@ -109,12 +108,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (status === "loading") return;
 
     const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
-    if (isProtectedRoute && status === "unauthenticated") {
-      console.log(`Access blocked for protected route: ${pathname}. Redirecting to auth.`);
-      router.push("/auth");
-      toast.error("Authentication required. Please sign in.");
+    if (isProtectedRoute) {
+      if (status === "unauthenticated") {
+        console.log(`Access blocked for protected route: ${pathname}. Redirecting to auth.`);
+        router.push("/auth");
+        toast.error("Authentication required. Please sign in.");
+      } else if (status === "authenticated" && user && !user.emailVerified) {
+        console.log(`Access blocked for unverified user on route: ${pathname}. Redirecting to verify-email.`);
+        router.push("/auth/verify-email");
+        toast.error("Please verify your email address to access this page.");
+      }
     }
-  }, [pathname, status, router]);
+  }, [pathname, status, user, router]);
 
   // Session Timeout Check Logic
   useEffect(() => {
