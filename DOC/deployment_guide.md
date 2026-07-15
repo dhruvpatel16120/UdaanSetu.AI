@@ -63,6 +63,47 @@ Vercel will detect the `vercel.json` and automatically configure the Python runt
 
 ---
 
+## 💻 Local Development & Verification
+
+To run both the Next.js frontend and the FastAPI backend locally:
+
+### 1. Run the FastAPI Backend
+1. Open a terminal and navigate to the `/backend` directory.
+2. Create a virtual environment and install dependencies:
+   ```bash
+   python -m venv venv
+   # On Windows:
+   .\venv\Scripts\activate
+   # On macOS/Linux:
+   source venv/bin/activate
+   
+   pip install -r requirements.txt
+   ```
+3. Run the FastAPI dev server:
+   ```bash
+   python main.py
+   ```
+   The backend will start running on `http://127.0.0.1:8000`.
+
+### 2. Run the Next.js Frontend
+1. Open another terminal and navigate to the `/frontend` directory.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Next.js dev server:
+   ```bash
+   npm run dev
+   ```
+   The frontend will start running on `http://localhost:3000`.
+
+### 3. Verify Local Routing
+Because `frontend/next.config.ts` has a rewrite rule configured for development, any request to `http://localhost:3000/api/...` will automatically be proxied to the backend at `http://127.0.0.1:8000/api/...`.
+- Test if FastAPI is responding locally by visiting: [http://localhost:3000/api/health](http://localhost:3000/api/health)
+- This should return: `{"status": "healthy", "message": "FastAPI backend is running successfully on Vercel!", "version": "1.0.0"}`
+
+---
+
 ## ⚙️ Backend Serverless Constraints
 
 Using Python on Vercel (AWS Lambda under the hood) has specific limits:

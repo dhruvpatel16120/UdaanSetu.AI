@@ -4,9 +4,17 @@
     {
       "src": "frontend/package.json",
       "use": "@vercel/next"
+    },
+    {
+      "src": "backend/main.py",
+      "use": "@vercel/python"
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "backend/main.py"
+    },
     {
       "source": "/(.*)",
       "destination": "/frontend/$1"
