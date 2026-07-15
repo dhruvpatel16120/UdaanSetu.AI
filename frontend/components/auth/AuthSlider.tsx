@@ -49,6 +49,27 @@ function isValidEmail(email: string): boolean {
   return emailRegex.test(email);
 }
 
+type PasswordStrength = {
+  hasMinLength: boolean;
+  hasUppercase: boolean;
+  hasLowercase: boolean;
+  hasSpecial: boolean;
+};
+
+function getPasswordStrength(password: string): PasswordStrength {
+  return {
+    hasMinLength: password.length >= 8,
+    hasUppercase: /[A-Z]/.test(password),
+    hasLowercase: /[a-z]/.test(password),
+    hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+  };
+}
+
+function isStrongPassword(password: string): boolean {
+  const s = getPasswordStrength(password);
+  return s.hasMinLength && s.hasUppercase && s.hasLowercase && s.hasSpecial;
+}
+
 const MODE_LABELS: Record<Mode, { titleKey: "auth.title.signIn" | "auth.title.signUp" }> = {
   "sign-in": { titleKey: "auth.title.signIn" },
   "sign-up": { titleKey: "auth.title.signUp" },
@@ -115,7 +136,6 @@ export function AuthSlider() {
       const credential = await authService.signInWithEmailPassword(signIn.email.trim(), signIn.password);
 
       if (!credential.user.emailVerified) {
-        await authService.signOut();
         router.push(ROUTES.auth.verifyEmail);
         throw { code: "auth/unverified-email" };
       }
@@ -127,6 +147,11 @@ export function AuthSlider() {
   const onSignUpSubmit = useCallback(async () => {
     if (!isValidEmail(signUp.email.trim())) {
       setSignUpLocalError(t("auth.error.invalidEmail"));
+      return;
+    }
+
+    if (!isStrongPassword(signUp.password)) {
+      setSignUpLocalError("Password must be at least 8 characters and include uppercase, lowercase, and a special character.");
       return;
     }
 
@@ -341,6 +366,57 @@ export function AuthSlider() {
                           }}
                           autoComplete="new-password"
                         />
+                        {/* Password strength checklist — shown while user is typing */}
+                        {signUp.password.length > 0 && (() => {
+                          const s = getPasswordStrength(signUp.password);
+                          const rules: { label: string; met: boolean }[] = [
+                            { label: "At least 8 characters", met: s.hasMinLength },
+                            { label: "Uppercase letter (A-Z)", met: s.hasUppercase },
+                            { label: "Lowercase letter (a-z)", met: s.hasLowercase },
+                            { label: "Special character (!@#$…)", met: s.hasSpecial },
+                          ];
+                          const metCount = rules.filter((r) => r.met).length;
+                          const strengthColors = ["bg-red-400", "bg-orange-400", "bg-yellow-400", "bg-lime-400"];
+                          return (
+                            <div className="mt-2 space-y-2">
+                              {/* Strength bar */}
+                              <div className="flex gap-1">
+                                {[0, 1, 2, 3].map((i) => (
+                                  <div
+                                    key={i}
+                                    className={cn(
+                                      "h-1.5 flex-1 rounded-full transition-all duration-300",
+                                      i < metCount ? strengthColors[metCount - 1] : "bg-zinc-200 dark:bg-white/10",
+                                    )}
+                                  />
+                                ))}
+                              </div>
+                              {/* Rule checklist */}
+                              <ul className="space-y-1">
+                                {rules.map((rule) => (
+                                  <li
+                                    key={rule.label}
+                                    className={cn(
+                                      "flex items-center gap-2 text-xs transition-colors",
+                                      rule.met ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500",
+                                    )}
+                                  >
+                                    {rule.met ? (
+                                      <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="9" strokeWidth={2} />
+                                      </svg>
+                                    )}
+                                    {rule.label}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          );
+                        })()}
                         <TextField
                           id="signUpConfirmPassword"
                           label={t("auth.field.confirmPassword")}
